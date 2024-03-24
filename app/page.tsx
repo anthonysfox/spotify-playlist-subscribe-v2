@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import { PrismaClient } from "@prisma/client";
 
-export default function Home() {
+const prisma = new PrismaClient();
+
+export default async function Home() {
   return (
     <div className="flex h-screen bg-black">
       <div className="w-screen h-screen flex flex-col justify-center items-center">
