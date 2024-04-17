@@ -1,8 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "dev": "prisma generate && concurrently \"next dev\" \"ngrok http --url=decent-werewolf-eagerly.ngrok-free.app 3000 --log=stdout\"",
-    "build": "prisma generate && prisma db push && next build",
+    "dev": "npx prisma generate && next dev",
+    "build": "npx prisma generate && prisma db push && next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
