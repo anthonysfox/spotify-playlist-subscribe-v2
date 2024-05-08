@@ -48,6 +48,15 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id            String    @id @default(cuid())
+  userPlaylistID String 
+  spotifyPlaylistID String
+  userID  String
+  user User     @relation(fields: [userID], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {

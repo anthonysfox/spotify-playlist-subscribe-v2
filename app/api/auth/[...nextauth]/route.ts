@@ -11,8 +11,8 @@ const prisma = new PrismaClient();
 export const authOptions: NextAuthOptions = {
   providers: [
     SpotifyProvider({
-      clientId: "" + process.env.SPOTIFY_ID,
-      clientSecret: "" + process.env.SPOTIFY_SECRET,
+      clientId: process.env.SPOTIFY_ID ?? "",
+      clientSecret: process.env.SPOTIFY_SECRET ?? "",
       authorization: {
         params: {
           scope,
@@ -22,24 +22,6 @@ export const authOptions: NextAuthOptions = {
   ],
   adapter: PrismaAdapter(prisma),
   secret: process.env.NEXTAUTH_SECRET,
-  callbacks: {
-    async jwt({ token, account }) {
-      if (account) {
-        token.id = account.id;
-        token.expires_at = account.expires_at;
-        token.accessToken = account.access_token;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      console.log(session);
-      session.user = token;
-      return session;
-    },
-  },
-  pages: {
-    signIn: "/login",
-  },
 };
 
 const handler = NextAuth(authOptions);
