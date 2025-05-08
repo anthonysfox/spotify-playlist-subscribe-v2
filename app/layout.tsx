@@ -2,12 +2,10 @@
 import "@/styles/globals.css";
 import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-import NavBar from "@/components/NavBar";
+import NavBar from "@/app/components/NavBar";
 import { Suspense } from "react";
 
-import SessionProvider from "../components/SessionProvider";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -19,18 +17,20 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
-
   return (
-    <html lang="en">
-      <body className={inter.variable}>
-        <Toaster />
-        <Suspense fallback="Loading..."></Suspense>
-        <SessionProvider>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${inter.variable} flex flex-col h-screen bg-gray-100 text-gray-800`}
+        >
           <NavBar />
-          {children}
-        </SessionProvider>
-      </body>
-    </html>
+          <main className="flex-grow flex flex-col overflow-hidden p-4">
+            <div className="max-w-6xl mx-auto w-full flex flex-col h-full">
+              {children}
+            </div>
+          </main>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
