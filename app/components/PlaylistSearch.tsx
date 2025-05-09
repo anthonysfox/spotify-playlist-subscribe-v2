@@ -1,30 +1,42 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ISpotifyPlaylist } from "../../utils/types";
 import { SearchBar } from "./SearchBar";
 import { Header } from "./Header";
 import WebPlayer from "./WebPlayer";
 import { PlaylistList } from "./PlaylistList";
-import { PreviewTracksBox } from "./PreviewTracksBox";
 import { OFFSET } from "utils/constants";
 import { NavTabs } from "./NavTabs";
 
+const userPlaylistsEndpoint = "/api/spotify/user/playlists";
+
 const PlaylistSearch = ({ token }: { token: string }) => {
   const [searchText, setSearchText] = useState<string>("");
-  const [selectedPlaylists, setSelectedPlaylists] = useState<string[]>([]);
   const [playlists, setPlaylists] = useState<ISpotifyPlaylist[]>([]);
   const [previewTracks, setPreviewTracks] = useState<any>([]);
   const [isLongPress, setIsLongPress] = useState(false);
   const [deviceID, setDeviceID] = useState("");
   const [player, setPlayer] = useState(null);
   const [offset, setOffset] = useState<number>(OFFSET);
-  const [APIURL, setAPIURL] = useState<string>("/api/spotify/user/playlists");
+  const [APIURL, setAPIURL] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [loadedAllData, setLoadedAllData] = useState<boolean>(false);
   const [selectedPlaylist, setSelectedPlaylist] =
     useState<ISpotifyPlaylist | null>(null);
   const [activeTab, setActiveTab] = useState("discover");
   const [expandedPlaylist, setExpandedPlaylist] = useState<string | null>("");
+  const [userPlaylists, setUserPlaylists] = useState<ISpotifyPlaylist[]>([]);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const listRef = useRef<HTMLDivElement>(null);
+  const hasFetched = useRef(false);
+
+  const [userOffset, setUserOffset] = useState(0);
+  const [userLoading, setUserLoading] = useState(false);
+  const [userLoadedAll, setUserLoadedAll] = useState(false);
+
+  const [searchOffset, setSearchOffset] = useState(0);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchLoadedAll, setSearchLoadedAll] = useState(false);
 
   useEffect(() => {
     async function fetchPlaylists() {
@@ -50,33 +62,56 @@ const PlaylistSearch = ({ token }: { token: string }) => {
     };
   }, [searchText]);
 
-  useEffect(() => {
-    async function fetchPlaylists() {
-      setLoading(true);
-      const res = await fetch(APIURL);
-      const data = await res.json();
-      setPlaylists([...data]);
-      setLoading(false);
+  const fetchSearchPlaylists = async () => {
+    console.log(searchLoading, searchLoadedAll, APIURL);
+    if (searchLoading || searchLoadedAll || !APIURL) return;
+    setSearchLoading(true);
+
+    try {
+      const res = await fetch(`${APIURL}&offset=${searchOffset}`);
+      const data: ISpotifyPlaylist[] = await res.json();
+      console.log(data.length);
+      setPlaylists((prev) => [...prev, ...data]);
+      setSearchLoadedAll(data.length < OFFSET);
+      setSearchOffset((prev) => prev + OFFSET);
+    } catch (err) {
+      console.error("Failed search fetch:", err);
+    } finally {
+      setSearchLoading(false);
     }
+  };
 
-    if (token) fetchPlaylists();
-  }, [token]);
+  const fetchUserPlaylists = async () => {
+    if (userLoading || userLoadedAll) return;
+    setUserLoading(true);
 
-  const fetchData = async () => {
-    if (loading || loadedAllData) return;
-    setLoading(true);
-    const res = await fetch(
-      `${APIURL}${APIURL.indexOf("?") >= 0 ? "&" : "?"}offset=${offset}`
-    );
-    const data: ISpotifyPlaylist[] = await res.json();
-    setLoadedAllData(data.length < OFFSET);
-    setPlaylists((prevState) => [...prevState, ...data]);
-    setLoading(false);
+    try {
+      const res = await fetch(`${userPlaylistsEndpoint}?offset=${userOffset}`);
+      const data: ISpotifyPlaylist[] = await res.json();
+      setUserPlaylists((prev) => [...prev, ...data]);
+      setPlaylists((prev) => [...prev, ...data]);
+      setUserLoadedAll(data.length < OFFSET);
+      setUserOffset((prev) => prev + OFFSET);
+    } catch (err) {
+      console.error("Failed user playlist fetch:", err);
+    } finally {
+      setUserLoading(false);
+    }
   };
 
   useEffect(() => {
-    if (token) fetchData();
-  }, [offset, token]);
+    const fetchData = async () => {
+      if (!hasFetched.current) {
+        hasFetched.current = true;
+        await fetchUserPlaylists();
+      }
+    };
+    fetchData();
+
+    return () => {
+      // Cleanup logic can be added here if needed, such as aborting fetch requests
+    };
+  }, []);
 
   useEffect(() => {
     const fetchPlaylistTracks = async (playlistID: string) => {
@@ -97,7 +132,7 @@ const PlaylistSearch = ({ token }: { token: string }) => {
     });
     const data = await res.json();
     if (data.success) {
-      setSelectedPlaylists((prev) => [...prev, playlistID]);
+      // setSelectedPlaylists((prev) => [...prev, playlistID]);
     }
   };
 
@@ -110,9 +145,49 @@ const PlaylistSearch = ({ token }: { token: string }) => {
     });
     const data = await res.json();
     if (data.success) {
-      setSelectedPlaylists((prev) => prev.filter((id) => id !== playlistID));
+      // setSelectedPlaylists((prev) => prev.filter((id) => id !== playlistID));
     }
   };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (listRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = listRef.current;
+        const nearBottom = scrollHeight - scrollTop <= clientHeight + 100;
+
+        if (!nearBottom || userLoading || searchLoading) return;
+
+        if (searchText) {
+          console.log("hi");
+          fetchSearchPlaylists();
+        } else {
+          fetchUserPlaylists();
+        }
+      }
+    };
+
+    if (listRef.current) {
+      listRef.current.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (listRef.current) {
+        listRef.current.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, [
+    loading,
+    loadedAllData,
+    listRef.current,
+    searchText,
+    userOffset,
+    searchOffset,
+    userLoadedAll,
+    searchLoadedAll,
+    userLoading,
+    searchLoading,
+    APIURL,
+  ]);
 
   return (
     <>
@@ -127,7 +202,7 @@ const PlaylistSearch = ({ token }: { token: string }) => {
       {activeTab === "discover" && (
         <>
           <SearchBar value={searchText} onChange={setSearchText} />
-          {playlists.length && (
+          {playlists.length ? (
             <div className="mt-4">
               <h2 className="text-xl font-semibold text-gray-800">
                 Search Results
@@ -137,7 +212,7 @@ const PlaylistSearch = ({ token }: { token: string }) => {
                 automatically add songs to your library
               </p>
             </div>
-          )}
+          ) : null}
           <PlaylistList
             playlists={playlists}
             setIsLongPress={setIsLongPress}
@@ -155,18 +230,10 @@ const PlaylistSearch = ({ token }: { token: string }) => {
             handleUnsubscribe={handleUnsubscribe}
             previewTracks={previewTracks}
             setPreviewTracks={setPreviewTracks}
+            testingRef={listRef}
           />
         </>
       )}
-      {/* {previewOpen ? (
-        <PreviewTracksBox
-          previewTracks={previewTracks}
-          open={previewOpen}
-          setPreviewOpen={setPreviewOpen}
-          deviceID={deviceID}
-          player={player}
-        />
-      ) : null} */}
     </>
   );
 };
