@@ -11,11 +11,18 @@ datasource db {
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
+enum SubscriptionFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 model Subscription {
   id            String    @id @default(cuid())
   userPlaylistID String 
   spotifyPlaylistID String
   userId  String
+  frequency SubscriptionFrequency
   user User @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
   createdAt DateTime @default(now())
   @@index([userId])

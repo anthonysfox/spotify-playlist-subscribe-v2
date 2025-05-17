@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json([...data.items]);
   } catch (error) {
+    console.log(error);
     return Response.json(error);
   }
 }

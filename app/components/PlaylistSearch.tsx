@@ -7,6 +7,7 @@ import WebPlayer from "./WebPlayer";
 import { PlaylistList } from "./PlaylistList";
 import { OFFSET } from "utils/constants";
 import { NavTabs } from "./NavTabs";
+import { SubscibeModal } from "./SubscibeModal";
 
 const userPlaylistsEndpoint = "/api/spotify/user/playlists";
 
@@ -26,7 +27,7 @@ const PlaylistSearch = ({ token }: { token: string }) => {
   const [activeTab, setActiveTab] = useState("discover");
   const [expandedPlaylist, setExpandedPlaylist] = useState<string | null>("");
   const [userPlaylists, setUserPlaylists] = useState<ISpotifyPlaylist[]>([]);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const hasFetched = useRef(false);
 
@@ -123,19 +124,6 @@ const PlaylistSearch = ({ token }: { token: string }) => {
     if (expandedPlaylist) fetchPlaylistTracks(expandedPlaylist);
   }, [expandedPlaylist]);
 
-  const handleSubscribe = async (playlistID: string) => {
-    const res = await fetch(`/api/spotify/subscribe/${playlistID}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await res.json();
-    if (data.success) {
-      // setSelectedPlaylists((prev) => [...prev, playlistID]);
-    }
-  };
-
   const handleUnsubscribe = async (playlistID: string) => {
     const res = await fetch(`/api/spotify/unsubscribe/${playlistID}`, {
       method: "DELETE",
@@ -226,12 +214,20 @@ const PlaylistSearch = ({ token }: { token: string }) => {
             setOffset={setOffset}
             expandedPlaylist={expandedPlaylist}
             setExpandedPlaylist={setExpandedPlaylist}
-            handleSubscribe={handleSubscribe}
             handleUnsubscribe={handleUnsubscribe}
             previewTracks={previewTracks}
             setPreviewTracks={setPreviewTracks}
             testingRef={listRef}
+            setShowSubscribeModal={setShowSubscribeModal}
           />
+          {showSubscribeModal && (
+            <SubscibeModal
+              selectedPlaylist={selectedPlaylist}
+              setSelectedPlaylist={setSelectedPlaylist}
+              setShowSubscribeModal={setShowSubscribeModal}
+              userPlaylists={userPlaylists}
+            />
+          )}
         </>
       )}
     </>

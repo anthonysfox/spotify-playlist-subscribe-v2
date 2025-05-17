@@ -18,11 +18,11 @@ export const PlaylistList = ({
   setSelectedPlaylist,
   expandedPlaylist,
   setExpandedPlaylist,
-  handleSubscribe,
   handleUnsubscribe,
   previewTracks,
   setPreviewTracks,
   testingRef,
+  setShowSubscribeModal,
 }: {
   playlists: ISpotifyPlaylist[];
   setIsLongPress: (isLongPress: boolean) => void;
@@ -38,11 +38,11 @@ export const PlaylistList = ({
   >;
   expandedPlaylist: string | null;
   setExpandedPlaylist: React.Dispatch<React.SetStateAction<string | null>>;
-  handleSubscribe: (playlistID: string) => void;
   handleUnsubscribe: (playlistID: string) => void;
   previewTracks: any;
   setPreviewTracks: React.Dispatch<React.SetStateAction<any>>;
   testingRef: React.RefObject<HTMLDivElement>;
+  setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -120,9 +120,10 @@ export const PlaylistList = ({
                               </button>
                             ) : (
                               <button
-                                onClick={() =>
-                                  setSelectedPlaylist({ ...playlist })
-                                }
+                                onClick={() => {
+                                  setShowSubscribeModal(true);
+                                  setSelectedPlaylist({ ...playlist });
+                                }}
                                 className="px-4 py-2 rounded-full bg-green-600 text-white text-sm hover:bg-green-700 transition-colors shadow-sm flex items-center"
                               >
                                 <Bell size={16} className="mr-1" />
