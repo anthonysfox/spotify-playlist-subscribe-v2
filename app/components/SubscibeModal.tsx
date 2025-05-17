@@ -61,7 +61,8 @@ export const SubscibeModal = ({
             Subscription Settings
           </h2>
           <p className="text-gray-600">
-            You&apos;re subscribing to "{selectedPlaylist?.name || ""}"
+            You&apos;re subscribing to &ldquo;{selectedPlaylist?.name || ""}
+            &ldquo;
           </p>
         </div>
 
