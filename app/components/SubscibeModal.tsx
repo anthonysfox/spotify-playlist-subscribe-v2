@@ -144,8 +144,8 @@ export const SubscibeModal = ({
             ))}
           </div>
           <p className="text-gray-500 text-xs mt-2">
-            We'll add a few tracks from this playlist to your selected playlist
-            at this frequency.
+            We&apos;ll add a few tracks from this playlist to your selected
+            playlist at this frequency.
           </p>
         </div>
 
