@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import getClerkOAuthToken from "utils/clerk";
 import { OFFSET } from "utils/constants";
 
 export async function GET(request: Request) {
-  const { userId } = auth();
+  const { userId, token } = await getClerkOAuthToken();
 
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
@@ -13,8 +12,6 @@ export async function GET(request: Request) {
   const offset = searchParams.get("offset") || 0;
 
   try {
-    const token = await getClerkOAuthToken();
-
     const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/search?q=${searchText}&type=playlist&limit=${OFFSET}&offset=${offset}`;
     const spotifyResponse = await fetch(spotifyUrl, {
       headers: {

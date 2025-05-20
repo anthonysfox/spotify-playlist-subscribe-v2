@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
   directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
 }
 
@@ -17,24 +17,123 @@ enum SubscriptionFrequency {
   MONTHLY
 }
 
-model Subscription {
-  id            String    @id @default(cuid())
-  userPlaylistID String 
-  spotifyPlaylistID String
-  userId  String
-  frequency SubscriptionFrequency
-  user User @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  @@index([userId])
-}
+// model Subscription {
+//   id            String    @id @default(cuid())
+//   userPlaylistID String 
+//   userPlaylistName String
+//   userPlaylistImageUrl String
+//   spotifyPlaylistID String
+//   spotifyPlaylistName String
+//   spotifyPlaylistImageUrl String
+//   userId  String
+//   frequency SubscriptionFrequency
+//   user User @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+//   createdAt DateTime @default(now())
+//   @@index([userId])
+// }
 
 model User {
-  id String @id @default(uuid())
-  clerkUserId String @unique
-  email String @unique
-  name String?
-  imageUrl String?
+  id               String            @id @default(uuid())
+  clerkUserId      String            @unique
+  email            String            @unique
+  name             String?
+  imageUrl         String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  managedPlaylists ManagedPlaylist[]
+
+  @@map("users")
+}
+
+// Represents a destination playlist on Spotify managed by your application for a user
+model ManagedPlaylist {
+  // Unique internal identifier for this managed playlist record.
+  id String @id @default(cuid())
+
+  // The Clerk user who owns/created this managed playlist on Spotify.
+  userId String
+  user   User   @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+
+  // The unique ID of this destination playlist on Spotify.
+  spotifyPlaylistId String @unique @db.VarChar(255)
+
+  // The name of the managed playlist (could be synced from Spotify or user-defined).
+  name String @db.VarChar(255)
+
+  imageUrl String? @db.VarChar(512)
+
+  // How often (in minutes) this specific managed playlist should sync.
+  syncInterval SubscriptionFrequency
+
+  // How many of the most recent songs to pull FROM EACH subscribed source during a sync run for this playlist.
+  syncQuantityPerSource Int @default(5)
+
+  // Date this managed playlist record was created in your DB.
   createdAt DateTime @default(now())
+
+  // Date this managed playlist record was last updated (including sync settings changes)
   updatedAt DateTime @updatedAt
-  subscriptions  Subscription[]
+
+  // The last time a full sync process completed successfully for this managed playlist.
+  lastSyncCompletedAt DateTime?
+
+  // The calculated time for the next scheduled sync for this playlist.
+  nextSyncTime DateTime?
+
+  // Links to the source playlists this managed playlist subscribes from
+  sourceSubscriptions ManagedPlaylistSourceSubscription[]
+
+  @@index([userId])
+  @@map("managed_playlists") // Maps the model name to the table name
+}
+
+// Represents an external Spotify playlist that can be a source, with minimal metadata
+model SourcePlaylist {
+  // Unique internal identifier for this source playlist record.
+  id String @id @default(cuid())
+
+  // The unique ID of the external Spotify playlist (the source).
+  spotifyPlaylistId String @unique @db.VarChar(255)
+
+  // The name of the source playlist (fetched once and stored for display).
+  name String @db.VarChar(255)
+
+  // URL of the playlist cover image (fetched once).
+  imageUrl String? @db.VarChar(512)
+
+  // Date this source playlist record was created.
+  createdAt DateTime @default(now())
+
+  // Date this source playlist record was last updated (e.g., metadata refresh).
+  updatedAt DateTime @updatedAt
+
+  // Links from managed playlists that subscribe to this source
+  managedSubscriptions ManagedPlaylistSourceSubscription[]
+
+  @@map("source_playlists") // Maps the model name to the table name
+}
+
+// Linking table: connects a managed playlist to a source playlist it subscribes from
+model ManagedPlaylistSourceSubscription {
+  // Unique internal identifier for this link.
+  id String @id @default(cuid())
+
+  // The managed destination playlist.
+  managedPlaylistId String
+  managedPlaylist   ManagedPlaylist @relation(fields: [managedPlaylistId], references: [id], onDelete: Cascade)
+
+  // The source playlist being subscribed from.
+  sourcePlaylistId String
+  sourcePlaylist   SourcePlaylist @relation(fields: [sourcePlaylistId], references: [id], onDelete: Cascade)
+
+  // Date this link was created.
+  createdAt DateTime @default(now())
+
+  // The last time this specific managed playlist pulled songs from this specific source playlist.
+  // Crucial for getting delta updates (songs added to the source SINCE this time).
+  lastSyncedFromSourceAt DateTime?
+
+  // Unique constraint to prevent duplicate links
+  @@unique([managedPlaylistId, sourcePlaylistId])
+  @@map("managed_playlist_source_subscriptions") // Maps the model name to the table name
 }

@@ -2,19 +2,18 @@ import { PrismaClient } from "@prisma/client";
 
 import PlaylistSearch from "./components/PlaylistSearch";
 import WebPlayer from "./components/WebPlayer";
-import getClerkOAuthToken from "utils/clerk";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Disc } from "lucide-react";
-
+import { currentUser } from "@clerk/nextjs/server";
 const prisma = new PrismaClient();
 
 export default async function Home() {
-  const token = await getClerkOAuthToken();
+  const user = await currentUser();
 
   return (
     <div className="flex-grow flex flex-col p-4 h-full">
-      {token ? (
-        <PlaylistSearch token={token} />
+      {user ? (
+        <PlaylistSearch />
       ) : (
         <div className="flex flex-col items-center justify-center h-full max-w-lg mx-auto text-center px-4">
           <Disc size={64} className="text-green-500 mb-6" />

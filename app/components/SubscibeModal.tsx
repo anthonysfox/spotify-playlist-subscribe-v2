@@ -2,12 +2,6 @@ import { Bell, X } from "lucide-react";
 import React, { useState } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 
-const frequencyOptions = [
-  { value: "DAILY", label: "Daily" },
-  { value: "WEEKLY", label: "Weekly" },
-  { value: "MONTHLY", label: "Monthly" },
-];
-
 export const SubscibeModal = ({
   setShowSubscribeModal,
   setSelectedPlaylist,
@@ -22,15 +16,27 @@ export const SubscibeModal = ({
   userPlaylists: ISpotifyPlaylist[];
 }) => {
   const [selectedFrequency, setSelectedFrequency] = useState("WEEKLY");
-  const [addSongsToPlaylist, setAddSongsToPlaylist] = useState("");
+  const [selectedUserPlaylist, setSelectedUserPlaylist] =
+    useState<ISpotifyPlaylist | null>(null);
+  const [songCount, setSongCount] = useState(5);
 
   const saveSubscriptionSettings = async () => {
+    const body = {
+      destinationPlaylist: {
+        id: selectedUserPlaylist?.id,
+        name: selectedUserPlaylist?.name,
+        imageUrl: selectedUserPlaylist?.images?.[0]?.url || "",
+      },
+      sourcePlaylist: {
+        id: selectedPlaylist?.id,
+        name: selectedPlaylist?.name || "",
+        imageUrl: selectedPlaylist?.images?.[0]?.url || "",
+      },
+    };
     const res = await fetch("/api/spotify/playlists/subscribe", {
       method: "POST",
       body: JSON.stringify({
-        userPlaylistID: addSongsToPlaylist,
-        spotifyPlaylistID: selectedPlaylist?.id,
-        frequency: selectedFrequency,
+        ...body,
       }),
       headers: {
         "Content-Type": "application/json",
@@ -74,7 +80,11 @@ export const SubscibeModal = ({
             <select
               id="playlist-dropdown"
               onChange={(e) => {
-                setAddSongsToPlaylist(e.target.value);
+                setSelectedUserPlaylist(
+                  userPlaylists.find(
+                    (playlist) => playlist.id === e.target.value
+                  ) || null
+                );
               }}
               className="w-full p-3 bg-white rounded border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
               defaultValue=""
@@ -121,7 +131,40 @@ export const SubscibeModal = ({
           </div> */}
         </div>
 
-        <div className="mb-6">
+        {/* <div className="mb-6">
+          <label className="block text-gray-700 mb-2 font-medium">
+            How many songs to add each time?
+          </label>
+          <div className="relative">
+            <select
+              id="song-count-dropdown"
+              onChange={(e) => setSongCount(parseInt(e.target.value))}
+              className="w-full p-3 bg-white rounded border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
+              defaultValue="5"
+              value={songCount}
+            >
+              {songCountOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+              <svg
+                className="fill-current h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+              >
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-gray-500 text-xs mt-2">
+            This is the number of tracks we'll add from this playlist each time.
+          </p>
+        </div> */}
+
+        {/* <div className="mb-6">
           <label className="block text-gray-700 mb-2 font-medium">
             How often should we add new tracks?
           </label>
@@ -147,7 +190,7 @@ export const SubscibeModal = ({
             We&apos;ll add a few tracks from this playlist to your selected
             playlist at this frequency.
           </p>
-        </div>
+        </div> */}
 
         <button
           id="save-button"

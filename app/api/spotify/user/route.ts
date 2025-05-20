@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import getClerkOAuthToken from "utils/clerk";
-import { auth } from "@clerk/nextjs/server";
 
 export async function GET() {
-  const { userId } = auth();
+  const { userId, token } = await getClerkOAuthToken();
 
   if (!userId) return new Response("Unauthorized", { status: 401 });
-
-  const token = await getClerkOAuthToken();
 
   const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/me`;
 

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import getClerkOAuthToken from "../../../../../utils/clerk";
 
 export async function POST(request: Request) {
-  const { userId } = auth();
+  const { userId, token } = await getClerkOAuthToken();
 
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
@@ -11,8 +10,6 @@ export async function POST(request: Request) {
   const track = searchParams.get("track") || "";
   const deviceID = searchParams.get("device_id") || "";
   try {
-    const token = await getClerkOAuthToken();
-
     const spotifyUrl = `${
       process.env.BASE_SPOTIFY_URL
     }/me/player/queue?uri=${encodeURIComponent(
