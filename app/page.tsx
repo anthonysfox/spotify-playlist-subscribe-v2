@@ -13,7 +13,7 @@ export default async function Home() {
   return (
     <div className="flex-grow flex flex-col p-4 h-full">
       {user ? (
-        <PlaylistSearch />
+        <PlaylistSearch userData={JSON.parse(JSON.stringify(user))} />
       ) : (
         <div className="flex flex-col items-center justify-center h-full max-w-lg mx-auto text-center px-4">
           <Disc size={64} className="text-green-500 mb-6" />

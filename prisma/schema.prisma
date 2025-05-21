@@ -62,7 +62,8 @@ model ManagedPlaylist {
 
   imageUrl String? @db.VarChar(512)
 
-  // How often (in minutes) this specific managed playlist should sync.
+  trackCount Int @default(0)
+
   syncInterval SubscriptionFrequency
 
   // How many of the most recent songs to pull FROM EACH subscribed source during a sync run for this playlist.

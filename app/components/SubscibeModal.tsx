@@ -26,6 +26,7 @@ export const SubscibeModal = ({
         id: selectedUserPlaylist?.id,
         name: selectedUserPlaylist?.name,
         imageUrl: selectedUserPlaylist?.images?.[0]?.url || "",
+        trackCount: selectedUserPlaylist?.tracks?.total || 0,
       },
       sourcePlaylist: {
         id: selectedPlaylist?.id,
@@ -43,7 +44,6 @@ export const SubscibeModal = ({
       },
     }).then(async (res) => {
       const data = await res.json();
-      console.log(data);
       setShowSubscribeModal(false);
       setSelectedPlaylist(null);
     });

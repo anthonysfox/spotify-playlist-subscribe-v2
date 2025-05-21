@@ -61,7 +61,7 @@ export const PlaylistSettingsModal = ({
               {selectedPlaylist.name}
             </h3>
             <p className="text-gray-500 text-sm">
-              {selectedPlaylist.tracks.items.length} tracks
+              {selectedPlaylist.tracks.total} tracks
             </p>
           </div>
         </div>

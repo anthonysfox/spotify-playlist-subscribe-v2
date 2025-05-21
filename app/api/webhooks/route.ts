@@ -14,9 +14,7 @@ export async function POST(req: Request) {
     const { id, first_name, last_name, image_url, email_addresses } = evt.data;
     const eventType = evt.type;
 
-    console.log("here");
     if (eventType === "user.created" && id) {
-      console.log("created");
       const createdUser = await prisma.user.create({
         data: {
           clerkUserId: id,
@@ -28,7 +26,6 @@ export async function POST(req: Request) {
 
       return NextResponse.json({ user: createdUser }, { status: 200 });
     } else if (eventType === "user.updated") {
-      console.log("updated");
       const updatedUser = await prisma.user.update({
         where: {
           clerkUserId: id,
