@@ -45,8 +45,8 @@ export const PlaylistSettingsModal = ({
             Playlist Update Settings
           </h2>
           <p className="text-gray-600">
-            Configure how "{selectedPlaylist.name}" receives tracks from
-            subscribed playlists
+            Configure how &quot;{selectedPlaylist.name}&quot; receives tracks
+            from subscribed playlists
           </p>
         </div>
 
@@ -93,8 +93,8 @@ export const PlaylistSettingsModal = ({
             </div>
           </div>
           <p className="text-gray-500 text-xs mt-2">
-            This is the number of tracks we'll add from each subscribed playlist
-            during updates.
+            This is the number of tracks we&apos;ll add from each subscribed
+            playlist during updates.
           </p>
         </div>
 
@@ -120,7 +120,7 @@ export const PlaylistSettingsModal = ({
             })}
           </div>
           <p className="text-gray-500 text-xs mt-2">
-            This is how often we'll update your playlist with fresh tracks.
+            This is how often we&apos;ll update your playlist with fresh tracks.
           </p>
         </div>
 
