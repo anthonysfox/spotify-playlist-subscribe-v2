@@ -1,3 +1,19 @@
+export interface IState {
+  offset: number;
+  loading: boolean;
+  loadedAll: boolean;
+}
+
+export interface IPlaylistState<T> extends IState {
+  playlists: T[];
+}
+
+export type IUserPlaylistsState = IPlaylistState<ISpotifyPlaylist>;
+
+export interface ITopArtistState extends IPlaylistState<ISpotifyPlaylist> {
+  artists: string[];
+}
+
 export interface ISpotifyPlaylist {
   id: string;
   name: string;

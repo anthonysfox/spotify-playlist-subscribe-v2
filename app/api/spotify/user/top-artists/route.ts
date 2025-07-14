@@ -21,7 +21,13 @@ export async function GET(request: NextRequest) {
     });
     const data = await spotifyResponse.json();
 
-    return NextResponse.json({ data });
+    const artists = data.items.reduce((artists, nextItem) => {
+      artists.push(nextItem.name);
+
+      return artists;
+    }, []);
+
+    return NextResponse.json([...artists]);
   } catch (error) {
     return Response.json(error);
   }
