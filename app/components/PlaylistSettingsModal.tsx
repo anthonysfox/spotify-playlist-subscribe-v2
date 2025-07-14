@@ -50,11 +50,11 @@ export const PlaylistSettingsModal = ({
           </p>
         </div>
 
-        <div className="flex items-center p-3 bg-gray-50 rounded border border-gray-200 mb-6">
+        <div className="flex items-center p-3 bg-gray-50 rounded-sm border border-gray-200 mb-6">
           <img
             src={selectedPlaylist.images?.[0]?.url}
             alt={selectedPlaylist.name}
-            className="w-12 h-12 object-cover rounded"
+            className="w-12 h-12 object-cover rounded-sm"
           />
           <div className="ml-3">
             <h3 className="font-medium text-gray-800">
@@ -73,7 +73,7 @@ export const PlaylistSettingsModal = ({
           <div className="relative">
             <select
               id="settings-song-count-dropdown"
-              className="w-full p-3 bg-white rounded border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
+              className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
               defaultValue={3}
             >
               {songCountOptions.map((option) => (

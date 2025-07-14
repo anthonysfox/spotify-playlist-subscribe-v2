@@ -2,7 +2,7 @@ import React from "react";
 
 export const NavTabs = ({ activeTab, setActiveTab }: any) => {
   return (
-    <div className="flex mb-6 bg-white rounded-lg p-1 shadow-sm border border-gray-200">
+    <div className="flex mb-6 bg-white rounded-lg p-1 shadow-xs border border-gray-200">
       <button
         onClick={() => setActiveTab("discover")}
         className={`flex-1 py-3 rounded-lg font-medium transition-colors ${

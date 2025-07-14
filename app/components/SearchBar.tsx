@@ -16,7 +16,7 @@ export const SearchBar = ({
           <input
             type="text"
             id="search-dropdown"
-            className="flex-grow py-3 px-6 bg-transparent outline-none text-gray-700"
+            className="grow py-3 px-6 bg-transparent outline-hidden text-gray-700"
             placeholder="Search Playlists..."
             value={value}
             onChange={(e) => onChange(e.target.value)}

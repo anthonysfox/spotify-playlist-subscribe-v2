@@ -24,7 +24,7 @@ export default async function RootLayout({
           className={`${inter.variable} flex flex-col h-screen bg-gray-100 text-gray-800`}
         >
           <NavBar />
-          <main className="flex-grow flex flex-col overflow-hidden p-4">
+          <main className="grow flex flex-col overflow-hidden p-4">
             <div className="max-w-6xl mx-auto w-full flex flex-col h-full">
               {children}
             </div>

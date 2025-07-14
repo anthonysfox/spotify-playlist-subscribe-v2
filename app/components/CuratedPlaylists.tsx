@@ -390,7 +390,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
         )}
 
       {/* Playlists */}
-      <div className="flex-grow overflow-hidden min-h-0 flex flex-col mx-4">
+      <div className="grow overflow-hidden min-h-0 flex flex-col mx-4">
         <PlaylistList
           playlists={playlists}
           setIsLongPress={() => {}}

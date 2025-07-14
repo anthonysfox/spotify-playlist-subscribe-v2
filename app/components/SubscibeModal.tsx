@@ -86,7 +86,7 @@ export const SubscibeModal = ({
                   ) || null
                 );
               }}
-              className="w-full p-3 bg-white rounded border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
+              className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
               defaultValue=""
             >
               <option value="" disabled>
@@ -112,11 +112,11 @@ export const SubscibeModal = ({
           {/* Preview of selected playlist */}
           {/* <div id="selected-playlist-preview" className="mt-3">
             {userPlaylists.length > 0 && (
-              <div className="flex items-center p-3 bg-gray-50 rounded border border-gray-200">
+              <div className="flex items-center p-3 bg-gray-50 rounded-sm border border-gray-200">
                 <img
                   src={userPlaylists[0].imageUrl}
                   alt={userPlaylists[0].name}
-                  className="w-12 h-12 object-cover rounded"
+                  className="w-12 h-12 object-cover rounded-sm"
                 />
                 <div className="ml-3">
                   <h3 className="font-medium text-gray-800">
@@ -139,7 +139,7 @@ export const SubscibeModal = ({
             <select
               id="song-count-dropdown"
               onChange={(e) => setSongCount(parseInt(e.target.value))}
-              className="w-full p-3 bg-white rounded border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
+              className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
               defaultValue="5"
               value={songCount}
             >

@@ -11,7 +11,7 @@ export default async function Home() {
   const user = await currentUser();
 
   return (
-    <div className="flex-grow flex flex-col p-4 h-full">
+    <div className="grow flex flex-col p-4 h-full">
       {user ? (
         <PlaylistSearch userData={JSON.parse(JSON.stringify(user))} />
       ) : (

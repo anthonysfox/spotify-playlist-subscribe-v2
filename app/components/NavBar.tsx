@@ -14,7 +14,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="p-4 bg-white shadow-sm">
+      <header className="p-4 bg-white shadow-xs">
         <div className="flex w-full h-16 items-center justify-between">
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
             <Link href={"/"} className="flex items-center">

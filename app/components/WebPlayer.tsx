@@ -17,7 +17,7 @@ function WebPlayer({ token }: { token: string }) {
   }
 
   return (
-    <div className="main-wrapper flex justify-between w-72 border-2 border-black p-3 bg-white absolute rounded right-0">
+    <div className="main-wrapper flex justify-between w-72 border-2 border-black p-3 bg-white absolute rounded-sm right-0">
       {state.current_track && (
         <>
           {state.current_track?.album.images[0].url ? (

@@ -41,13 +41,13 @@ export const PreviewTracksBox = ({
             return (
               <div
                 key={track.id}
-                className="flex flex-col p-1 justify-center items-center border-1 hover:border-red-300"
+                className="flex flex-col p-1 justify-center items-center border hover:border-red-300"
                 onClick={(e) => addTrackToQueue(e, track)}
               >
                 <img
                   src={track.album.images[track.album.images.length - 1].url}
                   alt=""
-                  className="w-15 hover:border-red rounded"
+                  className="w-15 hover:border-red rounded-sm"
                 />
                 {/* <div className="text-sm">{track.name}</div>
                 <div className="text-sm">{track.artists[0].name}</div> */}

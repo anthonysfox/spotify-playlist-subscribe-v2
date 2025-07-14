@@ -253,7 +253,7 @@ const PlaylistSearch = ({ userData }: any) => {
       <NavTabs activeTab={activeTab} setActiveTab={setActiveTab} />
 
       {activeTab === "discover" ? (
-        <div className="flex flex-col flex-grow min-h-0">
+        <div className="flex flex-col grow min-h-0">
           <CuratedPlaylists
             setSelectedPlaylist={setSelectedPlaylist}
             setShowSubscribeModal={setShowSubscribeModal}
@@ -275,9 +275,9 @@ const PlaylistSearch = ({ userData }: any) => {
           )}
         </div>
       ) : (
-        <div className="flex flex-col flex-grow min-h-0">
+        <div className="flex flex-col grow min-h-0">
           {subscriptions.length ? (
-            <div className="flex-grow overflow-auto">
+            <div className="grow overflow-auto">
               <h2 className="text-xl font-semibold mb-4 text-gray-800">
                 Your Playlists
               </h2>
@@ -302,7 +302,7 @@ const PlaylistSearch = ({ userData }: any) => {
                       <img
                         src={group.destination.imageUrl}
                         alt={group.destination.name}
-                        className="w-16 h-16 object-cover rounded"
+                        className="w-16 h-16 object-cover rounded-sm"
                       />
                       <div className="ml-4">
                         <h3 className="font-semibold text-gray-800 text-lg">
@@ -325,9 +325,9 @@ const PlaylistSearch = ({ userData }: any) => {
                           <img
                             src={source.imageUrl}
                             alt={source.name}
-                            className="w-12 h-12 object-cover rounded"
+                            className="w-12 h-12 object-cover rounded-sm"
                           />
-                          <div className="ml-3 flex-grow">
+                          <div className="ml-3 grow">
                             <div className="flex justify-between items-start">
                               <div>
                                 <h4 className="font-medium text-gray-800">
@@ -336,7 +336,7 @@ const PlaylistSearch = ({ userData }: any) => {
                               </div>
                               <button
                                 onClick={() => handleUnsubscribe(source.id)}
-                                className="px-3 py-1 rounded-full bg-gray-100 text-red-500 text-xs hover:bg-gray-200 shadow-sm border border-gray-200"
+                                className="px-3 py-1 rounded-full bg-gray-100 text-red-500 text-xs hover:bg-gray-200 shadow-xs border border-gray-200"
                               >
                                 Unsubscribe
                               </button>

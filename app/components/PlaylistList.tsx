@@ -196,7 +196,7 @@ export const PlaylistList = ({
 
   return (
     <div
-      className="h-full overflow-y-auto overflow-x-hidden min-h-0 flex-1 custom-scrollbar scrollbar-visible pl-3 pr-3 shadow-inner"
+      className="h-full overflow-y-auto overflow-x-hidden min-h-0 flex-1 custom-scrollbar scrollbar-visible pl-3 pr-3 inset-shadow-sm rounded-lg"
       ref={testingRef}
     >
       <div className="flex flex-col gap-4 pb-4 mt-3">
@@ -214,9 +214,9 @@ export const PlaylistList = ({
                     alt={playlist.name}
                     className="w-full h-32 sm:w-20 sm:h-20 object-cover"
                   />
-                  <div className="flex flex-col sm:flex-row flex-grow">
+                  <div className="flex flex-col sm:flex-row grow">
                     <div
-                      className="p-3 sm:p-4 flex-grow cursor-pointer min-w-0"
+                      className="p-3 sm:p-4 grow cursor-pointer min-w-0"
                       onClick={() => handleViewTracks(playlist.id)}
                     >
                       <h3 className="font-medium text-gray-800 text-base sm:text-lg truncate">
@@ -231,11 +231,11 @@ export const PlaylistList = ({
                         tracks
                       </p>
                     </div>
-                    <div className="p-3 sm:p-4 self-center flex-shrink-0">
+                    <div className="p-3 sm:p-4 self-center shrink-0">
                       {playlist.subscribed ? (
                         <button
                           onClick={() => setSelectedPlaylist({ ...playlist })}
-                          className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-full bg-gray-100 text-red-500 text-sm hover:bg-gray-200 transition-colors shadow-sm border border-gray-200"
+                          className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-full bg-gray-100 text-red-500 text-sm hover:bg-gray-200 transition-colors shadow-xs border border-gray-200"
                         >
                           Unsubscribe
                         </button>
@@ -245,7 +245,7 @@ export const PlaylistList = ({
                             setShowSubscribeModal(true);
                             setSelectedPlaylist({ ...playlist });
                           }}
-                          className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-full bg-green-600 text-white text-sm hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center"
+                          className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-full bg-green-600 text-white text-sm hover:bg-green-700 transition-colors shadow-xs flex items-center justify-center"
                         >
                           <Bell size={16} className="mr-1" />
                           Subscribe
@@ -260,19 +260,19 @@ export const PlaylistList = ({
                     <div className="px-2">
                       <div className="flex justify-between text-xs text-gray-500 py-2 px-2 border-b border-gray-200">
                         <span className="w-6">#</span>
-                        <span className="flex-grow">TITLE</span>
+                        <span className="grow">TITLE</span>
                         <span className="hidden sm:block">DURATION</span>
                       </div>
                       {previewTracks.map(
                         ({ track }: { track: any }, index: number) => (
                           <div
                             key={track.id}
-                            className="flex justify-between items-center py-2 px-2 text-sm hover:bg-gray-100 rounded cursor-pointer"
+                            className="flex justify-between items-center py-2 px-2 text-sm hover:bg-gray-100 rounded-sm cursor-pointer"
                             onClick={() => handleTrackPreview(track)}
                           >
-                            <div className="flex items-center flex-grow min-w-0">
+                            <div className="flex items-center grow min-w-0">
                               <button
-                                className="w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center mr-2 sm:mr-3 transition-colors flex-shrink-0"
+                                className="w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center mr-2 sm:mr-3 transition-colors shrink-0"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleTrackPreview(track);
@@ -287,10 +287,10 @@ export const PlaylistList = ({
                                   />
                                 )}
                               </button>
-                              <span className="w-6 text-gray-500 text-xs sm:text-sm flex-shrink-0">
+                              <span className="w-6 text-gray-500 text-xs sm:text-sm shrink-0">
                                 {index + 1}
                               </span>
-                              <div className="flex-grow ml-2 min-w-0">
+                              <div className="grow ml-2 min-w-0">
                                 <p className="text-gray-800 font-medium text-sm sm:text-base truncate">
                                   {track.name}
                                 </p>
@@ -299,7 +299,7 @@ export const PlaylistList = ({
                                 </p>
                               </div>
                             </div>
-                            <span className="text-gray-500 text-xs sm:text-sm flex-shrink-0 ml-2">
+                            <span className="text-gray-500 text-xs sm:text-sm shrink-0 ml-2">
                               {formatTime(track.duration_ms)}
                             </span>
                           </div>
@@ -322,10 +322,10 @@ export const PlaylistList = ({
             <div className="animate-pulse flex space-x-4">
               <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
               <div className="flex-1 space-y-4 py-1">
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded-sm w-3/4"></div>
                 <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded"></div>
-                  <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                  <div className="h-4 bg-gray-200 rounded-sm"></div>
+                  <div className="h-4 bg-gray-200 rounded-sm w-5/6"></div>
                 </div>
               </div>
             </div>
