@@ -55,6 +55,7 @@ class SpotifyPlayerInstance {
   }
 
   public initialize(token: string): void {
+    console.log(token);
     console.log(
       "SpotifyPlayerInstance: initialize called with token:",
       !!token

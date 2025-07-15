@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 import { Bell, Play, Pause } from "lucide-react";
 import { formatTime } from "utils";
+import { PlaylistSkeleton } from "./PlaylistSkeleton";
 
 const OFFSET = 20;
 
@@ -120,36 +121,23 @@ export const PlaylistList = ({
     try {
       if (player) {
         // First, add the track to the queue
-        const queueRes = await fetch("/api/spotify/player/queue", {
-          method: "POST",
+        const playRes = await fetch("/api/spotify/player/play", {
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            uri: `spotify:track:${trackId}`,
+            uris: [`spotify:track:${trackId}`],
+            position_ms: 30000,
             device_id: deviceID,
           }),
         });
 
-        if (!queueRes.ok) {
-          const errorData = await queueRes.json();
-          console.error("Failed to add track to queue:", errorData);
+        if (!playRes.ok) {
+          const errorData = await playRes.json();
+          console.error("Failed to play track:", errorData);
           return;
         }
-
-        // Then skip to the next track (which will be our queued track)
-        await player.nextTrack();
-
-        // Wait a moment for the track to load, then seek to 30 seconds and start playing
-        setTimeout(async () => {
-          try {
-            await player.seek(30000); // 30 seconds
-            await player.resume(); // Start playing from 30 seconds
-          } catch (error) {
-            console.error("Error seeking to 30 seconds:", error);
-          }
-        }, 1000);
-
         setCurrentlyPlaying(trackId);
 
         // Set a timeout to stop the track after 30 seconds
@@ -199,8 +187,14 @@ export const PlaylistList = ({
       className="h-full overflow-y-auto overflow-x-hidden min-h-0 flex-1 custom-scrollbar scrollbar-visible pl-3 pr-3 inset-shadow-sm rounded-lg"
       ref={testingRef}
     >
-      <div className="flex flex-col gap-4 pb-4 mt-3">
-        {playlists.length ? (
+      <div className="flex flex-col gap-4 pb-4 mt-3 pr-2">
+        {loading && playlists.length === 0 && <PlaylistSkeleton />}
+        {!loading && playlists.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No playlists found</p>
+          </div>
+        )}
+        {playlists.length > 0 &&
           playlists
             .filter((playlist) => playlist)
             .map((playlist, index) => (
@@ -309,29 +303,22 @@ export const PlaylistList = ({
                   </div>
                 ) : null}
               </div>
-            ))
-        ) : (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No playlists found</p>
-          </div>
-        )}
-
+            ))}
         {/* Loading indicator at bottom */}
-        {loading && (
+        {loading && playlists.length > 0 && (
           <div className="flex justify-center py-6">
             <div className="animate-pulse flex space-x-4">
               <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
               <div className="flex-1 space-y-4 py-1">
-                <div className="h-4 bg-gray-200 rounded-sm w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                 <div className="space-y-2">
-                  <div className="h-4 bg-gray-200 rounded-sm"></div>
-                  <div className="h-4 bg-gray-200 rounded-sm w-5/6"></div>
+                  <div className="h-4 bg-gray-200 rounded"></div>
+                  <div className="h-4 bg-gray-200 rounded w-5/6"></div>
                 </div>
               </div>
             </div>
           </div>
         )}
-
         {/* End of results indicator */}
         {loadedAllData && playlists.length > 0 && (
           <div className="text-center py-6">

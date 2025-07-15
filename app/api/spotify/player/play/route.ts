@@ -8,9 +8,9 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { uris, position_ms } = body;
+    const { uris, position_ms, device_id } = body;
 
-    const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/me/player/play`;
+    const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/me/player/play?device_id=${device_id}`;
 
     const spotifyResponse = await fetch(spotifyUrl, {
       method: "PUT",
