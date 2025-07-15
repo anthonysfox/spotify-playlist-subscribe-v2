@@ -10,7 +10,7 @@ export const SearchBar = ({
   onChange: (value: string) => void;
 }) => {
   return (
-    <div className="mb-5">
+    <>
       <div className="relative">
         <div className="flex items-center bg-white rounded-full overflow-hidden shadow-md border border-gray-200">
           <input
@@ -36,6 +36,6 @@ export const SearchBar = ({
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 };

@@ -80,8 +80,6 @@ export const PlaylistList = ({
     };
   }, [previewTimeouts]);
 
-  const handlePlaylistClick = (playlistID: string) => {};
-
   const handleViewTracks = async (playlistID: string) => {
     if (expandedPlaylist === playlistID) {
       // If already expanded, collapse it

@@ -28,11 +28,39 @@ export const useSpotifyPlayer = (token: string) => {
     console.log("useSpotifyPlayer: Setting up state subscription");
     const unsubscribe = playerInstance.subscribeToStateChange((newState) => {
       console.log("useSpotifyPlayer: State changed:", newState);
-      setState(newState);
+      setState({ ...newState });
     });
 
     return unsubscribe;
-  }, [playerInstance]);
+  }, [playerInstance, setState]);
+
+  // --- AUTOMATICALLY TRANSFER PLAYBACK TO THIS DEVICE ---
+  useEffect(() => {
+    // Only transfer if we have a device ID and token
+    console.log("LOOK AT THIS", state);
+    if (state.device_id && token) {
+      const transferPlayback = async () => {
+        try {
+          await fetch("https://api.spotify.com/v1/me/player", {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              device_ids: [state.device_id],
+              play: false, // Don't auto-play, just transfer
+            }),
+          });
+          console.log("Playback transferred to device:", state.device_id);
+        } catch (err) {
+          console.error("Failed to transfer playback:", err);
+        }
+      };
+      transferPlayback();
+    }
+  }, [state.device_id, token]);
+  // ------------------------------------------------------
 
   const play = useCallback(async () => {
     await playerInstance.play();
