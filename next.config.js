@@ -3,7 +3,11 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  swcMinify: true,
+  allowedDevOrigins: [
+    "localhost:3000",
+    "local-origin.dev",
+    "*.local-origin.dev",
+  ],
 };
 
 module.exports = nextConfig;

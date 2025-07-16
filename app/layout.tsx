@@ -1,31 +1,16 @@
 // These styles apply to every route in the application
 import "@/styles/globals.css";
-import { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-import AuthStatus from "@/components/auth-status";
+import NavBar from "@/app/components/NavBar";
 import { Suspense } from "react";
+
+import { ClerkProvider } from "@clerk/nextjs";
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
-
-const title = "Next.js Prisma Postgres Auth Starter";
-const description =
-  "This is a Next.js starter kit that uses Next-Auth for simple email + password login and a Postgres database to persist the data.";
-
-export const metadata: Metadata = {
-  title,
-  description,
-  twitter: {
-    card: "summary_large_image",
-    title,
-    description,
-  },
-  metadataBase: new URL("https://nextjs-postgres-auth.vercel.app"),
-  themeColor: "#FFF",
-};
 
 export default async function RootLayout({
   children,
@@ -33,15 +18,19 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.variable}>
-        <Toaster />
-        <Suspense fallback="Loading...">
-          {/* @ts-expect-error Async Server Component */}
-          <AuthStatus />
-        </Suspense>
-        {children}
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={`${inter.variable} flex flex-col h-screen bg-gray-100 text-gray-800`}
+        >
+          <NavBar />
+          <main className="grow flex flex-col overflow-hidden p-4">
+            <div className="max-w-6xl mx-auto w-full flex flex-col h-full">
+              {children}
+            </div>
+          </main>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

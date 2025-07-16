@@ -1,80 +1,46 @@
-import Image from "next/image";
-import Link from "next/link";
+import { PrismaClient } from "@prisma/client";
 
-export default function Home() {
+import PlaylistSearch from "./components/PlaylistSearch";
+import WebPlayer from "./components/WebPlayer";
+import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { Disc } from "lucide-react";
+import { currentUser } from "@clerk/nextjs/server";
+const prisma = new PrismaClient();
+
+export default async function Home() {
+  const user = await currentUser();
+
   return (
-    <div className="flex h-screen bg-black">
-      <div className="w-screen h-screen flex flex-col justify-center items-center">
-        <Image
-          width={512}
-          height={512}
-          src="/logo.png"
-          alt="Platforms on Vercel"
-          className="w-48 h-48"
-        />
-        <div className="text-center max-w-screen-sm mb-10">
-          <h1 className="text-stone-200 font-bold text-2xl">
-            Next.js Prisma PostgreSQL Auth Starter
-          </h1>
-          <p className="text-stone-400 mt-5">
-            This is a{" "}
-            <a
-              href="https://nextjs.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-stone-400 underline hover:text-stone-200 transition-all"
-            >
-              Next.js
-            </a>{" "}
-            starter kit that uses{" "}
-            <a
-              href="https://next-auth.js.org/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-stone-400 underline hover:text-stone-200 transition-all"
-            >
-              Next-Auth
-            </a>{" "}
-            for simple email + password login and a{" "}
-            <a
-              href="https://vercel.com/postgres"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-stone-400 underline hover:text-stone-200 transition-all"
-            >
-              Vercel Postgres
-            </a>{" "}
-            database to persist the data.
+    <div className="grow flex flex-col p-4 h-full">
+      {user ? (
+        <PlaylistSearch userData={JSON.parse(JSON.stringify(user))} />
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full max-w-lg mx-auto text-center px-4">
+          <Disc size={64} className="text-green-500 mb-6" />
+          <h2 className="text-3xl font-bold mb-4">
+            All your favorite playlists in one place{" "}
+          </h2>
+          <p className="text-gray-400 text-lg mb-6">
+            Subscribe to playlists you love and organize all your favorites in
+            one convenient location. Discover new music and keep your collection
+            perfectly curated.
           </p>
+          <div className="bg-gray-900 p-4 rounded-lg mb-8 w-full">
+            <p className="text-yellow-400 font-medium mb-2">
+              ⚠️ Spotify Premium Required
+            </p>
+            <p className="text-gray-400 text-sm">
+              This app requires a Spotify Premium subscription to access all
+              features. Free accounts have limited functionality.
+            </p>
+          </div>
+          <SignInButton>
+            <button className="w-full py-3 rounded-full bg-green-500 hover:bg-green-600 font-medium text-lg">
+              Log in with Spotify
+            </button>
+          </SignInButton>
         </div>
-        <div className="flex space-x-3">
-          <Link
-            href="/protected"
-            prefetch={false} // workaround until https://github.com/vercel/vercel/pull/8978 is deployed
-            className="text-stone-400 underline hover:text-stone-200 transition-all"
-          >
-            Protected Page
-          </Link>
-          <p className="text-white">·</p>
-          <a
-            href="https://github.com/steven-tey/nextjs-typescript-starter"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-stone-400 underline hover:text-stone-200 transition-all"
-          >
-            GitHub
-          </a>
-          <p className="text-white">·</p>
-          <a
-            href="https://vercel.com/templates/next.js/prisma-postgres-auth-starter"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-stone-400 underline hover:text-stone-200 transition-all"
-          >
-            1-click Deploy to Vercel
-          </a>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
