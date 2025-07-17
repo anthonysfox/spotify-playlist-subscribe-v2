@@ -114,16 +114,6 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   const [usePagination, setUsePagination] = useState(false); // Always use infinite scroll
   const itemsPerPage = 20;
 
-  // Set default sub-option when category changes
-  useEffect(() => {
-    const defaultSubOption =
-      categorySubOptions[activeCategory as keyof typeof categorySubOptions]?.[0]
-        ?.id;
-    if (defaultSubOption) {
-      setActiveSubOption(defaultSubOption);
-    }
-  }, [activeCategory]);
-
   // Clear container and reset scroll when filters change
   const clearContainerAndResetScroll = () => {
     setPlaylists([]);
@@ -278,6 +268,12 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   const handleCategoryChange = (category: string) => {
     if (isSearchMode) return; // Don't change category in search mode
     setActiveCategory(category);
+
+    const defaultSubOption =
+      categorySubOptions[category as keyof typeof categorySubOptions]?.[0]?.id;
+    if (defaultSubOption) {
+      setActiveSubOption(defaultSubOption);
+    }
   };
 
   const handleSubOptionChange = (subOption: string) => {
@@ -404,7 +400,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       )}
 
       {/* Playlists */}
-      <div className="grow overflow-hidden min-h-0 flex flex-col mx-4">
+      <div className="grow overflow-hidden min-h-0 flex flex-col">
         <PlaylistList
           playlists={playlists}
           setIsLongPress={() => {}}
