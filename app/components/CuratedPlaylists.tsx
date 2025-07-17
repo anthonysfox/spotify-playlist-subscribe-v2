@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { ISpotifyPlaylist } from "utils/types";
-import { PlaylistList } from "./PlaylistList";
+import { PlaylistList } from "./Playlist/List";
 import { SearchBar } from "./SearchBar";
 import {
   ChevronLeft,

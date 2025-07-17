@@ -5,17 +5,16 @@ import {
   IState,
   ITopArtistState,
   IUserPlaylistsState,
-} from "../../utils/types";
-import { Header } from "./Header";
-import WebPlayer from "./WebPlayer";
-import { CuratedPlaylists } from "./CuratedPlaylists";
+} from "../../../utils/types";
+import WebPlayer from "../WebPlayer";
+import { CuratedPlaylists } from "../CuratedPlaylists";
 import { OFFSET } from "utils/constants";
-import { NavTabs } from "./NavTabs";
-import { SubscibeModal } from "./SubscibeModal";
-import { PlaylistSettingsModal } from "./PlaylistSettingsModal";
+import { NavTabs } from "../NavTabs";
+import { SubscibeModal } from "../SubscibeModal";
+import { PlaylistSettingsModal } from "./SettingsModal";
 import { Bell } from "lucide-react";
 import { useUserStore } from "store/useUserStore";
-import { useSpotifyPlayer } from "utils/useSpotifyPlayer";
+import { useSpotifyPlayer } from "../../hooks/useSpotifyPlayer";
 
 const userPlaylistsEndpoint = "/api/spotify/user/playlists";
 const playlistEndpoint = "/api/spotify/playlists";

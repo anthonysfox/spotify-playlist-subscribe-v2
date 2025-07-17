@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
-import PlaylistSearch from "./components/PlaylistSearch";
+import PlaylistSearch from "./components/Playlist/Search";
 import WebPlayer from "./components/WebPlayer";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Disc } from "lucide-react";
@@ -11,7 +11,7 @@ export default async function Home() {
   const user = await currentUser();
 
   return (
-    <div className="grow flex flex-col p-4 h-full">
+    <div className="grow flex flex-col p-4 h-full w-full">
       {user ? (
         <PlaylistSearch userData={JSON.parse(JSON.stringify(user))} />
       ) : (

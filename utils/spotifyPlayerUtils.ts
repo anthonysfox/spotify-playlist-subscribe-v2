@@ -1,4 +1,4 @@
-import SpotifyPlayerInstance from "./spotifyPlayer";
+import SpotifyPlayerInstance from "../lib/spotifyPlayer";
 
 /**
  * Get the global Spotify player instance

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 import { Bell, Play, Pause } from "lucide-react";
 import { formatTime } from "utils";
-import { PlaylistSkeleton } from "./PlaylistSkeleton";
+import { PlaylistSkeleton } from "./Skeleton";
 
 const OFFSET = 20;
 
