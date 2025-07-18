@@ -6,7 +6,7 @@ import {
   IoIosPause,
   IoIosPlayCircle,
 } from "react-icons/io";
-import { useSpotifyPlayer } from "utils/useSpotifyPlayer";
+import { useSpotifyPlayer } from "../hooks/useSpotifyPlayer";
 
 function WebPlayer({ token }: { token: string }) {
   const { state, togglePlay, nextTrack, previousTrack } =

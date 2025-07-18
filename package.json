@@ -1,10 +1,15 @@
 {
   "private": true,
   "scripts": {
-    "dev": "prisma generate && next dev",
+    "dev": "prisma generate && concurrently \"next dev\" \"ngrok http --url=decent-werewolf-eagerly.ngrok-free.app 3000 --log=stdout\"",
     "build": "prisma generate && prisma db push && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:push": "prisma db push",
+    "prisma:studio": "prisma studio",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.19.4",
@@ -30,8 +35,10 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.11",
     "@types/bcrypt": "^5.0.0",
+    "concurrently": "^9.2.0",
     "eslint": "8.11.0",
     "eslint-config-next": "^13.0.5",
+    "ngrok": "^5.0.0-beta.2",
     "postcss": "^8.4.12",
     "prisma": "^6.8.2",
     "tailwindcss": "^4.1.11",

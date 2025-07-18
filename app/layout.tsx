@@ -25,7 +25,7 @@ export default async function RootLayout({
         >
           <NavBar />
           <main className="grow flex flex-col overflow-hidden p-4">
-            <div className="max-w-6xl mx-auto w-full flex flex-col h-full">
+            <div className="max-w-6xl mx-auto w-full flex flex-col h-full items-center">
               {children}
             </div>
           </main>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import SpotifyPlayerInstance from "./spotifyPlayer";
+import SpotifyPlayerInstance from "../../lib/spotifyPlayer";
 
 export const useSpotifyPlayer = (token: string) => {
   const [playerInstance] = useState(() => SpotifyPlayerInstance.getInstance());
