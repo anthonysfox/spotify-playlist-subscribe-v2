@@ -1,25 +1,70 @@
 import { Bell, X } from "lucide-react";
-import React, { useState } from "react";
-import { ISpotifyPlaylist } from "utils/types";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { ISpotifyPlaylist, IUserPlaylistsState } from "utils/types";
+import { useUserStore } from "../../store/useUserStore";
+import { OFFSET } from "utils/constants";
+
+const userPlaylistsEndpoint = "/api/spotify/user/playlists";
 
 export const SubscibeModal = ({
   setShowSubscribeModal,
   setSelectedPlaylist,
   selectedPlaylist,
-  userPlaylists,
 }: {
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedPlaylist: React.Dispatch<
     React.SetStateAction<ISpotifyPlaylist | null>
   >;
   selectedPlaylist: ISpotifyPlaylist | null;
-  userPlaylists: ISpotifyPlaylist[];
 }) => {
   const [selectedFrequency, setSelectedFrequency] = useState("WEEKLY");
   const [selectedUserPlaylist, setSelectedUserPlaylist] =
     useState<ISpotifyPlaylist | null>(null);
   const [songCount, setSongCount] = useState(5);
+  const selectRef = useRef<HTMLSelectElement>(null);
 
+  const userPlaylists = useUserStore((state) => state.userPlaylists);
+  const isLoading = useUserStore((state) => state.isLoading);
+  const userData = useUserStore((state) => state.user);
+  const offset = useUserStore((state) => state.offset);
+  const loadedAllPlaylists = useUserStore((state) => state.loadedAllPlaylists);
+  const setIsLoading = useUserStore((state) => state.setLoading);
+  const setOffset = useUserStore((state) => state.setOffset);
+  const setUserPlaylists = useUserStore((state) => state.setPlaylists);
+  const setLoadedAllPlaylists = useUserStore(
+    (state) => state.setLoadedAllPlaylists
+  );
+
+  const fetchUserPlaylists = useCallback(async () => {
+    if (isLoading || loadedAllPlaylists) return;
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(`${userPlaylistsEndpoint}?offset=${offset}`);
+      const data: ISpotifyPlaylist[] = await res.json();
+
+      const filteredPlaylists = data.filter(
+        (playlist) =>
+          playlist.owner.id === userData?.externalAccounts[0].externalId
+      );
+      setUserPlaylists(filteredPlaylists);
+      setLoadedAllPlaylists(data.length < OFFSET);
+      setOffset(offset + OFFSET);
+    } catch (err) {
+      console.error("Failed user playlist fetch:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isLoading, offset, loadedAllPlaylists, userData]);
+
+  // Fetch user playlists with pagination
+  useEffect(() => {
+    if (userData && userPlaylists.length === 0) {
+      fetchUserPlaylists();
+    }
+  }, [userData, userPlaylists, fetchUserPlaylists]);
+
+  console.log(selectedUserPlaylist);
   const saveSubscriptionSettings = async () => {
     const body = {
       destinationPlaylist: {
@@ -48,6 +93,7 @@ export const SubscibeModal = ({
       setSelectedPlaylist(null);
     });
   };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full p-6 relative shadow-xl">
@@ -88,6 +134,7 @@ export const SubscibeModal = ({
               }}
               className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
               defaultValue=""
+              ref={selectRef}
             >
               <option value="" disabled>
                 Select a playlist
