@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 import { PlaylistList } from "./Playlist/List";
-import { SearchBar } from "./SearchBar";
+import { SearchBar } from "./Navigation/SearchBar";
 import {
   ChevronLeft,
   ChevronRight,
@@ -10,68 +10,8 @@ import {
   ChevronsRight,
   Search,
 } from "lucide-react";
-
-// Frontend configuration - you can customize these categories
-const frontendCategories = [
-  { id: "popular", name: "Popular", icon: "🔥" },
-  { id: "mood", name: "Mood", icon: "😌" },
-  { id: "genre", name: "Genre", icon: "🎵" },
-  { id: "decade", name: "Decade", icon: "📅" },
-  { id: "activity", name: "Activity", icon: "🏃" },
-];
-
-// Sub-options for each main category
-const categorySubOptions = {
-  popular: [
-    { id: "trending", name: "Trending", icon: "📈" },
-    { id: "viral", name: "Viral", icon: "🦠" },
-    { id: "charts", name: "Charts", icon: "📊" },
-    { id: "hits", name: "Hits", icon: "🎯" },
-    { id: "top40", name: "Top 40", icon: "🏆" },
-  ],
-  mood: [
-    { id: "chill", name: "Chill", icon: "😌" },
-    { id: "energetic", name: "Energetic", icon: "⚡" },
-    { id: "romantic", icon: "💕", name: "Romantic" },
-    { id: "melancholy", name: "Melancholy", icon: "🌧️" },
-    { id: "happy", name: "Happy", icon: "😊" },
-    { id: "focused", name: "Focused", icon: "🎯" },
-  ],
-  genre: [
-    { id: "pop", name: "Pop", icon: "🎤" },
-    { id: "rock", name: "Rock", icon: "🎸" },
-    { id: "hiphop", name: "Hip Hop", icon: "🎧" },
-    { id: "electronic", name: "Electronic", icon: "🎛️" },
-    { id: "r&b", name: "R&B", icon: "🎹" },
-    { id: "country", name: "Country", icon: "🤠" },
-    { id: "jazz", name: "Jazz", icon: "🎷" },
-    { id: "classical", name: "Classical", icon: "🎻" },
-  ],
-  decade: [
-    { id: "2020s", name: "2020s", icon: "📱" },
-    { id: "2010s", name: "2010s", icon: "📱" },
-    { id: "2000s", name: "2000s", icon: "💿" },
-    { id: "1990s", name: "1990s", icon: "📼" },
-    { id: "1980s", name: "1980s", icon: "📻" },
-    { id: "1970s", name: "1970s", icon: "🎸" },
-    { id: "1960s", name: "1960s", icon: "🌺" },
-  ],
-  activity: [
-    { id: "workout", name: "Workout", icon: "💪" },
-    { id: "running", name: "Running", icon: "🏃" },
-    { id: "cooking", name: "Cooking", icon: "👨‍🍳" },
-    { id: "commute", name: "Commute", icon: "🚗" },
-    { id: "gaming", name: "Gaming", icon: "🎮" },
-    { id: "travel", name: "Travel", icon: "✈️" },
-    { id: "study", name: "Study", icon: "📚" },
-    { id: "party", name: "Party", icon: "🎉" },
-  ],
-};
-
-// Use custom categories instead of the default
-const categories = frontendCategories.map((cat) =>
-  cat.id === "genre" ? { ...cat, name: "Genres", icon: "🎵" } : cat
-);
+import { CategoryFilters } from "./Filters/CategoryFilters";
+import { categorySubOptions } from "constants/categories";
 
 interface CuratedPlaylistsProps {
   setSelectedPlaylist: React.Dispatch<
@@ -311,18 +251,6 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     searchText,
   ]);
 
-  const getCurrentSubOptionName = () => {
-    if (isSearchMode) {
-      return `Search Results for "${searchText}"`;
-    }
-    const subOptions =
-      categorySubOptions[activeCategory as keyof typeof categorySubOptions];
-    return (
-      subOptions?.find((option) => option.id === activeSubOption)?.name ||
-      activeSubOption
-    );
-  };
-
   return (
     <div className="space-y-6 flex flex-col h-full">
       {/* Search Bar */}
@@ -352,51 +280,13 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       </div>
 
       {showFilters && (
-        <>
-          {!isSearchMode && (
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => handleCategoryChange(category.id)}
-                  className={`px-4 py-2 rounded-full font-medium transition-colors ${
-                    activeCategory === category.id
-                      ? "bg-green-100 text-green-700 border-2 border-green-300"
-                      : "bg-white text-gray-600 border-2 border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  <span className="mr-2">{category.icon}</span>
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Sub-Options Tabs - Only show when not in search mode */}
-          {!isSearchMode &&
-            categorySubOptions[
-              activeCategory as keyof typeof categorySubOptions
-            ] && (
-              <div className="flex flex-wrap gap-2">
-                {categorySubOptions[
-                  activeCategory as keyof typeof categorySubOptions
-                ].map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => handleSubOptionChange(option.id)}
-                    className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                      activeSubOption === option.id
-                        ? "bg-blue-100 text-blue-700 border border-blue-300"
-                        : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
-                    }`}
-                  >
-                    <span className="mr-1">{option.icon}</span>
-                    {option.name}
-                  </button>
-                ))}
-              </div>
-            )}
-        </>
+        <CategoryFilters
+          handleCategoryChange={handleCategoryChange}
+          handleSubOptionChange={handleSubOptionChange}
+          isSearchMode={isSearchMode}
+          activeCategory={activeCategory}
+          activeSubOption={activeSubOption}
+        />
       )}
 
       {/* Playlists */}

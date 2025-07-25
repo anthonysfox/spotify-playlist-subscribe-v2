@@ -17,21 +17,6 @@ enum SubscriptionFrequency {
   MONTHLY
 }
 
-// model Subscription {
-//   id            String    @id @default(cuid())
-//   userPlaylistID String 
-//   userPlaylistName String
-//   userPlaylistImageUrl String
-//   spotifyPlaylistID String
-//   spotifyPlaylistName String
-//   spotifyPlaylistImageUrl String
-//   userId  String
-//   frequency SubscriptionFrequency
-//   user User @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
-//   createdAt DateTime @default(now())
-//   @@index([userId])
-// }
-
 model User {
   id               String            @id @default(uuid())
   clerkUserId      String            @unique
@@ -82,9 +67,12 @@ model ManagedPlaylist {
   nextSyncTime DateTime?
 
   // Links to the source playlists this managed playlist subscribes from
-  sourceSubscriptions ManagedPlaylistSourceSubscription[]
+  subscriptions ManagedPlaylistSourceSubscription[]
 
   @@index([userId])
+  @@index([spotifyPlaylistId])
+  @@index([nextSyncTime]) // Index for efficient sync scheduling
+  @@index([lastSyncCompletedAt]) // Index for quick access to last sync info
   @@map("managed_playlists") // Maps the model name to the table name
 }
 
@@ -102,6 +90,11 @@ model SourcePlaylist {
   // URL of the playlist cover image (fetched once).
   imageUrl String? @db.VarChar(512)
 
+  // Make sure the source playlist is active and available
+  isActive Boolean @default(true)
+
+  lastCheckedActiveAt DateTime? // Last time we checked if this source playlist is still valid
+
   // Date this source playlist record was created.
   createdAt DateTime @default(now())
 
@@ -111,6 +104,7 @@ model SourcePlaylist {
   // Links from managed playlists that subscribe to this source
   managedSubscriptions ManagedPlaylistSourceSubscription[]
 
+  @@index([spotifyPlaylistId]) // Index for quick lookups by Spotify ID
   @@map("source_playlists") // Maps the model name to the table name
 }
 
@@ -136,5 +130,8 @@ model ManagedPlaylistSourceSubscription {
 
   // Unique constraint to prevent duplicate links
   @@unique([managedPlaylistId, sourcePlaylistId])
+  @@index([managedPlaylistId]) // Index for efficient lookups by managed playlist
+  @@index([sourcePlaylistId]) // Index for efficient lookups by source playlist
+  @@index([lastSyncedFromSourceAt]) // Index for quick access to last sync time
   @@map("managed_playlist_source_subscriptions") // Maps the model name to the table name
 }
