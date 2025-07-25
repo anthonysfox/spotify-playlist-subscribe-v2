@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
+import { AuditLogger } from "@/lib/audit-logger";
 
 export async function DELETE(
   request: NextRequest,
@@ -87,6 +88,12 @@ export async function DELETE(
           where: { id: subscription.managedPlaylistId },
         });
       }
+
+      await AuditLogger.logSubscriptionDeleted(
+        subscription.managedPlaylistId,
+        subscription.sourcePlaylistId,
+        userId
+      );
 
       return {
         deletedSubscriptionId: subscription.id,

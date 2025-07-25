@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
+import { AuditLogger } from "@/lib/audit-logger";
 
 export async function POST(request: Request) {
   const { userId, token } = await getClerkOAuthToken();
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
       // 4. Find or Create Managed (Destination) Playlist for THIS USER
       // We need to find a managed playlist record with this Spotify ID *owned by this user*.
       // If not found, create it.
-      const existingManagedPlaylist = await prisma.managedPlaylist.findUnique({
+      const existingManagedPlaylist = await prisma.managedPlaylist.findFirst({
         where: { spotifyPlaylistId: cleanedDestinationSpotifyPlaylistId },
       });
 
@@ -119,6 +120,12 @@ export async function POST(request: Request) {
             // createdAt default
           },
         });
+
+      await AuditLogger.logSubscriptionCreated(
+        finalManagedPlaylist.id,
+        existingSourcePlaylist.id,
+        userId
+      );
 
       // Return created/found data to the frontend
       return {
