@@ -1,7 +1,10 @@
 import { PrismaClient } from "@prisma/client";
+import { softDeleteMiddleware } from "./prisma-middleware";
 
 const prismaClientSingleton = () => {
-  return new PrismaClient();
+  const client = new PrismaClient();
+  client.$use(softDeleteMiddleware);
+  return client;
 };
 
 declare const globalThis: {

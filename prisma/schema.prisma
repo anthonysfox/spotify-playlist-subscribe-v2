@@ -17,16 +17,28 @@ enum SubscriptionFrequency {
   MONTHLY
 }
 
+enum AuditAction {
+  CREATED
+  UPDATED
+  DELETED
+  SUBSCRIBED
+  UNSUBSCRIBED
+}
+
 model User {
   id               String            @id @default(uuid())
   clerkUserId      String            @unique
-  email            String            @unique
+  email            String
   name             String?
   imageUrl         String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  deletedAt      DateTime?        // Soft delete field
+  deletedBy      String?          // Optional user ID who deleted this user
   managedPlaylists ManagedPlaylist[]
 
+  // Email can be unique only for non-deleted users
+  @@unique([email, deletedAt])
   @@map("users")
 }
 
@@ -40,7 +52,7 @@ model ManagedPlaylist {
   user   User   @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
 
   // The unique ID of this destination playlist on Spotify.
-  spotifyPlaylistId String @unique @db.VarChar(255)
+  spotifyPlaylistId String @db.VarChar(255)
 
   // The name of the managed playlist (could be synced from Spotify or user-defined).
   name String @db.VarChar(255)
@@ -60,6 +72,10 @@ model ManagedPlaylist {
   // Date this managed playlist record was last updated (including sync settings changes)
   updatedAt DateTime @updatedAt
 
+  deletedAt DateTime? // Soft delete field
+
+  deletedBy String? // Optional user ID who deleted this managed playlist
+
   // The last time a full sync process completed successfully for this managed playlist.
   lastSyncCompletedAt DateTime?
 
@@ -69,10 +85,13 @@ model ManagedPlaylist {
   // Links to the source playlists this managed playlist subscribes from
   subscriptions ManagedPlaylistSourceSubscription[]
 
+  @@unique([spotifyPlaylistId, deletedAt])
   @@index([userId])
   @@index([spotifyPlaylistId])
   @@index([nextSyncTime]) // Index for efficient sync scheduling
   @@index([lastSyncCompletedAt]) // Index for quick access to last sync info
+  @@index([deletedAt]) // Index for soft delete filtering
+  @@index([deletedBy]) // Index for tracking who deleted it
   @@map("managed_playlists") // Maps the model name to the table name
 }
 
@@ -82,7 +101,7 @@ model SourcePlaylist {
   id String @id @default(cuid())
 
   // The unique ID of the external Spotify playlist (the source).
-  spotifyPlaylistId String @unique @db.VarChar(255)
+  spotifyPlaylistId String @db.VarChar(255)
 
   // The name of the source playlist (fetched once and stored for display).
   name String @db.VarChar(255)
@@ -101,10 +120,17 @@ model SourcePlaylist {
   // Date this source playlist record was last updated (e.g., metadata refresh).
   updatedAt DateTime @updatedAt
 
+  deletedAt DateTime? // Soft delete field
+
+  deletedBy String? // Optional user ID who deleted this source playlist
+
   // Links from managed playlists that subscribe to this source
   managedSubscriptions ManagedPlaylistSourceSubscription[]
 
+  @@unique([spotifyPlaylistId, deletedAt])
   @@index([spotifyPlaylistId]) // Index for quick lookups by Spotify ID
+  @@index([deletedAt]) // Index for soft delete filtering
+  @@index([deletedBy]) // Index for tracking who deleted it
   @@map("source_playlists") // Maps the model name to the table name
 }
 
@@ -134,4 +160,35 @@ model ManagedPlaylistSourceSubscription {
   @@index([sourcePlaylistId]) // Index for efficient lookups by source playlist
   @@index([lastSyncedFromSourceAt]) // Index for quick access to last sync time
   @@map("managed_playlist_source_subscriptions") // Maps the model name to the table name
+}
+
+// Audit log for tracking all changes to subscriptions and playlists
+model AuditLog {
+  id String @id @default(cuid())
+  
+  // What action was performed
+  action AuditAction
+  
+  // Which table/entity was affected
+  entityType String // "ManagedPlaylist", "SourcePlaylist", "Subscription", etc.
+  entityId String   // The ID of the affected record
+  
+  // Who performed the action
+  userId String? // Clerk user ID who made the change
+  
+  // When it happened
+  timestamp DateTime @default(now())
+  
+  // Details about the change
+  oldValues Json? // Previous state (for updates/deletes)
+  newValues Json? // New state (for creates/updates)
+  
+  // Additional context
+  metadata Json? // Extra info like IP address, user agent, etc.
+  
+  @@index([entityType, entityId]) // Query by entity
+  @@index([userId]) // Query by user
+  @@index([timestamp]) // Query by time range
+  @@index([action]) // Query by action type
+  @@map("audit_logs")
 }
