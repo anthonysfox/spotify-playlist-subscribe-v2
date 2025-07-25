@@ -6,12 +6,11 @@ import {
   ITopArtistState,
   IUserPlaylistsState,
 } from "utils/types";
-import WebPlayer from "../WebPlayer";
 import { CuratedPlaylists } from "../CuratedPlaylists";
 import { OFFSET } from "utils/constants";
-import { NavTabs } from "../NavTabs";
-import { SubscibeModal } from "../SubscibeModal";
-import { PlaylistSettingsModal } from "./SettingsModal";
+import { NavTabs } from "../Navigation/NavTabs";
+import { SubscribeModal } from "../Modals/SubscribeModal";
+import { PlaylistSettingsModal } from "../Modals/SettingsModal";
 import { Bell } from "lucide-react";
 import { useUserStore } from "store/useUserStore";
 import { useSpotifyPlayer } from "hooks/useSpotifyPlayer";
@@ -57,7 +56,6 @@ const PlaylistSearch = ({ userData }: any) => {
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
   const [showPlaylistSettingseModal, setShowPlaylistSettingseModal] =
     useState(false);
-  const [subscriptions, setSubscriptions] = useState<any>([]);
   const [topArtists, setTopArtists] = useState<any>([]);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -151,21 +149,6 @@ const PlaylistSearch = ({ userData }: any) => {
     setPreviewTracks(data);
   };
 
-  const handleUnsubscribe = async (playlistID: string) => {
-    try {
-      const res = await fetch(`/api/users/subscriptions/${playlistID}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        setSubscriptions((prev: any) =>
-          prev.filter((sub: any) => sub.id !== playlistID)
-        );
-      }
-    } catch (error) {
-      console.error("Error unsubscribing:", error);
-    }
-  };
-
   useEffect(() => {
     const handleScroll = () => {
       if (listRef.current) {
@@ -215,7 +198,7 @@ const PlaylistSearch = ({ userData }: any) => {
             deviceID={deviceID || ""}
           />
           {showSubscribeModal && (
-            <SubscibeModal
+            <SubscribeModal
               selectedPlaylist={selectedPlaylist}
               setSelectedPlaylist={setSelectedPlaylist}
               setShowSubscribeModal={setShowSubscribeModal}
@@ -227,7 +210,6 @@ const PlaylistSearch = ({ userData }: any) => {
         <Subscriptions
           setSelectedPlaylist={setSelectedPlaylist}
           setShowPlaylistSettingsModal={setShowPlaylistSettingseModal}
-          handleUnsubscribe={handleUnsubscribe}
           setActiveTab={setActiveTab}
           showPlaylistSettingsModal={showPlaylistSettingseModal}
           selectedPlaylist={selectedPlaylist}

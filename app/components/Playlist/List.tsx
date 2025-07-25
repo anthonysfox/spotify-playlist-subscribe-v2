@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 import { Bell, Play, Pause } from "lucide-react";
 import { formatTime } from "utils";
-import { PlaylistSkeleton } from "./Skeleton";
+import { PlaylistSkeleton } from "../Skeletons/PlaylistSkeleton";
 
 const OFFSET = 20;
 
@@ -186,8 +186,8 @@ export const PlaylistList = ({
       ref={testingRef}
     >
       <div className="flex flex-col gap-4 pb-4 mt-3 pr-2">
-        {loading && playlists.length === 0 && <PlaylistSkeleton />}
-        {!loading && playlists.length === 0 && (
+        {loading && !playlists.length && <PlaylistSkeleton />}
+        {!loading && !playlists.length && (
           <div className="text-center py-12">
             <p className="text-gray-500">No playlists found</p>
           </div>

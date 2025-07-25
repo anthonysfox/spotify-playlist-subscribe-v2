@@ -1,12 +1,13 @@
 import { Bell, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ISpotifyPlaylist, IUserPlaylistsState } from "utils/types";
-import { useUserStore } from "../../store/useUserStore";
+import { useUserStore } from "../../../store/useUserStore";
 import { OFFSET } from "utils/constants";
+import toast from "react-hot-toast";
 
 const userPlaylistsEndpoint = "/api/spotify/user/playlists";
 
-export const SubscibeModal = ({
+export const SubscribeModal = ({
   setShowSubscribeModal,
   setSelectedPlaylist,
   selectedPlaylist,
@@ -30,7 +31,7 @@ export const SubscibeModal = ({
   const loadedAllPlaylists = useUserStore((state) => state.loadedAllPlaylists);
   const setIsLoading = useUserStore((state) => state.setLoading);
   const setOffset = useUserStore((state) => state.setOffset);
-  const setUserPlaylists = useUserStore((state) => state.setPlaylists);
+  const setUserPlaylists = useUserStore((state) => state.setUserPlaylists);
   const setLoadedAllPlaylists = useUserStore(
     (state) => state.setLoadedAllPlaylists
   );
@@ -87,11 +88,17 @@ export const SubscibeModal = ({
       headers: {
         "Content-Type": "application/json",
       },
-    }).then(async (res) => {
-      const data = await res.json();
-      setShowSubscribeModal(false);
-      setSelectedPlaylist(null);
-    });
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        setShowSubscribeModal(false);
+        setSelectedPlaylist(null);
+        toast.success("Subscribed successfully");
+      })
+      .catch((err) => {
+        console.error("Error subscribing:", err);
+        toast.error("Failed to subscribe");
+      });
   };
 
   return (

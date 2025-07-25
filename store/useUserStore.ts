@@ -21,7 +21,10 @@ export type UserStoreActions = {
   refreshPlaylists: () => Promise<void>;
   setLoadedAllPlaylists: (loaded: boolean) => void;
   setSubscriptions: (subscriptions: any[]) => void;
-  removeSubscription: (id: string) => void;
+  removeSourceFromSubscription: (
+    subscriptionId: string,
+    sourceId: string
+  ) => void;
 };
 
 export type UserStore = UserStoreState & UserStoreActions;
@@ -61,10 +64,26 @@ export const useUserStore = create<UserStore>()(
           }
         },
         setSubscriptions: (subscriptions) => set({ subscriptions }),
-        removeSubscription: (id) =>
-          set((state) => ({
-            subscriptions: state.subscriptions.filter((s) => s.id !== id),
-          })),
+        removeSourceFromSubscription: (subscriptionId, sourceId) =>
+          set((state) => {
+            const updatedSubscriptions = state.subscriptions
+              .map((subscription) => {
+                if (subscription.destination.id === subscriptionId) {
+                  const updatedSources = subscription.sources.filter(
+                    (source) => source.id !== sourceId
+                  );
+
+                  return {
+                    ...subscription,
+                    sources: updatedSources,
+                  };
+                }
+                return subscription;
+              })
+              .filter((subscription) => subscription.sources.length > 0);
+
+            return { subscriptions: updatedSubscriptions };
+          }),
       }),
       {
         name: "user-store",

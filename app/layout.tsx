@@ -2,7 +2,7 @@
 import "@/styles/globals.css";
 import { Inter } from "next/font/google";
 import { Toaster } from "react-hot-toast";
-import NavBar from "@/app/components/NavBar";
+import NavBar from "@/components/Navigation/NavBar";
 import { Suspense } from "react";
 
 import { ClerkProvider } from "@clerk/nextjs";
@@ -27,6 +27,7 @@ export default async function RootLayout({
           <main className="grow flex flex-col overflow-hidden p-4">
             <div className="max-w-6xl mx-auto w-full flex flex-col h-full items-center">
               {children}
+              <Toaster position="bottom-center" />
             </div>
           </main>
         </body>

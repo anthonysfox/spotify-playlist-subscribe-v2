@@ -43,7 +43,8 @@ export async function GET(request: Request) {
       }
 
       grouped.get(destId).sources.push({
-        id: s.sourcePlaylist.id,
+        id: s.id,
+        sourcePlaylistID: s.sourcePlaylist.id,
         name: s.sourcePlaylist.name,
         imageUrl: s.sourcePlaylist.imageUrl,
         spotifyId: s.sourcePlaylist.spotifyPlaylistId,
