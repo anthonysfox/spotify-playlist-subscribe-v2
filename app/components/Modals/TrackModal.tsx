@@ -32,9 +32,9 @@ export const TrackModal: React.FC<TrackModalProps> = ({
         <div className="relative p-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white">
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 w-5 h-5 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center transition-colors"
           >
-            <X size={15} />
+            <X size={24} />
           </button>
 
           <div className="flex items-center gap-4">
