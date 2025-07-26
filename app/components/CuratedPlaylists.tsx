@@ -65,23 +65,18 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     }
   };
 
-  // Handle search text changes
+  // Handle search text changes with debouncing
   useEffect(() => {
+    // Have this so if there is no search text, it stops here instead of proceeding
+    if (!searchText?.trim()) {
+      setIsSearchMode(false);
+      return;
+    }
+
     const timeoutId = setTimeout(() => {
-      if (searchText.trim()) {
-        setIsSearchMode(true);
-        clearContainerAndResetScroll();
-        fetchSearchPlaylists(searchText, true, 1);
-      } else {
-        setIsSearchMode(false);
-        clearContainerAndResetScroll();
-        // Reset to curated playlists
-        if (usePagination) {
-          fetchCuratedPlaylists(activeCategory, activeSubOption, true, 1);
-        } else {
-          fetchCuratedPlaylists(activeCategory, activeSubOption, true);
-        }
-      }
+      setIsSearchMode(true);
+      clearContainerAndResetScroll();
+      fetchSearchPlaylists(searchText.trim(), true, 1);
     }, 1000);
 
     return () => clearTimeout(timeoutId);
@@ -293,18 +288,11 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       <div className="grow overflow-hidden min-h-0 flex flex-col">
         <PlaylistList
           playlists={playlists}
-          setIsLongPress={() => {}}
-          isLongPress={false}
           deviceID={deviceID}
           player={player}
           setSelectedPlaylist={setSelectedPlaylist}
           loading={loading}
           loadedAllData={loadedAll}
-          offset={offset}
-          setOffset={setOffset}
-          expandedPlaylist={expandedPlaylist}
-          setExpandedPlaylist={setExpandedPlaylist}
-          handleUnsubscribe={() => {}}
           previewTracks={previewTracks}
           setPreviewTracks={setPreviewTracks}
           testingRef={listRef}

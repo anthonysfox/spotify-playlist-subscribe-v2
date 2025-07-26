@@ -70,7 +70,7 @@ export const useUserStore = create<UserStore>()(
               .map((subscription) => {
                 if (subscription.destination.id === subscriptionId) {
                   const updatedSources = subscription.sources.filter(
-                    (source) => source.id !== sourceId
+                    (source: any) => source.id !== sourceId
                   );
 
                   return {

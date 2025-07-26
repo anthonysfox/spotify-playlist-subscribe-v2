@@ -37,6 +37,9 @@ export async function GET(request: Request) {
             spotifyId: s.managedPlaylist.spotifyPlaylistId,
             syncInterval: s.managedPlaylist.syncInterval,
             syncQuantityPerSource: s.managedPlaylist.syncQuantityPerSource,
+            lastSyncCompletedAt: s.managedPlaylist.lastSyncCompletedAt,
+            nextSyncTime: s.managedPlaylist.nextSyncTime,
+            trackCount: s.managedPlaylist.trackCount,
           },
           sources: [],
         });
