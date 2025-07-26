@@ -74,10 +74,12 @@ export const PlaylistList = ({
     setLoadingTracks(playlist.id); // Set loading state for this specific playlist
 
     try {
-      const res = await fetch(`/api/spotify/playlists/${playlist.id}`);
+      const res = await fetch(
+        `/api/spotify/playlists/${playlist.id}?tracks=true`
+      );
       if (!res.ok) throw new Error("Failed to fetch playlist tracks");
-      const data = await res.json();
-      setPreviewTracks(data);
+      const { tracks } = await res.json();
+      setPreviewTracks([...tracks]);
       setTrackModalOpen(true);
     } catch (error) {
       console.error("Error fetching playlist tracks:", error);

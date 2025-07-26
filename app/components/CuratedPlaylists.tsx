@@ -11,7 +11,8 @@ import {
   Search,
 } from "lucide-react";
 import { CategoryFilters } from "./Filters/CategoryFilters";
-import { categorySubOptions } from "constants/categories";
+import { FilterModal } from "./Modals/FilterModal";
+import { categorySubOptions, frontendCategories } from "constants/categories";
 
 interface CuratedPlaylistsProps {
   setSelectedPlaylist: React.Dispatch<
@@ -264,25 +265,27 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
         )}
       </div>
 
-      {/* Main Category Tabs - Only show when not in search mode */}
+      {/* Filter Button */}
       <div className="flex flex-wrap gap-2 justify-end">
         <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="px-4 py-2 rounded-full font-medium transition-colors bg-white text-gray-600 border-2 border-gray-200 hover:bg-gray-50"
+          onClick={() => setShowFilters(true)}
+          className="px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl flex items-center gap-2"
         >
-          {showFilters ? "Hide Filters" : "Show Filters"}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-white">
+            <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M3 6h18M7 12h10M10 18h4"/>
+          </svg>
+          <div className="flex flex-col items-start">
+            <span className="text-xs text-green-100">Filter</span>
+            <span className="text-sm font-bold">
+              {(() => {
+                const categoryName = frontendCategories.find(cat => cat.id === activeCategory)?.name || activeCategory;
+                const subOptionName = categorySubOptions[activeCategory as keyof typeof categorySubOptions]?.find(sub => sub.id === activeSubOption)?.name || activeSubOption;
+                return `${categoryName} • ${subOptionName}`;
+              })()}
+            </span>
+          </div>
         </button>
       </div>
-
-      {showFilters && (
-        <CategoryFilters
-          handleCategoryChange={handleCategoryChange}
-          handleSubOptionChange={handleSubOptionChange}
-          isSearchMode={isSearchMode}
-          activeCategory={activeCategory}
-          activeSubOption={activeSubOption}
-        />
-      )}
 
       {/* Playlists */}
       <div className="grow overflow-hidden min-h-0 flex flex-col">
@@ -299,6 +302,16 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
           setShowSubscribeModal={setShowSubscribeModal}
         />
       </div>
+      
+      <FilterModal
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        handleCategoryChange={handleCategoryChange}
+        handleSubOptionChange={handleSubOptionChange}
+        isSearchMode={isSearchMode}
+        activeCategory={activeCategory}
+        activeSubOption={activeSubOption}
+      />
     </div>
   );
 };

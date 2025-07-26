@@ -23,7 +23,7 @@ export const CategoryFilters = ({
   return (
     <>
       {!isSearchMode && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 mb-5">
           {categories.map((category) => (
             <button
               key={category.id}
