@@ -1,35 +1,24 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ISpotifyPlaylist } from "utils/types";
-import { Bell, Play, Pause } from "lucide-react";
-import { formatTime } from "utils";
+import { Bell, Music } from "lucide-react";
 import { PlaylistSkeleton } from "../Skeletons/PlaylistSkeleton";
+import { TrackModal } from "../Modals/TrackModal";
 
 const OFFSET = 20;
 
 export const PlaylistList = ({
   playlists,
-  setIsLongPress,
-  isLongPress,
-  offset,
-  setOffset,
   loading,
   loadedAllData,
   deviceID,
   player,
   setSelectedPlaylist,
-  expandedPlaylist,
-  setExpandedPlaylist,
-  handleUnsubscribe,
   previewTracks,
   setPreviewTracks,
   testingRef,
   setShowSubscribeModal,
 }: {
   playlists: ISpotifyPlaylist[];
-  setIsLongPress: (isLongPress: boolean) => void;
-  isLongPress: boolean;
-  offset: number;
-  setOffset: React.Dispatch<React.SetStateAction<number>>;
   deviceID: string;
   player: any;
   loading: boolean;
@@ -37,9 +26,6 @@ export const PlaylistList = ({
   setSelectedPlaylist: React.Dispatch<
     React.SetStateAction<ISpotifyPlaylist | null>
   >;
-  expandedPlaylist: string | null;
-  setExpandedPlaylist: React.Dispatch<React.SetStateAction<string | null>>;
-  handleUnsubscribe: (playlistID: string) => void;
   previewTracks: any;
   setPreviewTracks: React.Dispatch<React.SetStateAction<any>>;
   testingRef: React.RefObject<HTMLDivElement>;
@@ -51,10 +37,12 @@ export const PlaylistList = ({
   const [previewTimeouts, setPreviewTimeouts] = useState<{
     [key: string]: NodeJS.Timeout;
   }>({});
+  const [trackModalOpen, setTrackModalOpen] = useState(false);
+  const [selectedPlaylistForModal, setSelectedPlaylistForModal] =
+    useState<ISpotifyPlaylist | null>(null);
+  const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
 
   useEffect(() => {
-    window.addEventListener("mouseup", () => setIsLongPress(false));
-
     // Update container height on resize
     const updateHeight = () => {
       if (testingRef.current) {
@@ -80,25 +68,22 @@ export const PlaylistList = ({
     };
   }, [previewTimeouts]);
 
-  const handleViewTracks = async (playlistID: string) => {
-    if (expandedPlaylist === playlistID) {
-      // If already expanded, collapse it
-      setExpandedPlaylist(null);
-      setPreviewTracks([]);
-    } else {
-      // Expand the clicked playlist and fetch tracks
-      setExpandedPlaylist(playlistID);
-      setPreviewTracks([]); // Clear previous tracks while loading
+  const handleViewTracks = async (playlist: ISpotifyPlaylist) => {
+    setSelectedPlaylistForModal(playlist);
+    setPreviewTracks([]); // Clear previous tracks while loading
+    setLoadingTracks(playlist.id); // Set loading state for this specific playlist
 
-      try {
-        const res = await fetch(`/api/spotify/playlists/${playlistID}`);
-        if (!res.ok) throw new Error("Failed to fetch playlist tracks");
-        const data = await res.json();
-        setPreviewTracks(data);
-      } catch (error) {
-        console.error("Error fetching playlist tracks:", error);
-        // You might want to show an error message to the user here
-      }
+    try {
+      const res = await fetch(`/api/spotify/playlists/${playlist.id}`);
+      if (!res.ok) throw new Error("Failed to fetch playlist tracks");
+      const data = await res.json();
+      setPreviewTracks(data);
+      setTrackModalOpen(true);
+    } catch (error) {
+      console.error("Error fetching playlist tracks:", error);
+      // You might want to show an error message to the user here
+    } finally {
+      setLoadingTracks(null); // Clear loading state
     }
   };
 
@@ -198,36 +183,62 @@ export const PlaylistList = ({
             .map((playlist, index) => (
               <div
                 key={`${playlist.id}-${index}`}
-                className="bg-white rounded-lg overflow-hidden hover:bg-gray-50 transition-colors shadow-md border border-gray-200"
+                className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 shadow-lg border border-gray-200 group"
               >
                 <div className="flex flex-col sm:flex-row">
-                  <img
-                    src={playlist.images?.[0]?.url}
-                    alt={playlist.name}
-                    className="w-full h-32 sm:w-20 sm:h-20 object-cover"
-                  />
-                  <div className="flex flex-col sm:flex-row grow">
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={playlist.images?.[0]?.url}
+                      alt={playlist.name}
+                      className="w-full h-48 sm:w-24 sm:h-24 object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent sm:hidden"></div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row grow pt-1 pb-1 sm:pb-2">
                     <div
-                      className="p-3 sm:p-4 grow cursor-pointer min-w-0"
-                      onClick={() => handleViewTracks(playlist.id)}
+                      className={`grow min-w-0 flex flex-col justify-between pt-1 pb-1 pl-3 ${
+                        loadingTracks === playlist.id
+                          ? "cursor-not-allowed opacity-75"
+                          : "cursor-pointer"
+                      }`}
+                      onClick={() => {
+                        if (loadingTracks !== playlist.id) {
+                          handleViewTracks(playlist);
+                        }
+                      }}
                     >
-                      <h3 className="font-medium text-gray-800 text-base sm:text-lg truncate">
+                      <h3 className="font-bold text-gray-900 text-lg sm:text-xl truncate group-hover:text-green-600 transition-colors">
                         {playlist.name}
                       </h3>
-                      <p className="text-gray-500 text-sm mt-1">
-                        By {playlist.owner.display_name}
+                      <p className="text-gray-600 text-sm">
+                        By{" "}
+                        <span className="font-medium">
+                          {playlist.owner.display_name}
+                        </span>
                       </p>
-                      <p className="text-green-600 text-xs mt-2 font-medium">
-                        Click to
-                        {expandedPlaylist === playlist.id ? " hide " : " view "}
-                        tracks
-                      </p>
+                      <div className="flex items-center gap-2">
+                        {loadingTracks === playlist.id ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-green-600 text-sm font-medium">
+                              Loading tracks...
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <Music size={16} className="text-green-500" />
+                            <p className="text-green-600 text-sm font-medium">
+                              View tracks
+                            </p>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="p-3 sm:p-4 self-center shrink-0">
+                    <div className="self-center shrink-0 pr-3 max-sm:pr-0">
                       {playlist.subscribed ? (
                         <button
                           onClick={() => setSelectedPlaylist({ ...playlist })}
-                          className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-full bg-gray-100 text-red-500 text-sm hover:bg-gray-200 transition-colors shadow-xs border border-gray-200"
+                          className="w-full sm:w-auto px-5 py-3 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-all duration-200 border border-red-200 shadow-sm hover:shadow-md"
                         >
                           Unsubscribe
                         </button>
@@ -237,69 +248,18 @@ export const PlaylistList = ({
                             setShowSubscribeModal(true);
                             setSelectedPlaylist({ ...playlist });
                           }}
-                          className="w-full sm:w-auto px-3 sm:px-4 py-2 rounded-full bg-green-600 text-white text-sm hover:bg-green-700 transition-colors shadow-xs flex items-center justify-center"
+                          className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center group"
                         >
-                          <Bell size={16} className="mr-1" />
+                          <Bell
+                            size={16}
+                            className="mr-2 group-hover:animate-pulse"
+                          />
                           Subscribe
                         </button>
                       )}
                     </div>
                   </div>
                 </div>
-
-                {expandedPlaylist === playlist.id ? (
-                  <div className="border-t border-gray-200 p-2">
-                    <div className="px-2">
-                      <div className="flex justify-between text-xs text-gray-500 py-2 px-2 border-b border-gray-200">
-                        <span className="w-6">#</span>
-                        <span className="grow">TITLE</span>
-                        <span className="hidden sm:block">DURATION</span>
-                      </div>
-                      {previewTracks.map(
-                        ({ track }: { track: any }, index: number) => (
-                          <div
-                            key={track.id}
-                            className="flex justify-between items-center py-2 px-2 text-sm hover:bg-gray-100 rounded-sm cursor-pointer"
-                            onClick={() => handleTrackPreview(track)}
-                          >
-                            <div className="flex items-center grow min-w-0">
-                              <button
-                                className="w-8 h-8 rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center mr-2 sm:mr-3 transition-colors shrink-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleTrackPreview(track);
-                                }}
-                              >
-                                {currentlyPlaying === track.id ? (
-                                  <Pause size={12} className="text-white" />
-                                ) : (
-                                  <Play
-                                    size={12}
-                                    className="text-white ml-0.5"
-                                  />
-                                )}
-                              </button>
-                              <span className="w-6 text-gray-500 text-xs sm:text-sm shrink-0">
-                                {index + 1}
-                              </span>
-                              <div className="grow ml-2 min-w-0">
-                                <p className="text-gray-800 font-medium text-sm sm:text-base truncate">
-                                  {track.name}
-                                </p>
-                                <p className="text-gray-500 text-xs truncate">
-                                  {track.artists?.[0]?.name || "Unknown Artist"}
-                                </p>
-                              </div>
-                            </div>
-                            <span className="text-gray-500 text-xs sm:text-sm shrink-0 ml-2">
-                              {formatTime(track.duration_ms)}
-                            </span>
-                          </div>
-                        )
-                      )}
-                    </div>
-                  </div>
-                ) : null}
               </div>
             ))}
         {/* Loading indicator at bottom */}
@@ -324,6 +284,19 @@ export const PlaylistList = ({
           </div>
         )}
       </div>
+
+      <TrackModal
+        isOpen={trackModalOpen}
+        onClose={() => {
+          setTrackModalOpen(false);
+          setSelectedPlaylistForModal(null);
+          setPreviewTracks([]);
+        }}
+        playlist={selectedPlaylistForModal}
+        tracks={previewTracks}
+        currentlyPlaying={currentlyPlaying}
+        onTrackPreview={handleTrackPreview}
+      />
     </div>
   );
 };

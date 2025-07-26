@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
 import PlaylistSearch from "./components/Playlist/Search";
-import WebPlayer from "./components/WebPlayer";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Disc } from "lucide-react";
 import { currentUser } from "@clerk/nextjs/server";

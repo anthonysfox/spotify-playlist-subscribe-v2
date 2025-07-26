@@ -37,7 +37,6 @@ export const useSpotifyPlayer = (token: string) => {
   // --- AUTOMATICALLY TRANSFER PLAYBACK TO THIS DEVICE ---
   useEffect(() => {
     // Only transfer if we have a device ID and token
-    console.log("LOOK AT THIS", state);
     if (state.device_id && token) {
       const transferPlayback = async () => {
         try {

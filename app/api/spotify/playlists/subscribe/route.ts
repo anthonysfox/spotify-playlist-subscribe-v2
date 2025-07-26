@@ -44,6 +44,14 @@ export async function POST(request: Request) {
   const cleanedSourceSpotifyPlaylistId =
     sourcePlaylist.id.split("/").pop()?.split("?")[0] || sourcePlaylist.id;
 
+  // Validate cleaned IDs
+  if (!cleanedDestinationSpotifyPlaylistId || !cleanedSourceSpotifyPlaylistId) {
+    return NextResponse.json(
+      { error: "Invalid playlist IDs provided" },
+      { status: 400 }
+    );
+  }
+
   try {
     // Use a transaction to ensure both playlist lookups/creations and the subscription are atomic
     const result = await prisma.$transaction(async (prisma) => {
@@ -93,21 +101,33 @@ export async function POST(request: Request) {
       }
 
       // 5. Find or Create Source Playlist (scoped globally by Spotify ID)
-      // We find a source playlist record with this Spotify ID. If not found, create it.
-      const existingSourcePlaylist = await prisma.sourcePlaylist.upsert({
-        where: { spotifyPlaylistId: cleanedSourceSpotifyPlaylistId },
-        update: {
-          // Optionally update name/image in case it changed on Spotify or frontend sent updated info
-          name: sourcePlaylist.name,
-          imageUrl: sourcePlaylist.imageUrl || null,
-        },
-        create: {
+      // First try to find an existing non-deleted source playlist
+      let existingSourcePlaylist = await prisma.sourcePlaylist.findFirst({
+        where: {
           spotifyPlaylistId: cleanedSourceSpotifyPlaylistId,
-          name: sourcePlaylist.name,
-          imageUrl: sourcePlaylist.imageUrl || null,
-          // createdAt, updatedAt default
+          deletedAt: null,
         },
       });
+
+      if (existingSourcePlaylist) {
+        // Update existing source playlist
+        existingSourcePlaylist = await prisma.sourcePlaylist.update({
+          where: { id: existingSourcePlaylist.id },
+          data: {
+            name: sourcePlaylist.name,
+            imageUrl: sourcePlaylist.imageUrl || null,
+          },
+        });
+      } else {
+        // Create new source playlist
+        existingSourcePlaylist = await prisma.sourcePlaylist.create({
+          data: {
+            spotifyPlaylistId: cleanedSourceSpotifyPlaylistId,
+            name: sourcePlaylist.name,
+            imageUrl: sourcePlaylist.imageUrl || null,
+          },
+        });
+      }
 
       // 6. Check for Existing Subscription & Create New Subscription
       // This attempts to create the link. Prisma's @@unique constraint will prevent duplicates.
