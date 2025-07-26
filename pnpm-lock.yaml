@@ -63,7 +63,7 @@ importers:
         specifier: ^34.1.1
         version: 34.4.0
       zustand:
-        specifier: ^5.0.4
+        specifier: ^5.0.6
         version: 5.0.6(@types/react@18.3.21)(react@19.1.0)(use-sync-external-store@1.5.0(react@19.1.0))
     devDependencies:
       '@tailwindcss/postcss':
