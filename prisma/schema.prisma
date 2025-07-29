@@ -79,6 +79,8 @@ model ManagedPlaylist {
   // The last time a full sync process completed successfully for this managed playlist.
   lastSyncCompletedAt DateTime?
 
+  lastMetadataRefreshAt DateTime @default(now()) // Last time we refreshed metadata (name, image, etc.)
+
   // The calculated time for the next scheduled sync for this playlist.
   nextSyncTime DateTime?
 
@@ -112,7 +114,11 @@ model SourcePlaylist {
   // Make sure the source playlist is active and available
   isActive Boolean @default(true)
 
+  trackCount Int @default(0) // Number of tracks in this source playlist
+
   lastCheckedActiveAt DateTime? // Last time we checked if this source playlist is still valid
+
+  lastMetadataRefreshAt DateTime @default(now()) // Last time we refreshed metadata (name, image, etc.)
 
   // Date this source playlist record was created.
   createdAt DateTime @default(now())

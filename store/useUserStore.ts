@@ -1,10 +1,15 @@
+import {
+  ManagedPlaylist,
+  ManagedPlaylistSourceSubscription,
+  SourcePlaylist,
+} from "@prisma/client";
 import { ISpotifyPlaylist } from "utils/types";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 
 export type UserStoreState = {
   userPlaylists: ISpotifyPlaylist[];
-  subscriptions: any[];
+  managedPlaylists: ManagedPlaylistWithSubscriptions[];
   user: Record<string, any> | null;
   isLoading: boolean;
   loadedAllPlaylists: boolean;
@@ -20,12 +25,20 @@ export type UserStoreActions = {
   removePlaylist: (id: string) => void;
   refreshPlaylists: () => Promise<void>;
   setLoadedAllPlaylists: (loaded: boolean) => void;
-  setSubscriptions: (subscriptions: any[]) => void;
-  removeSourceFromSubscription: (
-    subscriptionId: string,
-    sourceId: string
+  setManagedPlaylists: (
+    managedPlaylists: ManagedPlaylistWithSubscriptions[]
+  ) => void;
+  removeSubscriptionFromManagedPlaylist: (
+    managedPlaylistId: string,
+    subscriptionId: string
   ) => void;
 };
+
+interface ManagedPlaylistWithSubscriptions extends ManagedPlaylist {
+  subscriptions: (ManagedPlaylistSourceSubscription & {
+    sourcePlaylist: SourcePlaylist;
+  })[];
+}
 
 export type UserStore = UserStoreState & UserStoreActions;
 
@@ -34,7 +47,7 @@ export const useUserStore = create<UserStore>()(
     persist(
       (set, get) => ({
         userPlaylists: [],
-        subscriptions: [],
+        managedPlaylists: [],
         user: null,
         isLoading: false,
         loadedAllPlaylists: false,
@@ -63,26 +76,32 @@ export const useUserStore = create<UserStore>()(
             console.error("Failed to refresh playlists", error);
           }
         },
-        setSubscriptions: (subscriptions) => set({ subscriptions }),
-        removeSourceFromSubscription: (subscriptionId, sourceId) =>
+        setManagedPlaylists: (managedPlaylists) => set({ managedPlaylists }),
+        removeSubscriptionFromManagedPlaylist: (
+          managedPlaylistId,
+          subscriptionId
+        ) =>
           set((state) => {
-            const updatedSubscriptions = state.subscriptions
-              .map((subscription) => {
-                if (subscription.destination.id === subscriptionId) {
-                  const updatedSources = subscription.sources.filter(
-                    (source: any) => source.id !== sourceId
-                  );
+            const updatedManagedPlaylists = state.managedPlaylists
+              .map((managedPlaylist) => {
+                if (managedPlaylist.id === managedPlaylistId) {
+                  const updatedSubscriptions =
+                    managedPlaylist.subscriptions.filter(
+                      (subscription: any) => subscription.id !== subscriptionId
+                    );
 
                   return {
-                    ...subscription,
-                    sources: updatedSources,
+                    ...managedPlaylist,
+                    subscriptions: [...updatedSubscriptions],
                   };
                 }
-                return subscription;
+                return managedPlaylist;
               })
-              .filter((subscription) => subscription.sources.length > 0);
+              .filter(
+                (managedPlaylist) => managedPlaylist.subscriptions.length
+              );
 
-            return { subscriptions: updatedSubscriptions };
+            return { managedPlaylists: updatedManagedPlaylists };
           }),
       }),
       {
