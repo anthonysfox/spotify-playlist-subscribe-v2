@@ -65,10 +65,9 @@ export const SubscribeModal = ({
     }
   }, [userData, userPlaylists, fetchUserPlaylists]);
 
-  console.log(selectedUserPlaylist);
   const saveSubscriptionSettings = async () => {
     const body = {
-      destinationPlaylist: {
+      managedPlaylist: {
         id: selectedUserPlaylist?.id,
         name: selectedUserPlaylist?.name,
         imageUrl: selectedUserPlaylist?.images?.[0]?.url || "",
@@ -78,6 +77,7 @@ export const SubscribeModal = ({
         id: selectedPlaylist?.id,
         name: selectedPlaylist?.name || "",
         imageUrl: selectedPlaylist?.images?.[0]?.url || "",
+        trackCount: selectedPlaylist?.tracks.total || 0,
       },
     };
     const res = await fetch("/api/spotify/playlists/subscribe", {

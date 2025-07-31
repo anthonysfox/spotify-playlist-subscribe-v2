@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
+import { addDays } from "date-fns";
 
 export async function POST(request: Request) {
   const { userId, token } = await getClerkOAuthToken();
@@ -17,17 +18,19 @@ export async function POST(request: Request) {
   }
 
   const {
-    destinationPlaylist, // Expecting { id: string, name: string, imageUrl?: string }
-    sourcePlaylist, // Expecting { id: string, name: string, imageUrl?: string }
+    managedPlaylist, // Expecting { id: string, name: string, imageUrl?: string, trackCount: number }
+    sourcePlaylist, // Expecting { id: string, name: string, imageUrl?: string, trackCount: number }
   } = body;
 
   if (
-    !destinationPlaylist ||
-    !destinationPlaylist.id ||
-    !destinationPlaylist.name ||
+    !managedPlaylist ||
+    !managedPlaylist.id ||
+    !managedPlaylist.name ||
+    !managedPlaylist.trackCount ||
     !sourcePlaylist ||
     !sourcePlaylist.id ||
-    !sourcePlaylist.name
+    !sourcePlaylist.name ||
+    !sourcePlaylist.trackCount
   ) {
     return NextResponse.json(
       {
@@ -38,14 +41,13 @@ export async function POST(request: Request) {
     );
   }
 
-  const cleanedDestinationSpotifyPlaylistId =
-    destinationPlaylist.id.split("/").pop()?.split("?")[0] ||
-    destinationPlaylist.id;
+  const cleanedManagedSpotifyPlaylistId =
+    managedPlaylist.id.split("/").pop()?.split("?")[0] || managedPlaylist.id;
   const cleanedSourceSpotifyPlaylistId =
     sourcePlaylist.id.split("/").pop()?.split("?")[0] || sourcePlaylist.id;
 
   // Validate cleaned IDs
-  if (!cleanedDestinationSpotifyPlaylistId || !cleanedSourceSpotifyPlaylistId) {
+  if (!cleanedManagedSpotifyPlaylistId || !cleanedSourceSpotifyPlaylistId) {
     return NextResponse.json(
       { error: "Invalid playlist IDs provided" },
       { status: 400 }
@@ -59,28 +61,25 @@ export async function POST(request: Request) {
       // We need to find a managed playlist record with this Spotify ID *owned by this user*.
       // If not found, create it.
       const existingManagedPlaylist = await prisma.managedPlaylist.findFirst({
-        where: { spotifyPlaylistId: cleanedDestinationSpotifyPlaylistId },
+        where: {
+          spotifyPlaylistId: cleanedManagedSpotifyPlaylistId,
+          userId,
+        },
       });
+      const now = new Date();
 
       let finalManagedPlaylist;
 
       if (existingManagedPlaylist) {
-        // If a record exists for this Spotify ID, verify it belongs to the current user
-        if (existingManagedPlaylist.userId !== userId) {
-          // This Spotify playlist ID is already registered as a managed playlist for a DIFFERENT user.
-          // This indicates a potential issue or a policy decision needed (can a playlist be managed by multiple app users?).
-          // For this example, we'll throw an error assuming a managed playlist is unique to one app user.
-          throw new Error(
-            "This destination playlist is already being managed by another user."
-          );
-        }
         // If owned by the user, use the existing managed playlist record.
         // Optionally update name/image in case it changed on Spotify or frontend sent updated info.
         finalManagedPlaylist = await prisma.managedPlaylist.update({
           where: { id: existingManagedPlaylist.id },
           data: {
-            name: destinationPlaylist.name,
-            imageUrl: destinationPlaylist.imageUrl || null,
+            name: managedPlaylist.name,
+            imageUrl: managedPlaylist.imageUrl || null,
+            trackCount: managedPlaylist.trackCount || 0,
+            lastMetadataRefreshAt: now,
           },
         });
       } else {
@@ -88,14 +87,16 @@ export async function POST(request: Request) {
         finalManagedPlaylist = await prisma.managedPlaylist.create({
           data: {
             userId: userId, // Link to the current user
-            spotifyPlaylistId: cleanedDestinationSpotifyPlaylistId,
-            name: destinationPlaylist.name,
-            imageUrl: destinationPlaylist.imageUrl || null,
+            spotifyPlaylistId: cleanedManagedSpotifyPlaylistId,
+            name: managedPlaylist.name,
+            imageUrl: managedPlaylist.imageUrl || null,
             // Default sync settings (syncIntervalMinutes, syncQuantityPerSource) are applied by Prisma
             // createdAt, updatedAt default
             lastSyncCompletedAt: null,
-            nextSyncTime: null,
+            nextSyncTime: addDays(new Date(), 7),
             syncInterval: "WEEKLY",
+            lastMetadataRefreshAt: now,
+            trackCount: managedPlaylist.trackCount || 0,
           },
         });
       }
@@ -105,7 +106,6 @@ export async function POST(request: Request) {
       let existingSourcePlaylist = await prisma.sourcePlaylist.findFirst({
         where: {
           spotifyPlaylistId: cleanedSourceSpotifyPlaylistId,
-          deletedAt: null,
         },
       });
 
@@ -116,6 +116,9 @@ export async function POST(request: Request) {
           data: {
             name: sourcePlaylist.name,
             imageUrl: sourcePlaylist.imageUrl || null,
+            lastMetadataRefreshAt: now,
+            trackCount: sourcePlaylist.trackCount,
+            deletedAt: null,
           },
         });
       } else {
@@ -125,6 +128,8 @@ export async function POST(request: Request) {
             spotifyPlaylistId: cleanedSourceSpotifyPlaylistId,
             name: sourcePlaylist.name,
             imageUrl: sourcePlaylist.imageUrl || null,
+            lastMetadataRefreshAt: now,
+            trackCount: sourcePlaylist.trackCount || 0,
           },
         });
       }
@@ -208,19 +213,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-// export async function DELETE(request: Request) {
-//   const { userId } = auth();
-
-//   if (!userId) return new Response("Unauthorized", { status: 401 });
-
-//   try {
-//     const data = await request.json();
-
-//     const subscription = await prisma.subscription.deleteMany({});
-
-//     return NextResponse.json({ subscription });
-//   } catch (error) {
-//     return Response.json(error);
-//   }
-// }

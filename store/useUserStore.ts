@@ -28,6 +28,10 @@ export type UserStoreActions = {
   setManagedPlaylists: (
     managedPlaylists: ManagedPlaylistWithSubscriptions[]
   ) => void;
+  updateManagedPlaylist: (
+    playlistId: string,
+    updates: Partial<ManagedPlaylist>
+  ) => void;
   removeSubscriptionFromManagedPlaylist: (
     managedPlaylistId: string,
     subscriptionId: string
@@ -77,6 +81,14 @@ export const useUserStore = create<UserStore>()(
           }
         },
         setManagedPlaylists: (managedPlaylists) => set({ managedPlaylists }),
+        updateManagedPlaylist: (playlistId, updates) =>
+          set((state) => ({
+            managedPlaylists: state.managedPlaylists.map((playlist) =>
+              playlist.id === playlistId
+                ? { ...playlist, ...updates }
+                : { ...playlist }
+            ),
+          })),
         removeSubscriptionFromManagedPlaylist: (
           managedPlaylistId,
           subscriptionId
