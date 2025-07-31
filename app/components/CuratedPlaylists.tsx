@@ -271,15 +271,32 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
           onClick={() => setShowFilters(true)}
           className="px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl flex items-center gap-2"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-white">
-            <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" d="M3 6h18M7 12h10M10 18h4"/>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            className="text-white"
+          >
+            <path
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              d="M3 6h18M7 12h10M10 18h4"
+            />
           </svg>
           <div className="flex flex-col items-start">
             <span className="text-xs text-green-100">Filter</span>
             <span className="text-sm font-bold">
               {(() => {
-                const categoryName = frontendCategories.find(cat => cat.id === activeCategory)?.name || activeCategory;
-                const subOptionName = categorySubOptions[activeCategory as keyof typeof categorySubOptions]?.find(sub => sub.id === activeSubOption)?.name || activeSubOption;
+                const categoryName =
+                  frontendCategories.find((cat) => cat.id === activeCategory)
+                    ?.name || activeCategory;
+                const subOptionName =
+                  categorySubOptions[
+                    activeCategory as keyof typeof categorySubOptions
+                  ]?.find((sub) => sub.id === activeSubOption)?.name ||
+                  activeSubOption;
                 return `${categoryName} • ${subOptionName}`;
               })()}
             </span>
@@ -302,7 +319,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
           setShowSubscribeModal={setShowSubscribeModal}
         />
       </div>
-      
+
       <FilterModal
         isOpen={showFilters}
         onClose={() => setShowFilters(false)}

@@ -24,12 +24,18 @@ export async function GET(request: Request) {
       where: { userId },
       include: {
         subscriptions: {
+          where: {
+            sourcePlaylist: {
+              deletedAt: null,
+            },
+          },
           include: {
             sourcePlaylist: true,
           },
         },
       },
     });
+
     const now = new Date();
     const playlistsToUpdate = new Map();
     const seenSourcePlaylists = new Set();

@@ -1,10 +1,11 @@
-import { Bell } from "lucide-react";
+import { Bell, Music, Clock, Hash, Calendar, Settings } from "lucide-react";
 import React, { useEffect } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 import { PlaylistSettingsModal } from "../Modals/SettingsModal";
 import { useUserStore } from "store/useUserStore";
 import { SubscriptionSkeleton } from "../Skeletons/SubscriptionSkeleton";
 import toast from "react-hot-toast";
+import { ManagedPlaylist } from "@prisma/client";
 
 interface ISubscriptionsProps {
   setSelectedPlaylist: React.Dispatch<
@@ -13,7 +14,7 @@ interface ISubscriptionsProps {
   setShowPlaylistSettingsModal: React.Dispatch<React.SetStateAction<boolean>>;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
   showPlaylistSettingsModal: boolean;
-  selectedPlaylist: ISpotifyPlaylist | null;
+  selectedPlaylist: ManagedPlaylist | null;
 }
 
 export const Subscriptions = ({
@@ -51,13 +52,13 @@ export const Subscriptions = ({
       method: "DELETE",
     })
       .then((res) => res.json())
-      .then((data) => {
-        if (!data.success) {
+      .then(({ success, data }) => {
+        if (!success) {
           throw new Error(data.error || "Failed to unsubscribe");
         }
         removeSubscriptionFromManagedPlaylist(
-          data.data.subscriptionId,
-          sourceID
+          data.managedPlaylistId,
+          data.subscriptionId
         );
       })
       .catch((error) => {
@@ -66,7 +67,7 @@ export const Subscriptions = ({
         throw error;
       });
   };
-
+  console.log(managedPlaylists);
   return (
     <div className="flex flex-col grow min-h-0">
       {!isLoading ? (
@@ -84,14 +85,9 @@ export const Subscriptions = ({
                       className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                     >
                       <div
-                        className="p-6 border-b border-gray-200 bg-gradient-to-r from-slate-50 to-gray-50 cursor-pointer hover:from-slate-100 hover:to-gray-100 transition-all duration-200"
+                        className="p-6 border-b border-gray-200 bg-gradient-to-r from-slate-50 to-gray-50 cursor-pointer hover:from-slate-100 hover:to-gray-100 transition-all duration-200 group relative"
                         onClick={() => {
-                          setSelectedPlaylist(
-                            userPlaylists.find(
-                              (p: ISpotifyPlaylist) =>
-                                p.id === managedPlaylist.spotifyPlaylistId
-                            ) || null
-                          );
+                          setSelectedPlaylist(managedPlaylist);
                           setShowPlaylistSettingsModal(true);
                         }}
                       >
@@ -107,28 +103,46 @@ export const Subscriptions = ({
                             </div>
                           </div>
                           <div className="ml-4 flex-1">
-                            <h3 className="font-bold text-gray-900 text-lg mb-1">
-                              {managedPlaylist.name}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-gray-900 text-lg mb-1">
+                                {managedPlaylist.name}
+                              </h3>
+                              <Settings 
+                                size={16} 
+                                className="text-gray-400 group-hover:text-gray-600 transition-colors opacity-60 group-hover:opacity-100" 
+                              />
+                            </div>
                             <p className="text-gray-600 text-sm">
                               Auto-collecting from{" "}
                               {managedPlaylist.subscriptions.length} source
                               {managedPlaylist.subscriptions.length === 1
                                 ? ""
-                                : "s"}
+                                : "s"} • Click to configure
                             </p>
                           </div>
                         </div>
 
                         <div className="flex flex-wrap gap-3">
                           <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
-                            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                            <Music size={12} className="text-emerald-500" />
                             <span className="text-sm font-semibold text-gray-700">
-                              {managedPlaylist.trackCount} songs
+                              {managedPlaylist.syncQuantityPerSource} per source
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              (
+                              {managedPlaylist.syncQuantityPerSource *
+                                managedPlaylist.subscriptions.length}{" "}
+                              total per sync)
                             </span>
                           </div>
                           <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <Hash size={12} className="text-blue-500" />
+                            <span className="text-sm font-semibold text-gray-700">
+                              {managedPlaylist.trackCount} total songs
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
+                            <Clock size={12} className="text-purple-500" />
                             <span className="text-sm font-semibold text-gray-700">
                               {`${managedPlaylist.syncInterval
                                 .charAt(0)
@@ -138,9 +152,9 @@ export const Subscriptions = ({
                             </span>
                           </div>
                           <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                            <Calendar size={12} className="text-orange-500" />
                             <span className="text-sm font-semibold text-gray-700">
-                              Next Sync: {managedPlaylist.nextSyncTime}
+                              Next: {managedPlaylist.nextSyncTime ? new Date(managedPlaylist.nextSyncTime).toLocaleDateString() : 'Not scheduled'}
                             </span>
                           </div>
                         </div>

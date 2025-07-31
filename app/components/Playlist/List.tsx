@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 import { Bell, Music } from "lucide-react";
 import { PlaylistSkeleton } from "../Skeletons/PlaylistSkeleton";
 import { TrackModal } from "../Modals/TrackModal";
+import { useUserStore } from "store/useUserStore";
 
 const OFFSET = 20;
 
@@ -41,6 +42,17 @@ export const PlaylistList = ({
   const [selectedPlaylistForModal, setSelectedPlaylistForModal] =
     useState<ISpotifyPlaylist | null>(null);
   const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
+  const managedPlaylists = useUserStore((state) => state.managedPlaylists);
+
+  const subscribedPlaylists = useMemo(() => {
+    return new Set(
+      managedPlaylists.flatMap((mp) => {
+        return mp.subscriptions.map(
+          (sub) => sub.sourcePlaylist.spotifyPlaylistId
+        );
+      })
+    );
+  }, [managedPlaylists]);
 
   useEffect(() => {
     // Update container height on resize
@@ -167,6 +179,14 @@ export const PlaylistList = ({
     }
   };
 
+  const handleTrackModalClose = () => {
+    setTrackModalOpen(false);
+    setSelectedPlaylistForModal(null);
+    setPreviewTracks([]);
+    setCurrentlyPlaying(null);
+    if (currentlyPlaying) stopTrackPreview(currentlyPlaying);
+  };
+
   return (
     <div
       className="h-full overflow-y-auto overflow-x-hidden min-h-0 flex-1 custom-scrollbar scrollbar-visible pl-3 pr-3 inset-shadow-sm rounded-lg"
@@ -237,7 +257,7 @@ export const PlaylistList = ({
                       </div>
                     </div>
                     <div className="self-center shrink-0 pr-3 max-sm:pr-0">
-                      {playlist.subscribed ? (
+                      {subscribedPlaylists.has(playlist.id) ? (
                         <button
                           onClick={() => setSelectedPlaylist({ ...playlist })}
                           className="w-full sm:w-auto px-5 py-3 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-all duration-200 border border-red-200 shadow-sm hover:shadow-md"
@@ -289,11 +309,7 @@ export const PlaylistList = ({
 
       <TrackModal
         isOpen={trackModalOpen}
-        onClose={() => {
-          setTrackModalOpen(false);
-          setSelectedPlaylistForModal(null);
-          setPreviewTracks([]);
-        }}
+        onClose={handleTrackModalClose}
         playlist={selectedPlaylistForModal}
         tracks={previewTracks}
         currentlyPlaying={currentlyPlaying}

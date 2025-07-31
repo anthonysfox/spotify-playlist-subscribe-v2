@@ -1,5 +1,7 @@
 import { Settings, X } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
+import { useUserStore } from "store/useUserStore";
 import { ISpotifyPlaylist } from "utils/types";
 
 const frequencyOptions = [
@@ -21,13 +23,46 @@ export const PlaylistSettingsModal = ({
   selectedPlaylist,
 }: {
   setShowPlaylistSettingsModal: React.Dispatch<React.SetStateAction<boolean>>;
-  setSelectedPlaylist: React.Dispatch<
-    React.SetStateAction<ISpotifyPlaylist | null>
-  >;
-  selectedPlaylist: ISpotifyPlaylist;
+  setSelectedPlaylist: React.Dispatch<React.SetStateAction<any>>;
+  selectedPlaylist: any;
 }) => {
+  const [updatedData, setUpdatedData] = useState({
+    syncInterval: selectedPlaylist.syncInterval,
+    syncQuantityPerSource: selectedPlaylist.syncQuantityPerSource,
+  });
+  const updateManagedPlaylist = useUserStore(
+    (state) => state.updateManagedPlaylist
+  );
+
+  const resetData = () =>
+    setUpdatedData({
+      syncInterval: selectedPlaylist.syncInterval,
+      syncQuantityPerSource: selectedPlaylist.syncQuantityPerSource,
+    });
+
+  const handleUpdateManagedPlaylist = async () => {
+    fetch(`/api/users/subscriptions/${selectedPlaylist.id}`, {
+      method: "PUT",
+      body: JSON.stringify({ ...updatedData }),
+    })
+      .then((resp) => resp.json())
+      .then(({ data: { managedPlaylist }, success, message }) => {
+        if (success) {
+          updateManagedPlaylist(selectedPlaylist.id, managedPlaylist);
+          toast.success(message);
+          setShowPlaylistSettingsModal(false);
+        } else {
+          toast.error(message);
+        }
+      })
+      .catch((error) => {
+        console.error(error.message);
+        toast.error(error.message);
+      });
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full p-6 relative shadow-xl">
         <button
           onClick={() => {
@@ -52,7 +87,7 @@ export const PlaylistSettingsModal = ({
 
         <div className="flex items-center p-3 bg-gray-50 rounded-sm border border-gray-200 mb-6">
           <img
-            src={selectedPlaylist.images?.[0]?.url}
+            src={selectedPlaylist.imageUrl}
             alt={selectedPlaylist.name}
             className="w-12 h-12 object-cover rounded-sm"
           />
@@ -61,7 +96,7 @@ export const PlaylistSettingsModal = ({
               {selectedPlaylist.name}
             </h3>
             <p className="text-gray-500 text-sm">
-              {selectedPlaylist.tracks.total} tracks
+              {selectedPlaylist.trackCount} tracks
             </p>
           </div>
         </div>
@@ -74,7 +109,13 @@ export const PlaylistSettingsModal = ({
             <select
               id="settings-song-count-dropdown"
               className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
-              defaultValue={3}
+              value={updatedData.syncQuantityPerSource}
+              onChange={(e) =>
+                setUpdatedData((prevState) => ({
+                  ...prevState,
+                  syncQuantityPerSource: parseInt(e.target.value),
+                }))
+              }
             >
               {songCountOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -109,10 +150,16 @@ export const PlaylistSettingsModal = ({
                   key={option.value}
                   id={`settings-freq-${option.value}`}
                   className={`settings-frequency-option py-2 text-center rounded cursor-pointer transition-colors border ${
-                    true
+                    updatedData.syncInterval === option.value
                       ? "bg-green-600 text-white"
                       : "bg-gray-50 text-gray-800 border-gray-200"
                   }`}
+                  onClick={() =>
+                    setUpdatedData((prevState) => ({
+                      ...prevState,
+                      syncInterval: option.value,
+                    }))
+                  }
                 >
                   {option.label}
                 </div>
@@ -126,7 +173,7 @@ export const PlaylistSettingsModal = ({
 
         <button
           onClick={() => {
-            console.log("hi");
+            handleUpdateManagedPlaylist();
           }}
           className="w-full py-3 rounded-full bg-green-600 hover:bg-green-700 text-white font-medium shadow-md transition-colors"
         >

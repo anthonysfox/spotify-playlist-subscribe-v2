@@ -6,21 +6,37 @@ import {
   ITopArtistState,
   IUserPlaylistsState,
 } from "utils/types";
-import { CuratedPlaylists } from "../CuratedPlaylists";
+import { CuratedPlaylists } from "./CuratedPlaylists";
 import { OFFSET } from "utils/constants";
-import { NavTabs } from "../Navigation/NavTabs";
-import { SubscribeModal } from "../Modals/SubscribeModal";
-import { PlaylistSettingsModal } from "../Modals/SettingsModal";
+import { NavTabs } from "./Navigation/NavTabs";
+import { SubscribeModal } from "./Modals/SubscribeModal";
+import { PlaylistSettingsModal } from "./Modals/SettingsModal";
 import { Bell } from "lucide-react";
 import { useUserStore } from "store/useUserStore";
 import { useSpotifyPlayer } from "hooks/useSpotifyPlayer";
-import { Subscriptions } from "./Subscriptions";
+import { Subscriptions } from "./Playlist/Subscriptions";
+import toast from "react-hot-toast";
 
 const playlistEndpoint = "/api/spotify/playlists";
 
-const PlaylistSearch = ({ userData }: any) => {
+const Dashboard = ({ userData }: any) => {
   const setUser = useUserStore((state) => state.setUser);
+  const setManagedPlaylists = useUserStore(
+    (state) => state.setManagedPlaylists
+  );
   const [token, setToken] = useState<string>("");
+  const { player, deviceID } = useSpotifyPlayer(token);
+  const [previewTracks, setPreviewTracks] = useState<any>([]);
+  const [isLongPress, setIsLongPress] = useState(false);
+  const [selectedPlaylist, setSelectedPlaylist] =
+    useState<ISpotifyPlaylist | null>(null);
+  const [activeTab, setActiveTab] = useState("discover");
+  const [expandedPlaylist, setExpandedPlaylist] = useState<string | null>("");
+  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
+  const [showPlaylistSettingseModal, setShowPlaylistSettingseModal] =
+    useState(false);
+  const [topArtists, setTopArtists] = useState<any>([]);
+  const listRef = useRef<HTMLDivElement>(null);
 
   // Fetch the Spotify token from the API
   useEffect(() => {
@@ -45,25 +61,21 @@ const PlaylistSearch = ({ userData }: any) => {
     fetchToken();
   }, []);
 
-  const { player, deviceID } = useSpotifyPlayer(token);
-
-  const [previewTracks, setPreviewTracks] = useState<any>([]);
-  const [isLongPress, setIsLongPress] = useState(false);
-  const [selectedPlaylist, setSelectedPlaylist] =
-    useState<ISpotifyPlaylist | null>(null);
-  const [activeTab, setActiveTab] = useState("discover");
-  const [expandedPlaylist, setExpandedPlaylist] = useState<string | null>("");
-  const [showSubscribeModal, setShowSubscribeModal] = useState(false);
-  const [showPlaylistSettingseModal, setShowPlaylistSettingseModal] =
-    useState(false);
-  const [topArtists, setTopArtists] = useState<any>([]);
-  const listRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     setUser({
       ...userData,
     });
   }, [userData, setUser]);
+
+  useEffect(() => {
+    fetch("/api/users/subscriptions")
+      .then((resp) => resp.json())
+      .then((data) => setManagedPlaylists([...data]))
+      .catch((error) => {
+        console.error("Error getting subscriptions:", error.message);
+        toast.error(error.message || "Failed to get subscriptions");
+      });
+  }, [setManagedPlaylists]);
 
   const fetchTopArtists = async (): Promise<string[]> => {
     try {
@@ -219,4 +231,4 @@ const PlaylistSearch = ({ userData }: any) => {
   );
 };
 
-export default PlaylistSearch;
+export default Dashboard;
