@@ -41,7 +41,7 @@ export const PlaylistSettingsModal = ({
     });
 
   const handleUpdateManagedPlaylist = async () => {
-    fetch(`/api/users/subscriptions/${selectedPlaylist.id}`, {
+    fetch(`/api/users/managed-playlists/${selectedPlaylist.id}`, {
       method: "PUT",
       body: JSON.stringify({ ...updatedData }),
     })

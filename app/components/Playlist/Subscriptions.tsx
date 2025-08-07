@@ -29,8 +29,8 @@ export const Subscriptions = ({
   const setManagedPlaylists = useUserStore(
     (state) => state.setManagedPlaylists
   );
-  const removeSubscriptionFromManagedPlaylist = useUserStore(
-    (state) => state.removeSubscriptionFromManagedPlaylist
+  const unsubscribeFromSource = useUserStore(
+    (state) => state.unsubscribeFromSource
   );
   const isLoading = useUserStore((state) => state.isLoading);
   const setIsLoading = useUserStore((state) => state.setLoading);
@@ -38,7 +38,7 @@ export const Subscriptions = ({
   useEffect(() => {
     async function fetchSubscriptions() {
       setIsLoading(true);
-      const api = `/api/users/subscriptions`;
+      const api = `/api/users/managed-playlists`;
       const res = await fetch(api);
       const data = await res.json();
       setManagedPlaylists([...data]);
@@ -47,25 +47,11 @@ export const Subscriptions = ({
     fetchSubscriptions();
   }, []);
 
-  const handleUnsubscribe = async (sourceID: string) => {
-    const res = await fetch(`/api/users/subscriptions/${sourceID}`, {
-      method: "DELETE",
-    })
-      .then((res) => res.json())
-      .then(({ success, data }) => {
-        if (!success) {
-          throw new Error(data.error || "Failed to unsubscribe");
-        }
-        removeSubscriptionFromManagedPlaylist(
-          data.managedPlaylistId,
-          data.subscriptionId
-        );
-      })
-      .catch((error) => {
-        console.error("Error unsubscribing:", error.message || error);
-        toast.error(error.message || "Failed to unsubscribe");
-        throw error;
-      });
+  const handleUnsubscribe = async (
+    sourcePlaylistID: string,
+    managedPlaylistId: string
+  ) => {
+    await unsubscribeFromSource(sourcePlaylistID, managedPlaylistId);
   };
   console.log(managedPlaylists);
   return (
@@ -107,9 +93,9 @@ export const Subscriptions = ({
                               <h3 className="font-bold text-gray-900 text-lg mb-1">
                                 {managedPlaylist.name}
                               </h3>
-                              <Settings 
-                                size={16} 
-                                className="text-gray-400 group-hover:text-gray-600 transition-colors opacity-60 group-hover:opacity-100" 
+                              <Settings
+                                size={16}
+                                className="text-gray-400 group-hover:text-gray-600 transition-colors opacity-60 group-hover:opacity-100"
                               />
                             </div>
                             <p className="text-gray-600 text-sm">
@@ -117,7 +103,8 @@ export const Subscriptions = ({
                               {managedPlaylist.subscriptions.length} source
                               {managedPlaylist.subscriptions.length === 1
                                 ? ""
-                                : "s"} • Click to configure
+                                : "s"}{" "}
+                              • Click to configure
                             </p>
                           </div>
                         </div>
@@ -154,7 +141,12 @@ export const Subscriptions = ({
                           <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
                             <Calendar size={12} className="text-orange-500" />
                             <span className="text-sm font-semibold text-gray-700">
-                              Next: {managedPlaylist.nextSyncTime ? new Date(managedPlaylist.nextSyncTime).toLocaleDateString() : 'Not scheduled'}
+                              Next:{" "}
+                              {managedPlaylist.nextSyncTime
+                                ? new Date(
+                                    managedPlaylist.nextSyncTime
+                                  ).toLocaleDateString()
+                                : "Not scheduled"}
                             </span>
                           </div>
                         </div>
@@ -186,7 +178,8 @@ export const Subscriptions = ({
                                 <button
                                   onClick={() =>
                                     handleUnsubscribe(
-                                      subscription.sourcePlaylist.id
+                                      subscription.sourcePlaylist.id,
+                                      managedPlaylist.id
                                     )
                                   }
                                   className="ml-4 px-4 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition-all duration-200 border border-red-200 shadow-sm hover:shadow-md flex-shrink-0"

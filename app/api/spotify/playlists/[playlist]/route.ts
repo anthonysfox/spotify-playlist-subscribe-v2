@@ -43,7 +43,7 @@ export async function GET(
     }/playlists/${playlistId}?${
       fields.length ? `fields=${fields.join(",")}` : ""
     }`;
-
+    console.log(spotifyUrl);
     const spotifyResponse = await fetch(spotifyUrl, {
       headers: {
         Authorization: `Bearer ${token}`,

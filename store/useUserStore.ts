@@ -6,6 +6,7 @@ import {
 import { ISpotifyPlaylist } from "utils/types";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import toast from "react-hot-toast";
 
 export type UserStoreState = {
   userPlaylists: ISpotifyPlaylist[];
@@ -32,10 +33,15 @@ export type UserStoreActions = {
     playlistId: string,
     updates: Partial<ManagedPlaylist>
   ) => void;
+  addManagedPlaylist: (newPlaylist: ManagedPlaylistWithSubscriptions) => void;
   removeSubscriptionFromManagedPlaylist: (
     managedPlaylistId: string,
     subscriptionId: string
   ) => void;
+  unsubscribeFromSource: (
+    sourcePlaylistId: string,
+    managedPlaylistId: string
+  ) => Promise<void>;
 };
 
 interface ManagedPlaylistWithSubscriptions extends ManagedPlaylist {
@@ -81,6 +87,24 @@ export const useUserStore = create<UserStore>()(
           }
         },
         setManagedPlaylists: (managedPlaylists) => set({ managedPlaylists }),
+        addManagedPlaylist: (newPlaylist) =>
+          set((state) => {
+            const existingIndex = state.managedPlaylists.findIndex(
+              (playlist) => playlist.id === newPlaylist.id
+            );
+
+            if (existingIndex >= 0) {
+              // Update existing playlist
+              const updatedPlaylists = [...state.managedPlaylists];
+              updatedPlaylists[existingIndex] = newPlaylist;
+              return { managedPlaylists: updatedPlaylists };
+            } else {
+              // Add new playlist
+              return {
+                managedPlaylists: [...state.managedPlaylists, newPlaylist],
+              };
+            }
+          }),
         updateManagedPlaylist: (playlistId, updates) =>
           set((state) => ({
             managedPlaylists: state.managedPlaylists.map((playlist) =>
@@ -115,6 +139,37 @@ export const useUserStore = create<UserStore>()(
 
             return { managedPlaylists: updatedManagedPlaylists };
           }),
+        unsubscribeFromSource: async (
+          sourcePlaylistId: string,
+          managedPlaylistId: string
+        ) => {
+          try {
+            const response = await fetch(
+              `/api/users/managed-playlists/${managedPlaylistId}/subscriptions/${sourcePlaylistId}`,
+              {
+                method: "DELETE",
+              }
+            );
+
+            const { success, data } = await response.json();
+
+            if (!success) {
+              throw new Error(data.error || "Failed to unsubscribe");
+            }
+
+            // Update local state
+            get().removeSubscriptionFromManagedPlaylist(
+              data.managedPlaylistId,
+              data.subscriptionId
+            );
+
+            toast.success("Successfully unsubscribed");
+          } catch (error: any) {
+            console.error("Error unsubscribing:", error.message || error);
+            toast.error(error.message || "Failed to unsubscribe");
+            throw error;
+          }
+        },
       }),
       {
         name: "user-store",
