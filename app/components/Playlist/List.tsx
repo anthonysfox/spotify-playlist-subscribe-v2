@@ -4,6 +4,7 @@ import { Bell, Music } from "lucide-react";
 import { PlaylistSkeleton } from "../Skeletons/PlaylistSkeleton";
 import { TrackModal } from "../Modals/TrackModal";
 import { useUserStore } from "store/useUserStore";
+import toast from "react-hot-toast";
 
 const OFFSET = 20;
 
@@ -43,6 +44,9 @@ export const PlaylistList = ({
     useState<ISpotifyPlaylist | null>(null);
   const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
   const managedPlaylists = useUserStore((state) => state.managedPlaylists);
+  const unsubscribeFromSource = useUserStore(
+    (state) => state.unsubscribeFromSource
+  );
 
   const subscribedPlaylists = useMemo(() => {
     return new Set(
@@ -187,6 +191,14 @@ export const PlaylistList = ({
     if (currentlyPlaying) stopTrackPreview(currentlyPlaying);
   };
 
+  const getManagedPlaylistsForSource = (sourceSpotifyPlaylistId: string) => {
+    return managedPlaylists.filter((mp) => {
+      return mp.subscriptions.some((sub) => {
+        return sub.sourcePlaylist.spotifyPlaylistId === sourceSpotifyPlaylistId;
+      });
+    });
+  };
+
   return (
     <div
       className="h-full overflow-y-auto overflow-x-hidden min-h-0 flex-1 custom-scrollbar scrollbar-visible pl-3 pr-3 inset-shadow-sm rounded-lg"
@@ -255,14 +267,52 @@ export const PlaylistList = ({
                           </>
                         )}
                       </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {getManagedPlaylistsForSource(playlist.id).map(
+                          (managedPlaylist) => (
+                            <div
+                              key={managedPlaylist.id}
+                              className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full border border-green-200 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all duration-200 cursor-pointer group"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const sourcePlaylistId =
+                                  managedPlaylist.subscriptions.find(
+                                    (sub) =>
+                                      sub.sourcePlaylist.spotifyPlaylistId ===
+                                      playlist.id
+                                  )?.sourcePlaylist.id;
+                                if (sourcePlaylistId) {
+                                  unsubscribeFromSource(
+                                    sourcePlaylistId,
+                                    managedPlaylist.id
+                                  );
+                                }
+                              }}
+                              title={`Click to remove from ${managedPlaylist.name}`}
+                            >
+                              <Bell size={10} className="group-hover:hidden" />
+                              <span className="hidden group-hover:inline text-red-500">
+                                ×
+                              </span>
+                              <span className="font-medium truncate max-w-20">
+                                {managedPlaylist.name}
+                              </span>
+                            </div>
+                          )
+                        )}
+                      </div>
                     </div>
                     <div className="self-center shrink-0 pr-3 max-sm:pr-0">
                       {subscribedPlaylists.has(playlist.id) ? (
                         <button
-                          onClick={() => setSelectedPlaylist({ ...playlist })}
-                          className="w-full sm:w-auto px-5 py-3 rounded-xl bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-all duration-200 border border-red-200 shadow-sm hover:shadow-md"
+                          onClick={() => {
+                            setShowSubscribeModal(true);
+                            setSelectedPlaylist({ ...playlist });
+                          }}
+                          className="w-full sm:w-auto px-4 py-2 rounded-lg bg-green-50 text-green-600 text-sm font-medium hover:bg-green-100 transition-all duration-200 border border-green-200 flex items-center gap-2"
                         >
-                          Unsubscribe
+                          <Bell size={14} />
+                          Add to More
                         </button>
                       ) : (
                         <button

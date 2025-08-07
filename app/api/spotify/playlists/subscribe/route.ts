@@ -160,24 +160,30 @@ export async function POST(request: Request) {
       };
     });
 
-    // 7. Return Success Response
+    // 7. get the managed playlist with subscriptions
+    const completePlaylist = await prisma.managedPlaylist.findUnique({
+      where: {
+        id: result.managedPlaylist.id,
+      },
+      include: {
+        subscriptions: {
+          include: {
+            sourcePlaylist: true,
+          },
+        },
+      },
+    });
+
     console.log(
       `Subscription created: Managed Playlist ${result.managedPlaylist.id} subscribed to Source Playlist ${result.existingSourcePlaylist.id} for user ${userId}. Subscription ID: ${result.subscription.id}`
     );
     return NextResponse.json(
       {
         message: "Subscription created successfully",
-        subscriptionId: result.subscription.id,
-        managedPlaylist: {
-          // Return basic info about the involved playlists if helpful for frontend
-          id: result.managedPlaylist.id,
-          spotifyId: result.managedPlaylist.spotifyPlaylistId,
-          name: result.managedPlaylist.name,
-        },
-        sourcePlaylist: {
-          id: result.existingSourcePlaylist.id,
-          spotifyId: result.existingSourcePlaylist.spotifyPlaylistId,
-          name: result.existingSourcePlaylist.name,
+        success: true,
+        data: {
+          managedPlaylist: completePlaylist,
+          subscriptionId: result.subscription.id,
         },
       },
       { status: 201 }

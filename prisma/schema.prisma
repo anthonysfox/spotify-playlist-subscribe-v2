@@ -28,13 +28,16 @@ enum AuditAction {
 model User {
   id               String            @id @default(uuid())
   clerkUserId      String            @unique
+  spotifyRefreshToken String?        @map("spotify_refresh_token")
+  spotifyAccessToken  String?        @map("spotify_access_token")
+  spotifyTokenExpiresAt DateTime?    @map("spotify_token_expires_at")
   email            String
   name             String?
   imageUrl         String?
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  deletedAt      DateTime?        // Soft delete field
-  deletedBy      String?          // Optional user ID who deleted this user
+  deletedAt        DateTime?        // Soft delete field
+  deletedBy        String?          // Optional user ID who deleted this user
   managedPlaylists ManagedPlaylist[]
 
   // Email can be unique only for non-deleted users

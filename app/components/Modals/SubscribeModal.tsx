@@ -35,6 +35,7 @@ export const SubscribeModal = ({
   const setLoadedAllPlaylists = useUserStore(
     (state) => state.setLoadedAllPlaylists
   );
+  const addManagedPlaylist = useUserStore((state) => state.addManagedPlaylist);
 
   const fetchUserPlaylists = useCallback(async () => {
     if (isLoading || loadedAllPlaylists) return;
@@ -90,10 +91,20 @@ export const SubscribeModal = ({
       },
     })
       .then(async (res) => {
-        const data = await res.json();
-        setShowSubscribeModal(false);
-        setSelectedPlaylist(null);
-        toast.success("Subscribed successfully");
+        const {
+          data: { managedPlaylist },
+          success,
+          message,
+        } = await res.json();
+
+        if (success) {
+          addManagedPlaylist(managedPlaylist);
+          setShowSubscribeModal(false);
+          setSelectedPlaylist(null);
+          toast.success(message);
+        } else {
+          toast.error(message);
+        }
       })
       .catch((err) => {
         console.error("Error subscribing:", err);
