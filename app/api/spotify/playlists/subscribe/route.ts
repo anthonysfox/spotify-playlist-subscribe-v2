@@ -5,7 +5,7 @@ import { AuditLogger } from "@/lib/audit-logger";
 import { addDays } from "date-fns";
 
 export async function POST(request: Request) {
-  const { userId, token } = await getClerkOAuthToken();
+  const { userId, token, spotifyUserId } = await getClerkOAuthToken();
 
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,14 +19,16 @@ export async function POST(request: Request) {
 
   const {
     managedPlaylist, // Expecting { id: string, name: string, imageUrl?: string, trackCount: number }
-    sourcePlaylist, // Expecting { id: string, name: string, imageUrl?: string, trackCount: number }
+    sourcePlaylist, // Expecting { id: string, name: string, imageUrl?: string, trackCount: number },
+    newPlaylistName,
   } = body;
 
   if (
-    !managedPlaylist ||
-    !managedPlaylist.id ||
-    !managedPlaylist.name ||
-    !managedPlaylist.trackCount ||
+    (!newPlaylistName && !managedPlaylist) ||
+    (managedPlaylist &&
+      (!managedPlaylist.id ||
+        !managedPlaylist.name ||
+        !managedPlaylist.trackCount)) ||
     !sourcePlaylist ||
     !sourcePlaylist.id ||
     !sourcePlaylist.name ||
@@ -41,13 +43,24 @@ export async function POST(request: Request) {
     );
   }
 
+  let managedPlaylistToUse = newPlaylistName
+    ? await createSpotifyPlaylist(newPlaylistName, spotifyUserId, token)
+    : { ...managedPlaylist };
+
   const cleanedManagedSpotifyPlaylistId =
-    managedPlaylist.id.split("/").pop()?.split("?")[0] || managedPlaylist.id;
+    managedPlaylistToUse?.id.split("/").pop()?.split("?")[0] ||
+    managedPlaylistToUse?.id ||
+    "";
   const cleanedSourceSpotifyPlaylistId =
-    sourcePlaylist.id.split("/").pop()?.split("?")[0] || sourcePlaylist.id;
+    sourcePlaylist?.id.split("/").pop()?.split("?")[0] ||
+    sourcePlaylist?.id ||
+    "";
 
   // Validate cleaned IDs
-  if (!cleanedManagedSpotifyPlaylistId || !cleanedSourceSpotifyPlaylistId) {
+  if (
+    (!cleanedManagedSpotifyPlaylistId || !cleanedSourceSpotifyPlaylistId) &&
+    !newPlaylistName
+  ) {
     return NextResponse.json(
       { error: "Invalid playlist IDs provided" },
       { status: 400 }
@@ -60,6 +73,7 @@ export async function POST(request: Request) {
       // 4. Find or Create Managed (Destination) Playlist for THIS USER
       // We need to find a managed playlist record with this Spotify ID *owned by this user*.
       // If not found, create it.
+
       const existingManagedPlaylist = await prisma.managedPlaylist.findFirst({
         where: {
           spotifyPlaylistId: cleanedManagedSpotifyPlaylistId,
@@ -76,9 +90,9 @@ export async function POST(request: Request) {
         finalManagedPlaylist = await prisma.managedPlaylist.update({
           where: { id: existingManagedPlaylist.id },
           data: {
-            name: managedPlaylist.name,
-            imageUrl: managedPlaylist.imageUrl || null,
-            trackCount: managedPlaylist.trackCount || 0,
+            name: managedPlaylistToUse.name,
+            imageUrl: managedPlaylistToUse.imageUrl || null,
+            trackCount: managedPlaylistToUse.trackCount || 0,
             lastMetadataRefreshAt: now,
           },
         });
@@ -88,15 +102,15 @@ export async function POST(request: Request) {
           data: {
             userId: userId, // Link to the current user
             spotifyPlaylistId: cleanedManagedSpotifyPlaylistId,
-            name: managedPlaylist.name,
-            imageUrl: managedPlaylist.imageUrl || null,
+            name: managedPlaylistToUse.name,
+            imageUrl: managedPlaylistToUse.imageUrl || null,
             // Default sync settings (syncIntervalMinutes, syncQuantityPerSource) are applied by Prisma
             // createdAt, updatedAt default
             lastSyncCompletedAt: null,
             nextSyncTime: addDays(new Date(), 7),
             syncInterval: "WEEKLY",
             lastMetadataRefreshAt: now,
-            trackCount: managedPlaylist.trackCount || 0,
+            trackCount: managedPlaylistToUse.trackCount || 0,
           },
         });
       }
@@ -218,4 +232,43 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+async function createSpotifyPlaylist(
+  playlistName: string,
+  spotifyUserId: string,
+  token: string
+) {
+  const spotifyCreatePlaylistAPI: string = `https://api.spotify.com/v1/users/${spotifyUserId}/playlists`;
+
+  const spotifyPlaylistCreateResp = await fetch(spotifyCreatePlaylistAPI, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      name: playlistName,
+      public: false,
+    }),
+  });
+
+  if (!spotifyPlaylistCreateResp.ok) {
+    throw new Error(
+      `Failed to create spotify playlist: ${spotifyPlaylistCreateResp.statusText}`
+    );
+  }
+
+  const {
+    id,
+    name,
+    tracks: { count },
+    images,
+  } = await spotifyPlaylistCreateResp.json();
+
+  return {
+    id,
+    name,
+    trackCount: count,
+    imageUrl: images?.[0]?.url || "",
+  };
 }
