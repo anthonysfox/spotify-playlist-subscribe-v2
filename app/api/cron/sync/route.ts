@@ -257,14 +257,18 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
     let updatedImageUrl = managedPlaylist.imageUrl;
     if (totalTracksAdded > 0) {
       try {
-        const playlistResponse = await fetch(`${process.env.BASE_SPOTIFY_URL}/playlists/${spotifyPlaylistId}?fields=images,tracks.total`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const playlistResponse = await fetch(
+          `${process.env.BASE_SPOTIFY_URL}/playlists/${spotifyPlaylistId}?fields=images,tracks.total`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         if (playlistResponse.ok) {
           const playlistData = await playlistResponse.json();
-          updatedImageUrl = playlistData.images?.[0]?.url || managedPlaylist.imageUrl;
+          updatedImageUrl =
+            playlistData.images?.[0]?.url || managedPlaylist.imageUrl;
         }
       } catch (error) {
         console.warn("Failed to refresh playlist metadata:", error);
