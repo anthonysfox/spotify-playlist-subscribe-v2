@@ -19,6 +19,7 @@ export const PlaylistList = ({
   setPreviewTracks,
   testingRef,
   setShowSubscribeModal,
+  sentinelRef,
 }: {
   playlists: ISpotifyPlaylist[];
   deviceID: string;
@@ -32,6 +33,7 @@ export const PlaylistList = ({
   setPreviewTracks: React.Dispatch<React.SetStateAction<any>>;
   testingRef: React.RefObject<HTMLDivElement>;
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
+  sentinelRef?: React.RefObject<HTMLDivElement>;
 }) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -347,6 +349,12 @@ export const PlaylistList = ({
                 </div>
               </div>
             </div>
+          </div>
+        )}
+        {/* Intersection Observer Sentinel */}
+        {sentinelRef && !loadedAllData && (
+          <div ref={sentinelRef} className="h-10 flex items-center justify-center">
+            {/* This invisible element triggers loading more content */}
           </div>
         )}
         {/* End of results indicator */}

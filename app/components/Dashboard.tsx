@@ -33,7 +33,7 @@ const Dashboard = ({ userData }: any) => {
   const [activeTab, setActiveTab] = useState("discover");
   const [expandedPlaylist, setExpandedPlaylist] = useState<string | null>("");
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
-  const [showPlaylistSettingseModal, setShowPlaylistSettingseModal] =
+  const [showPlaylistSettingseModal, setShowPlaylistSettingsModal] =
     useState(false);
   const [topArtists, setTopArtists] = useState<any>([]);
   const listRef = useRef<HTMLDivElement>(null);
@@ -214,14 +214,23 @@ const Dashboard = ({ userData }: any) => {
               selectedPlaylist={selectedPlaylist}
               setSelectedPlaylist={setSelectedPlaylist}
               setShowSubscribeModal={setShowSubscribeModal}
+              setShowPlaylistSettingsModal={setShowPlaylistSettingsModal}
               //userPlaylists={userPlaylistsState.playlists}
+            />
+          )}
+          {showPlaylistSettingseModal && selectedPlaylist && (
+            <PlaylistSettingsModal
+              setShowPlaylistSettingsModal={setShowPlaylistSettingsModal}
+              setSelectedPlaylist={setSelectedPlaylist}
+              selectedPlaylist={selectedPlaylist}
+              fromSubscribeModal={selectedPlaylist.id === "temp-id"}
             />
           )}
         </div>
       ) : (
         <Subscriptions
           setSelectedPlaylist={setSelectedPlaylist}
-          setShowPlaylistSettingsModal={setShowPlaylistSettingseModal}
+          setShowPlaylistSettingsModal={setShowPlaylistSettingsModal}
           setActiveTab={setActiveTab}
           showPlaylistSettingsModal={showPlaylistSettingseModal}
           selectedPlaylist={selectedPlaylist}

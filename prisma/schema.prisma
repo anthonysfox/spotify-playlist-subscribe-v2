@@ -15,6 +15,12 @@ enum SubscriptionFrequency {
   DAILY
   WEEKLY
   MONTHLY
+  CUSTOM
+}
+
+enum SyncMode {
+  APPEND 
+  REPLACE
 }
 
 enum AuditAction {
@@ -68,6 +74,14 @@ model ManagedPlaylist {
 
   // How many of the most recent songs to pull FROM EACH subscribed source during a sync run for this playlist.
   syncQuantityPerSource Int @default(5)
+
+  // Advanced settings 
+  syncMode SyncMode @default(APPEND)
+  explicitContentFilter Boolean @default(false)
+  trackAgeLimit Int @default(0)
+
+  customDays String?
+  customTime String?
 
   // Date this managed playlist record was created in your DB.
   createdAt DateTime @default(now())
