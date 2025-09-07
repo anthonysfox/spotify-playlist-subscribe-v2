@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     if (eventType === "user.created" && id) {
       const client = await clerkClient();
-      const test = await client.users.getUser(id);
+      const clerkUser = await client.users.getUser(id);
       const spotifyToken = clerkUser.externalAccounts.find(
         (account) => account.provider === "spotify"
       )?.accessToken;
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
         if (!isPremium) {
           // Delete immediately if not premium
-          await clerkClient.users.deleteUser(id);
+          await client.users.deleteUser(id);
 
           return NextResponse.json(
             { error: "Premium required" },
