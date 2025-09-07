@@ -9,18 +9,25 @@ export async function GET(request: Request) {
   if (!userId) return new Response("Unauthorized", { status: 401 });
 
   try {
-    const subscriptions =
-      await prisma.managedPlaylistSourceSubscription.findMany({
-        where: {
-          managedPlaylist: {
-            userId,
+    const subscriptions = await prisma.managedPlaylist.findMany({
+      where: { userId },
+      include: {
+        subscriptions: {
+          where: {
+            sourcePlaylist: {
+              deletedAt: null,
+            },
+          },
+          include: {
+            sourcePlaylist: true,
           },
         },
-        include: {
-          managedPlaylist: true,
-          sourcePlaylist: true,
-        },
-      });
+      },
+    });
+
+    const now = new Date();
+    const playlistsToUpdate = new Map();
+    const seenSourcePlaylists = new Set();
 
     // Group by destination playlist
     const grouped = new Map();
