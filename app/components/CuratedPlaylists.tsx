@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 import { PlaylistList } from "./Playlist/List";
 import { SearchBar } from "./Navigation/SearchBar";
@@ -55,6 +55,10 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   const [usePagination, setUsePagination] = useState(false); // Always use infinite scroll
   const itemsPerPage = 20;
 
+  // Intersection Observer for dynamic loading
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
   // Clear container and reset scroll when filters change
   const clearContainerAndResetScroll = () => {
     setPlaylists([]);
@@ -65,6 +69,83 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       listRef.current.scrollTop = 0;
     }
   };
+
+  // Check if we need more playlists to fill the container
+  const ensureScrollbar = useCallback(() => {
+    if (!listRef.current || loading || loadedAll) return;
+
+    const container = listRef.current;
+    const needsMoreContent = container.scrollHeight <= container.clientHeight;
+
+    if (
+      needsMoreContent &&
+      playlists.length > 0 &&
+      playlists.length % itemsPerPage === 0
+    ) {
+      // Load more content
+      if (isSearchMode) {
+        fetchSearchPlaylists(searchText);
+      } else {
+        fetchCuratedPlaylists(activeCategory, activeSubOption);
+      }
+    }
+  }, [
+    loading,
+    loadedAll,
+    playlists.length,
+    isSearchMode,
+    searchText,
+    activeCategory,
+    activeSubOption,
+  ]);
+
+  // Setup Intersection Observer for auto-loading
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+
+    // Cleanup previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !loading && !loadedAll) {
+          if (isSearchMode) {
+            fetchSearchPlaylists(searchText);
+          } else {
+            fetchCuratedPlaylists(activeCategory, activeSubOption);
+          }
+        }
+      },
+      {
+        threshold: 0.1,
+        rootMargin: "100px", // Load slightly before reaching the sentinel
+      }
+    );
+
+    observerRef.current.observe(sentinelRef.current);
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [
+    loading,
+    loadedAll,
+    isSearchMode,
+    searchText,
+    activeCategory,
+    activeSubOption,
+  ]);
+
+  // Check for scrollbar after playlists change
+  useEffect(() => {
+    const timeoutId = setTimeout(ensureScrollbar, 100);
+    return () => clearTimeout(timeoutId);
+  }, [playlists, ensureScrollbar]);
 
   // Handle search text changes with debouncing
   useEffect(() => {
@@ -217,35 +298,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     setActiveSubOption(subOption);
   };
 
-  const handleScroll = () => {
-    if (listRef.current) {
-      const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-      const nearBottom = scrollHeight - scrollTop <= clientHeight + 100;
-
-      if (nearBottom && !loading && !loadedAll) {
-        if (isSearchMode) {
-          fetchSearchPlaylists(searchText);
-        } else {
-          fetchCuratedPlaylists(activeCategory, activeSubOption);
-        }
-      }
-    }
-  };
-
-  useEffect(() => {
-    const currentRef = listRef.current;
-    if (currentRef) {
-      currentRef.addEventListener("scroll", handleScroll);
-      return () => currentRef.removeEventListener("scroll", handleScroll);
-    }
-  }, [
-    loading,
-    loadedAll,
-    activeCategory,
-    activeSubOption,
-    isSearchMode,
-    searchText,
-  ]);
+  // Remove the old scroll handler since we're using Intersection Observer now
 
   return (
     <div className="space-y-6 flex flex-col h-full">
@@ -317,6 +370,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
           setPreviewTracks={setPreviewTracks}
           testingRef={listRef}
           setShowSubscribeModal={setShowSubscribeModal}
+          sentinelRef={sentinelRef}
         />
       </div>
 

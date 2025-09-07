@@ -28,11 +28,13 @@ export async function POST(request: NextRequest) {
     const forceSync = searchParams.get("force") === "true";
     const specificUserId = searchParams.get("userId");
     const specificPlaylistId = searchParams.get("playlistId");
+    const specificSourceId = searchParams.get("sourceId");
 
     console.log(`🔄 Starting sync job at ${new Date().toISOString()}`, {
       forceSync,
       specificUserId,
       specificPlaylistId,
+      specificSourceId,
     });
 
     // 3. Build query conditions
@@ -61,7 +63,10 @@ export async function POST(request: NextRequest) {
       include: {
         subscriptions: {
           where: {
-            sourcePlaylist: { deletedAt: null },
+            sourcePlaylist: {
+              deletedAt: null,
+              ...(specificSourceId ? { id: specificSourceId } : {}),
+            },
           },
           include: { sourcePlaylist: true },
         },
@@ -248,6 +253,24 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
       }
     }
 
+    // Refresh playlist metadata from Spotify if tracks were added
+    let updatedImageUrl = managedPlaylist.imageUrl;
+    if (totalTracksAdded > 0) {
+      try {
+        const playlistResponse = await fetch(`${process.env.BASE_SPOTIFY_URL}/playlists/${spotifyPlaylistId}?fields=images,tracks.total`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (playlistResponse.ok) {
+          const playlistData = await playlistResponse.json();
+          updatedImageUrl = playlistData.images?.[0]?.url || managedPlaylist.imageUrl;
+        }
+      } catch (error) {
+        console.warn("Failed to refresh playlist metadata:", error);
+      }
+    }
+
     // Update managed playlist sync metadata
     const nextSyncTime = calculateNextSyncTime(managedPlaylist.syncInterval);
     await prisma.managedPlaylist.update({
@@ -256,6 +279,8 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
         lastSyncCompletedAt: new Date(),
         nextSyncTime,
         trackCount: (managedPlaylist.trackCount || 0) + totalTracksAdded,
+        imageUrl: updatedImageUrl,
+        lastMetadataRefreshAt: new Date(),
       },
     });
 
