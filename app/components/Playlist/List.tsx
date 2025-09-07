@@ -353,7 +353,10 @@ export const PlaylistList = ({
         )}
         {/* Intersection Observer Sentinel */}
         {sentinelRef && !loadedAllData && (
-          <div ref={sentinelRef} className="h-10 flex items-center justify-center">
+          <div
+            ref={sentinelRef}
+            className="h-10 flex items-center justify-center"
+          >
             {/* This invisible element triggers loading more content */}
           </div>
         )}
