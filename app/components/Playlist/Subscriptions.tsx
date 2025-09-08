@@ -182,9 +182,10 @@ export const Subscriptions = ({
                                       managedPlaylist.id
                                     )
                                   }
-                                  className="ml-4 px-4 py-2 rounded-lg bg-red-50 text-red-600 text-sm font-medium hover:bg-red-100 transition-all duration-200 border border-red-200 shadow-sm hover:shadow-md flex-shrink-0"
+                                  className="ml-2 sm:ml-4 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-red-50 text-red-600 text-xs sm:text-sm font-medium hover:bg-red-100 transition-all duration-200 border border-red-200 shadow-sm hover:shadow-md flex-shrink-0"
                                 >
-                                  Unsubscribe
+                                  <span className="hidden sm:inline">Unsubscribe</span>
+                                  <span className="sm:hidden">×</span>
                                 </button>
                               </div>
                             )

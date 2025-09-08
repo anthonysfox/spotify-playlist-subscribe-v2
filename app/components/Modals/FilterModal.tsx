@@ -27,7 +27,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
       <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl sm:max-h-[80vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-full sm:fade-in sm:zoom-in-95 duration-300">
         {/* Header */}
-        <div className="relative p-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+        <div className="relative p-6 bg-gradient-to-r from-[#CC5500] to-[#A0522D] text-white">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
@@ -41,7 +41,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             </div>
             <div>
               <h2 className="text-2xl font-bold">Filter Playlists</h2>
-              <p className="text-green-100 text-sm mt-1">
+              <p className="text-orange-100 text-sm mt-1">
                 Choose categories to discover new music
               </p>
             </div>
@@ -91,7 +91,7 @@ export const FilterModal: React.FC<FilterModalProps> = ({
             </button>
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold hover:from-green-700 hover:to-emerald-700 transition-colors shadow-lg"
+              className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-[#CC5500] to-[#A0522D] text-white font-semibold hover:from-[#B04A00] hover:to-[#8B4513] transition-colors shadow-lg"
             >
               Apply Filters
             </button>

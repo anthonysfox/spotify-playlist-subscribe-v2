@@ -208,6 +208,7 @@ const Dashboard = ({ userData }: any) => {
             listRef={listRef}
             player={player}
             deviceID={deviceID || ""}
+            isActive={activeTab === "discover"}
           />
           {showSubscribeModal && (
             <SubscribeModal

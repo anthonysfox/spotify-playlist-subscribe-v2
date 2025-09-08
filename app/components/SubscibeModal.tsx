@@ -108,7 +108,7 @@ export const SubscibeModal = ({
         </button>
 
         <div className="text-center mb-6">
-          <Bell size={36} className="text-green-600 mx-auto mb-4" />
+          <Bell size={36} className="text-[#CC5500] mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2 text-gray-800">
             Subscription Settings
           </h2>
@@ -132,7 +132,7 @@ export const SubscibeModal = ({
                   ) || null
                 );
               }}
-              className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
+              className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#CC5500] focus:border-[#CC5500] appearance-none text-gray-700"
               defaultValue=""
               ref={selectRef}
             >
@@ -186,7 +186,7 @@ export const SubscibeModal = ({
             <select
               id="song-count-dropdown"
               onChange={(e) => setSongCount(parseInt(e.target.value))}
-              className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
+              className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#CC5500] focus:border-[#CC5500] appearance-none text-gray-700"
               defaultValue="5"
               value={songCount}
             >
@@ -246,7 +246,7 @@ export const SubscibeModal = ({
           onClick={(e) => {
             saveSubscriptionSettings();
           }}
-          className="w-full py-3 rounded-full bg-green-600 hover:bg-green-700 text-white font-medium shadow-md transition-colors"
+          className="w-full py-3 rounded-full bg-[#CC5500] hover:bg-[#B04A00] text-white font-medium shadow-md transition-colors"
         >
           Save Subscription
         </button>

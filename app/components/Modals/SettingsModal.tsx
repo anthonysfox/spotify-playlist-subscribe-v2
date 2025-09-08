@@ -71,13 +71,16 @@ export const PlaylistSettingsModal = ({
   fromSubscribeModal: boolean;
 }) => {
   const [updatedData, setUpdatedData] = useState({
-    syncInterval: selectedPlaylist.syncInterval,
-    syncQuantityPerSource: selectedPlaylist.syncQuantityPerSource,
-    syncMode: selectedPlaylist.syncMode || "APPEND",
-    explicitContentFilter: selectedPlaylist.explicitContentFilter || false,
-    trackAgeLimit: selectedPlaylist.trackAgeLimit || 0,
-    customDays: JSON.parse(selectedPlaylist.customDays) || ["monday"],
-    customTime: selectedPlaylist.customTime || "09:00",
+    syncInterval: selectedPlaylist?.syncInterval || "WEEKLY",
+    syncQuantityPerSource: selectedPlaylist?.syncQuantityPerSource || 5,
+    syncMode: selectedPlaylist?.syncMode || "APPEND",
+    explicitContentFilter: selectedPlaylist?.explicitContentFilter || false,
+    trackAgeLimit: selectedPlaylist?.trackAgeLimit || 0,
+    customDays: selectedPlaylist?.customDays ? 
+      (typeof selectedPlaylist.customDays === 'string' ? 
+        JSON.parse(selectedPlaylist.customDays) : selectedPlaylist.customDays) 
+      : ["monday"],
+    customTime: selectedPlaylist?.customTime || "09:00",
   });
   const updateManagedPlaylist = useUserStore(
     (state) => state.updateManagedPlaylist
@@ -85,13 +88,16 @@ export const PlaylistSettingsModal = ({
 
   const resetData = () =>
     setUpdatedData({
-      syncInterval: selectedPlaylist.syncInterval,
-      syncQuantityPerSource: selectedPlaylist.syncQuantityPerSource,
-      syncMode: selectedPlaylist.syncMode || "APPEND",
-      explicitContentFilter: selectedPlaylist.explicitContentFilter || false,
-      trackAgeLimit: selectedPlaylist.trackAgeLimit || 0,
-      customDays: selectedPlaylist.customDays || ["monday"],
-      customTime: selectedPlaylist.customTime || "09:00",
+      syncInterval: selectedPlaylist?.syncInterval || "WEEKLY",
+      syncQuantityPerSource: selectedPlaylist?.syncQuantityPerSource || 5,
+      syncMode: selectedPlaylist?.syncMode || "APPEND",
+      explicitContentFilter: selectedPlaylist?.explicitContentFilter || false,
+      trackAgeLimit: selectedPlaylist?.trackAgeLimit || 0,
+      customDays: selectedPlaylist?.customDays ? 
+        (typeof selectedPlaylist.customDays === 'string' ? 
+          JSON.parse(selectedPlaylist.customDays) : selectedPlaylist.customDays) 
+        : ["monday"],
+      customTime: selectedPlaylist?.customTime || "09:00",
     });
 
   const handleUpdateManagedPlaylist = async () => {
@@ -120,8 +126,15 @@ export const PlaylistSettingsModal = ({
     setShowPlaylistSettingsModal(false);
   };
 
+  // Safety check - don't render if selectedPlaylist is missing
+  if (!selectedPlaylist?.id) {
+    return null;
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className={`fixed inset-0 flex items-center justify-center z-50 p-4 ${
+      fromSubscribeModal ? '' : 'bg-black/60 backdrop-blur-sm'
+    }`}>
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 relative shadow-xl">
         <button
           onClick={handleCancelOrClose}
@@ -131,28 +144,28 @@ export const PlaylistSettingsModal = ({
         </button>
 
         <div className="text-center mb-6">
-          <Settings size={36} className="text-green-600 mx-auto mb-4" />
+          <Settings size={36} className="text-[#CC5500] mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2 text-gray-800">
             Advanced Settings
           </h2>
           <p className="text-gray-600">
-            Configure how &quot;{selectedPlaylist.name}&quot; receives tracks
+            Configure how &quot;{selectedPlaylist?.name || 'this playlist'}&quot; receives tracks
             from subscribed playlists
           </p>
         </div>
 
         <div className="flex items-center p-3 bg-gray-50 rounded-sm border border-gray-200 mb-6">
           <img
-            src={selectedPlaylist.imageUrl}
-            alt={selectedPlaylist.name}
+            src={selectedPlaylist?.imageUrl || selectedPlaylist?.images?.[0]?.url || '/placeholder.png'}
+            alt={selectedPlaylist?.name || 'Playlist'}
             className="w-12 h-12 object-cover rounded-sm"
           />
           <div className="ml-3">
             <h3 className="font-medium text-gray-800">
-              {selectedPlaylist.name}
+              {selectedPlaylist?.name || 'Unknown Playlist'}
             </h3>
             <p className="text-gray-500 text-sm">
-              {selectedPlaylist.trackCount} tracks
+              {selectedPlaylist?.trackCount || selectedPlaylist?.tracks?.total || 0} tracks
             </p>
           </div>
         </div>
@@ -174,7 +187,7 @@ export const PlaylistSettingsModal = ({
                       id={`settings-freq-${option.value}`}
                       className={`settings-frequency-option py-2 text-center rounded cursor-pointer transition-colors border ${
                         updatedData.syncInterval === option.value
-                          ? "bg-green-600 text-white"
+                          ? "bg-[#CC5500] text-white"
                           : "bg-gray-50 text-gray-800 border-gray-200"
                       }`}
                       onClick={() =>
@@ -229,7 +242,7 @@ export const PlaylistSettingsModal = ({
                               }));
                             }
                           }}
-                          className="text-green-600 focus:ring-green-500 rounded"
+                          className="text-[#CC5500] focus:ring-[#CC5500] rounded"
                         />
                         <span>{day.label}</span>
                       </label>
@@ -250,7 +263,7 @@ export const PlaylistSettingsModal = ({
                           customTime: e.target.value,
                         }))
                       }
-                      className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
+                      className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#CC5500] focus:border-[#CC5500] appearance-none text-gray-700"
                     >
                       {timeOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -285,7 +298,7 @@ export const PlaylistSettingsModal = ({
                 <div className="relative">
                   <select
                     id="settings-song-count-dropdown"
-                    className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
+                    className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#CC5500] focus:border-[#CC5500] appearance-none text-gray-700"
                     value={updatedData.syncQuantityPerSource}
                     onChange={(e) =>
                       setUpdatedData((prevState) => ({
@@ -337,7 +350,7 @@ export const PlaylistSettingsModal = ({
                             syncMode: e.target.value,
                           }))
                         }
-                        className="mt-1 text-green-600 focus:ring-green-500"
+                        className="mt-1 text-[#CC5500] focus:ring-[#CC5500]"
                       />
                       <div>
                         <div className="font-medium text-gray-700">
@@ -369,7 +382,7 @@ export const PlaylistSettingsModal = ({
                       explicitContentFilter: e.target.checked,
                     }))
                   }
-                  className="text-green-600 focus:ring-green-500 rounded"
+                  className="text-[#CC5500] focus:ring-[#CC5500] rounded"
                 />
                 <div>
                   <div className="font-medium text-gray-700">
@@ -394,7 +407,7 @@ export const PlaylistSettingsModal = ({
                         trackAgeLimit: parseInt(e.target.value),
                       }))
                     }
-                    className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-green-500 focus:border-green-500 appearance-none text-gray-700"
+                    className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#CC5500] focus:border-[#CC5500] appearance-none text-gray-700"
                   >
                     {trackAgeLimitOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -438,7 +451,7 @@ export const PlaylistSettingsModal = ({
             onClick={() => {
               handleUpdateManagedPlaylist();
             }}
-            className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            className="px-6 py-2 bg-[#CC5500] text-white rounded hover:bg-[#B04A00] transition-colors"
           >
             Save Settings
           </button>

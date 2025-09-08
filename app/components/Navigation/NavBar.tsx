@@ -4,6 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Disc } from "lucide-react";
+import Image from "next/image";
 
 function classNames(...classes: String[]) {
   return classes.filter(Boolean).join(" ");
@@ -18,9 +19,15 @@ export default function Navbar() {
         <div className="flex w-full h-16 items-center justify-between">
           <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
             <Link href={"/"} className="flex items-center">
-              <Disc size={30} className="text-green-500" />
-              <h1 className="text-2xl font-bold text-gray-800 ml-2">
-                Spotify Playlist Discovery
+              <Image
+                src="/logo.png"
+                alt="PlaylistFox"
+                width={40}
+                height={40}
+                className="rounded-lg shadow-sm"
+              />
+              <h1 className="text-2xl font-bold text-gray-800 ml-3">
+                PlaylistFox
               </h1>
             </Link>
           </div>

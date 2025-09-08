@@ -30,7 +30,7 @@ export const CategoryFilters = ({
               onClick={() => handleCategoryChange(category.id)}
               className={`px-4 py-2 rounded-full font-medium transition-colors ${
                 activeCategory === category.id
-                  ? "bg-green-100 text-green-700 border-2 border-green-300"
+                  ? "bg-orange-100 text-[#CC5500] border-2 border-orange-300"
                   : "bg-white text-gray-600 border-2 border-gray-200 hover:bg-gray-50"
               }`}
             >

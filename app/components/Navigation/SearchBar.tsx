@@ -31,7 +31,7 @@ export const SearchBar = ({
               <X size={20} />
             </button>
           )}
-          <button className="bg-green-600 p-3 hover:bg-green-700 text-white transition-colors">
+          <button className="bg-gradient-to-r from-[#CC5500] to-[#A0522D] p-3 hover:from-[#B04A00] hover:to-[#8B4513] text-white transition-colors">
             <Search size={20} />
           </button>
         </div>

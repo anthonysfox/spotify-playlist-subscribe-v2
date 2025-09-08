@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ISpotifyPlaylist } from "utils/types";
-import { PlaylistList } from "./Playlist/List";
+import { SimplePlaylistList } from "./Playlist/SimpleList";
 import { SearchBar } from "./Navigation/SearchBar";
 import {
   ChevronLeft,
@@ -26,6 +26,7 @@ interface CuratedPlaylistsProps {
   listRef: React.RefObject<HTMLDivElement>;
   player: any;
   deviceID: string;
+  isActive: boolean;
 }
 
 export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
@@ -38,6 +39,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   listRef,
   player,
   deviceID,
+  isActive,
 }) => {
   const [activeCategory, setActiveCategory] = useState("popular");
   const [activeSubOption, setActiveSubOption] = useState("trending"); // Default sub-option
@@ -282,6 +284,20 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     }
   }, [activeCategory, activeSubOption, usePagination, isSearchMode]);
 
+  // Reset playlists when tab becomes active to prevent duplicates
+  useEffect(() => {
+    if (isActive) {
+      clearContainerAndResetScroll();
+      if (!isSearchMode) {
+        if (usePagination) {
+          fetchCuratedPlaylists(activeCategory, activeSubOption, true, 1);
+        } else {
+          fetchCuratedPlaylists(activeCategory, activeSubOption, true);
+        }
+      }
+    }
+  }, [isActive]);
+
   const handleCategoryChange = (category: string) => {
     if (isSearchMode) return; // Don't change category in search mode
     setActiveCategory(category);
@@ -322,7 +338,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       <div className="flex flex-wrap gap-2 justify-end">
         <button
           onClick={() => setShowFilters(true)}
-          className="px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl flex items-center gap-2"
+          className="px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-[#CC5500] to-[#A0522D] text-white hover:from-[#B04A00] hover:to-[#8B4513] shadow-lg hover:shadow-xl flex items-center gap-2"
         >
           <svg
             width="16"
@@ -339,7 +355,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
             />
           </svg>
           <div className="flex flex-col items-start">
-            <span className="text-xs text-green-100">Filter</span>
+            <span className="text-xs text-orange-100">Filter</span>
             <span className="text-sm font-bold">
               {(() => {
                 const categoryName =
@@ -359,19 +375,46 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
 
       {/* Playlists */}
       <div className="grow overflow-hidden min-h-0 flex flex-col">
-        <PlaylistList
-          playlists={playlists}
-          deviceID={deviceID}
-          player={player}
-          setSelectedPlaylist={setSelectedPlaylist}
-          loading={loading}
-          loadedAllData={loadedAll}
-          previewTracks={previewTracks}
-          setPreviewTracks={setPreviewTracks}
-          testingRef={listRef}
-          setShowSubscribeModal={setShowSubscribeModal}
-          sentinelRef={sentinelRef}
-        />
+        <div
+          className="h-full overflow-y-auto overflow-x-hidden min-h-0 flex-1 custom-scrollbar scrollbar-visible p-3"
+          ref={listRef}
+        >
+          <SimplePlaylistList
+            playlists={playlists}
+            setSelectedPlaylist={setSelectedPlaylist}
+            setShowSubscribeModal={setShowSubscribeModal}
+            player={player}
+            deviceID={deviceID}
+          />
+          
+          {/* Loading indicator */}
+          {loading && playlists.length > 0 && (
+            <div className="flex justify-center py-6">
+              <div className="w-6 h-6 border-2 border-[#CC5500] border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+          
+          {/* Intersection Observer Sentinel */}
+          {!loadedAll && (
+            <div ref={sentinelRef} className="h-10 flex items-center justify-center">
+              {/* This invisible element triggers loading more content */}
+            </div>
+          )}
+          
+          {/* End of results indicator */}
+          {loadedAll && playlists.length > 0 && (
+            <div className="text-center py-6">
+              <p className="text-gray-500 text-sm">No more playlists to load</p>
+            </div>
+          )}
+          
+          {/* No results */}
+          {!loading && !playlists.length && (
+            <div className="text-center py-12">
+              <p className="text-gray-500">No playlists found</p>
+            </div>
+          )}
+        </div>
       </div>
 
       <FilterModal
