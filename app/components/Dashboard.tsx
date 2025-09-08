@@ -62,9 +62,13 @@ const Dashboard = ({ userData }: any) => {
   }, []);
 
   useEffect(() => {
-    setUser({
+    // Transform client-side user data to match expected format
+    const transformedUser = {
       ...userData,
-    });
+      // Ensure externalAccounts is properly formatted
+      externalAccounts: userData?.externalAccounts || [],
+    };
+    setUser(transformedUser);
   }, [userData, setUser]);
 
   useEffect(() => {

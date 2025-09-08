@@ -80,9 +80,13 @@ export const SubscribeModal = ({
       const res = await fetch(`${userPlaylistsEndpoint}?offset=${offset}`);
       const data: ISpotifyPlaylist[] = await res.json();
 
+      // Handle both server-side and client-side user data structures
+      const spotifyExternalId = userData?.externalAccounts?.[0]?.externalId || 
+                                userData?.externalAccounts?.[0]?.providerUserId ||
+                                userData?.externalAccounts?.[0]?.id;
+      
       const filteredPlaylists = data.filter(
-        (playlist) =>
-          playlist.owner.id === userData?.externalAccounts[0].externalId
+        (playlist) => playlist.owner.id === spotifyExternalId
       );
       setUserPlaylists(filteredPlaylists);
       setLoadedAllPlaylists(data.length < OFFSET);
