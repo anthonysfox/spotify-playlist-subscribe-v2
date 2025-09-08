@@ -13,7 +13,7 @@ const frequencyOptions = [
   { value: "MONTHLY", label: "Monthly" },
 ];
 
-interface SubscribeReqBody {
+export interface SubscribeReqBody {
   sourcePlaylist: {
     id: string;
     name: string;
@@ -29,6 +29,12 @@ interface SubscribeReqBody {
   newPlaylistName?: string;
   syncFrequency: string;
   runImmediateSync: boolean;
+  // Advanced settings properties
+  syncQuantityPerSource?: number;
+  syncMode?: string;
+  explicitContentFilter?: boolean;
+  trackAgeLimit?: number;
+  customDays?: string[];
 }
 
 export const SubscribeModal = ({
@@ -36,21 +42,34 @@ export const SubscribeModal = ({
   setSelectedPlaylist,
   selectedPlaylist,
   setShowPlaylistSettingsModal,
+  subscribeModalFormData,
+  setSubscribeModalFormData,
 }: {
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedPlaylist: React.Dispatch<
     React.SetStateAction<ISpotifyPlaylist | null>
   >;
+  setSubscribeModalFormData: React.Dispatch<
+    React.SetStateAction<SubscribeReqBody | null>
+  >;
+  subscribeModalFormData: SubscribeReqBody | null;
   selectedPlaylist: ISpotifyPlaylist | null;
   setShowPlaylistSettingsModal?: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const [selectedFrequency, setSelectedFrequency] = useState("WEEKLY");
+  const [selectedFrequency, setSelectedFrequency] = useState(
+    subscribeModalFormData?.syncFrequency || "WEEKLY"
+  );
   const [selectedUserPlaylist, setSelectedUserPlaylist] =
     useState<ISpotifyPlaylist | null>(null);
-  const [newPlaylistName, setNewPlaylistName] = useState<string>("");
-  const [runImmediateSync, setRunImmediateSync] = useState(true);
-  const selectRef = useRef<HTMLSelectElement>(null);
+  const [newPlaylistName, setNewPlaylistName] = useState<string>(
+    subscribeModalFormData?.newPlaylistName || ""
+  );
+  const [runImmediateSync, setRunImmediateSync] = useState<boolean>(
+    subscribeModalFormData?.runImmediateSync ?? true
+  );
+  console.log(subscribeModalFormData);
 
+  const selectRef = useRef<HTMLSelectElement>(null);
   const userPlaylists = useUserStore((state) => state.userPlaylists);
   const isLoading = useUserStore((state) => state.isLoading);
   const userData = useUserStore((state) => state.user);
@@ -80,9 +99,14 @@ export const SubscribeModal = ({
       const res = await fetch(`${userPlaylistsEndpoint}?offset=${offset}`);
       const data: ISpotifyPlaylist[] = await res.json();
 
+      // Handle both server-side and client-side user data structures
+      const spotifyExternalId =
+        userData?.externalAccounts?.[0]?.externalId ||
+        userData?.externalAccounts?.[0]?.providerUserId ||
+        userData?.externalAccounts?.[0]?.id;
+
       const filteredPlaylists = data.filter(
-        (playlist) =>
-          playlist.owner.id === userData?.externalAccounts[0].externalId
+        (playlist) => playlist.owner.id === spotifyExternalId
       );
       setUserPlaylists(filteredPlaylists);
       setLoadedAllPlaylists(data.length < OFFSET);
@@ -101,8 +125,23 @@ export const SubscribeModal = ({
     }
   }, [userData, userPlaylists, fetchUserPlaylists]);
 
+  useEffect(() => {
+    if (subscribeModalFormData) {
+      if (subscribeModalFormData?.managedPlaylist?.id) {
+        const playlist = userPlaylists.find(
+          (userPlaylist) =>
+            userPlaylist.id === subscribeModalFormData.managedPlaylist?.id
+        );
+        setSelectedUserPlaylist(playlist || null);
+      }
+    }
+  }, [subscribeModalFormData, userPlaylists]);
+
   const saveSubscriptionSettings = async () => {
     const body: SubscribeReqBody = {
+      // Start with any existing advanced settings from subscribeModalFormData
+      ...subscribeModalFormData,
+      // Override with current form state (this takes precedence)
       sourcePlaylist: {
         id: selectedPlaylist?.id || "",
         name: selectedPlaylist?.name || "",
@@ -162,6 +201,7 @@ export const SubscribeModal = ({
           onClick={() => {
             setShowSubscribeModal(false);
             setSelectedPlaylist(null);
+            setSubscribeModalFormData(null);
           }}
           className="absolute top-3 right-3 text-gray-400 hover:text-gray-600"
         >
@@ -195,12 +235,10 @@ export const SubscribeModal = ({
                   );
                 }}
                 className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#CC5500] focus:border-[#CC5500] appearance-none text-gray-700"
-                defaultValue=""
+                value={selectedUserPlaylist?.id || ""}
                 ref={selectRef}
               >
-                <option value="" disabled>
-                  Select a playlist
-                </option>
+                <option value="">Select a playlist...</option>
                 {userPlaylists.map((playlist) => {
                   const isManaged = managedPlaylists.find(
                     (mp) => mp.spotifyPlaylistId === playlist.id
@@ -236,6 +274,7 @@ export const SubscribeModal = ({
               placeholder="Playlist name..."
               value={newPlaylistName}
               onChange={(e) => setNewPlaylistName(e.target.value)}
+              disabled={!!selectedUserPlaylist}
             />
           </div>
         </div>
@@ -359,22 +398,33 @@ export const SubscribeModal = ({
           <button
             onClick={() => {
               if (setShowPlaylistSettingsModal) {
+                const body: SubscribeReqBody = {
+                  sourcePlaylist: {
+                    id: selectedPlaylist?.id || "",
+                    name: selectedPlaylist?.name || "",
+                    imageUrl: selectedPlaylist?.images?.[0]?.url || "",
+                    trackCount: selectedPlaylist?.tracks.total || 0,
+                  },
+                  syncFrequency: selectedFrequency,
+                  runImmediateSync,
+                };
+
+                if (newPlaylistName) {
+                  body.newPlaylistName = newPlaylistName;
+                } else {
+                  body.managedPlaylist = {
+                    id: selectedUserPlaylist?.id || "",
+                    name: selectedUserPlaylist?.name || "",
+                    imageUrl: selectedUserPlaylist?.images?.[0]?.url || "",
+                    trackCount: selectedUserPlaylist?.tracks?.total || 0,
+                  };
+                }
                 // Create a temporary playlist object with default settings for the modal
-                setSelectedPlaylist({
-                  id: "temp-id",
-                  name:
-                    newPlaylistName || selectedPlaylist?.name || "New Playlist",
-                  imageUrl: selectedPlaylist?.images?.[0]?.url || null,
-                  trackCount: selectedPlaylist?.tracks?.total || 0,
-                  syncInterval: selectedFrequency,
-                  syncQuantityPerSource: 5,
-                  syncMode: "APPEND",
-                  explicitContentFilter: false,
-                  trackAgeLimit: 0,
-                  customDays: ["monday"],
-                  customTime: "09:00",
+                setSubscribeModalFormData({
+                  ...body,
                 });
                 setShowPlaylistSettingsModal(true);
+                setShowSubscribeModal(false);
               }
             }}
             className="w-full py-2 text-[#CC5500] hover:text-[#B04A00] text-sm underline bg-transparent"

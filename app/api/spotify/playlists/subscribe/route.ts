@@ -2,15 +2,7 @@ import { NextResponse } from "next/server";
 import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
-import {
-  addDays,
-  addHours,
-  addMinutes,
-  setHours,
-  setMinutes,
-  nextMonday,
-  nextSunday,
-} from "date-fns";
+import { addDays } from "date-fns";
 
 export async function POST(request: Request) {
   const { userId, token, spotifyUserId } = await getClerkOAuthToken();
@@ -30,12 +22,12 @@ export async function POST(request: Request) {
     sourcePlaylist, // Expecting { id: string, name: string, imageUrl?: string, trackCount: number },
     newPlaylistName,
     syncFrequency = "WEEKLY",
+    syncQuantityPerSource = 5,
     runImmediateSync = true,
     syncMode = "APPEND",
     explicitContentFilter = false,
     trackAgeLimit = 0,
     customDays,
-    customTime,
   } = body;
 
   if (
@@ -83,6 +75,34 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Ensure user exists in database before creating managed playlist
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) {
+      // Create user if not exists (fallback for webhook timing issues)
+      const {
+        userId: clerkUserId,
+        token,
+        spotifyUserId,
+      } = await getClerkOAuthToken();
+      const clerkClient = (await import("@clerk/nextjs/server")).clerkClient;
+      const client = await clerkClient();
+      const clerkUser = await client.users.getUser(clerkUserId);
+
+      await prisma.user.create({
+        data: {
+          clerkUserId: userId,
+          email: clerkUser.emailAddresses?.[0]?.emailAddress || "",
+          name:
+            `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
+            "User",
+          imageUrl: clerkUser.imageUrl,
+        },
+      });
+    }
+
     // Use a transaction to ensure both playlist lookups/creations and the subscription are atomic
     const result = await prisma.$transaction(
       async (prisma) => {
@@ -115,11 +135,7 @@ export async function POST(request: Request) {
         } else {
           // No managed playlist record exists for this Spotify ID, create it for the current user.
 
-          const nextSyncTime = calculateNextSyncTime(
-            syncFrequency,
-            customDays,
-            customTime
-          );
+          const nextSyncTime = calculateNextSyncTime(syncFrequency, customDays);
 
           finalManagedPlaylist = await prisma.managedPlaylist.create({
             data: {
@@ -132,12 +148,11 @@ export async function POST(request: Request) {
               lastSyncCompletedAt: null,
               nextSyncTime,
               syncInterval: syncFrequency as any,
-              syncQuantityPerSource: 5,
+              syncQuantityPerSource,
               syncMode: syncMode as any,
               explicitContentFilter,
               trackAgeLimit,
               customDays: customDays ? JSON.stringify(customDays) : null,
-              customTime: customTime || null,
               lastMetadataRefreshAt: now,
               trackCount: managedPlaylistToUse.trackCount || 0,
             },
@@ -324,11 +339,7 @@ async function createSpotifyPlaylist(
   };
 }
 
-function calculateNextSyncTime(
-  syncFrequency: string,
-  customDays: string[],
-  customTime: string
-) {
+function calculateNextSyncTime(syncFrequency: string, customDays: string[]) {
   const now = new Date();
 
   switch (syncFrequency) {
@@ -339,16 +350,15 @@ function calculateNextSyncTime(
     case "MONTHLY":
       return addDays(now, 30);
     case "CUSTOM":
-      return calculateNextCustomRun(customDays, customTime);
+      return calculateNextCustomRun(customDays);
     default:
       return addDays(now, 7);
   }
 }
 
-function calculateNextCustomRun(days?: string[], time?: string) {
-  if (!days || !time) return null;
+function calculateNextCustomRun(days?: string[]) {
+  if (!days) return null;
 
-  const [hours, minutes] = time.split(":").map(Number);
   const now = new Date();
 
   const dayMap: { [key: string]: number } = {
@@ -367,14 +377,18 @@ function calculateNextCustomRun(days?: string[], time?: string) {
 
   if (!targetDays.length) return null;
 
+  // Always sync at midnight (00:00)
   for (let i = 0; i < 7; i++) {
     const candidateDate = addDays(now, i);
     const dayOfWeek = candidateDate.getDay();
 
     if (targetDays.includes(dayOfWeek)) {
-      let scheduledTime = setHours(setMinutes(candidateDate, minutes), hours);
+      // Set time to midnight
+      const scheduledTime = new Date(candidateDate);
+      scheduledTime.setHours(0, 0, 0, 0);
 
-      if (i == 0 && scheduledTime <= now) {
+      // If it's today and we've already passed midnight, skip to next occurrence
+      if (i === 0 && scheduledTime <= now) {
         continue;
       }
 
@@ -382,7 +396,10 @@ function calculateNextCustomRun(days?: string[], time?: string) {
     }
   }
 
+  // Find the next occurrence if no match found in the next 7 days
   const firstTargetDay = Math.min(...targetDays);
   const daysUntilTarget = (firstTargetDay + 7 - now.getDay()) % 7 || 7;
-  return setHours(setMinutes(now, daysUntilTarget), hours);
+  const nextRun = addDays(now, daysUntilTarget);
+  nextRun.setHours(0, 0, 0, 0);
+  return nextRun;
 }
