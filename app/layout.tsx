@@ -6,11 +6,31 @@ import NavBar from "@/components/Navigation/NavBar";
 import { Suspense } from "react";
 
 import { ClerkProvider } from "@clerk/nextjs";
+import { Metadata, Viewport } from "next";
 
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
+
+export const metadata: Metadata = {
+  title: "PlaylistFox - Automatic Spotify Playlist Updates",
+  description: "Keep your Spotify playlists fresh with automatic track updates from your favorite sources",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "PlaylistFox",
+  },
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#CC5500",
+};
 
 export default async function RootLayout({
   children,
