@@ -1,16 +1,27 @@
-import { PrismaClient } from "@prisma/client";
+"use client";
 
-import { currentUser } from "@clerk/nextjs/server";
+import { useUser } from "@clerk/nextjs";
 import Dashboard from "./components/Dashboard";
 import { HomePage } from "./components/HomePage";
 
-export default async function Home() {
-  const user = await currentUser();
+export default function Home() {
+  const { isLoaded, isSignedIn, user } = useUser();
+
+  // Show loading or nothing while Clerk is loading
+  if (!isLoaded) {
+    return (
+      <div className="grow flex flex-col p-4 h-full w-full">
+        <div className="flex items-center justify-center h-full">
+          <div className="w-8 h-8 border-2 border-[#CC5500] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grow flex flex-col p-4 h-full w-full">
-      {user ? (
-        <Dashboard userData={JSON.parse(JSON.stringify(user))} />
+      {isSignedIn && user ? (
+        <Dashboard userData={user} />
       ) : (
         <HomePage />
       )}
