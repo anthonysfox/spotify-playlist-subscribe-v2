@@ -83,6 +83,28 @@ export async function POST(request: Request) {
   }
 
   try {
+    // Ensure user exists in database before creating managed playlist
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) {
+      // Create user if not exists (fallback for webhook timing issues)
+      const { userId: clerkUserId, token, spotifyUserId } = await getClerkOAuthToken();
+      const clerkClient = (await import("@clerk/nextjs/server")).clerkClient;
+      const client = await clerkClient();
+      const clerkUser = await client.users.getUser(clerkUserId);
+      
+      await prisma.user.create({
+        data: {
+          clerkUserId: userId,
+          email: clerkUser.emailAddresses?.[0]?.emailAddress || "",
+          name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() || "User",
+          imageUrl: clerkUser.imageUrl,
+        },
+      });
+    }
+
     // Use a transaction to ensure both playlist lookups/creations and the subscription are atomic
     const result = await prisma.$transaction(
       async (prisma) => {
