@@ -81,7 +81,6 @@ model ManagedPlaylist {
   trackAgeLimit Int @default(0)
 
   customDays String?
-  customTime String?
 
   // Date this managed playlist record was created in your DB.
   createdAt DateTime @default(now())

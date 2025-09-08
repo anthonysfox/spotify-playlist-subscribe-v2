@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useUserStore } from "store/useUserStore";
 import { ISpotifyPlaylist } from "utils/types";
+import { SubscribeReqBody } from "./SubscribeModal";
 
 const frequencyOptions = [
   { value: "DAILY", label: "Daily" },
@@ -50,38 +51,45 @@ const daysOfWeek = [
   { value: "sunday", label: "Sunday" },
 ];
 
-const timeOptions = [
-  { value: "06:00", label: "6:00 AM" },
-  { value: "09:00", label: "9:00 AM" },
-  { value: "12:00", label: "12:00 PM" },
-  { value: "15:00", label: "3:00 PM" },
-  { value: "18:00", label: "6:00 PM" },
-  { value: "21:00", label: "9:00 PM" },
-];
-
 export const PlaylistSettingsModal = ({
   setShowPlaylistSettingsModal,
   setSelectedPlaylist,
+  setShowSubscribeModal,
   selectedPlaylist,
   fromSubscribeModal,
+  mode = "edit",
+  setSubscribeModalFormData,
+  subscribeModalFormData,
 }: {
   setShowPlaylistSettingsModal: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedPlaylist: React.Dispatch<React.SetStateAction<any>>;
+  setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
+  setSubscribeModalFormData: React.Dispatch<
+    React.SetStateAction<SubscribeReqBody | null>
+  >;
   selectedPlaylist: any;
   fromSubscribeModal: boolean;
+  mode: string;
+  subscribeModalFormData?: SubscribeReqBody | null;
 }) => {
   const [updatedData, setUpdatedData] = useState({
-    syncInterval: selectedPlaylist?.syncInterval || "WEEKLY",
+    syncInterval:
+      subscribeModalFormData?.syncFrequency ||
+      selectedPlaylist?.syncInterval ||
+      "WEEKLY",
     syncQuantityPerSource: selectedPlaylist?.syncQuantityPerSource || 5,
     syncMode: selectedPlaylist?.syncMode || "APPEND",
     explicitContentFilter: selectedPlaylist?.explicitContentFilter || false,
     trackAgeLimit: selectedPlaylist?.trackAgeLimit || 0,
-    customDays: selectedPlaylist?.customDays ? 
-      (typeof selectedPlaylist.customDays === 'string' ? 
-        JSON.parse(selectedPlaylist.customDays) : selectedPlaylist.customDays) 
+    customDays: selectedPlaylist?.customDays
+      ? typeof selectedPlaylist.customDays === "string"
+        ? JSON.parse(selectedPlaylist.customDays)
+        : selectedPlaylist.customDays
       : ["monday"],
-    customTime: selectedPlaylist?.customTime || "09:00",
   });
+  const [modalMode, setModalMode] = useState(mode);
+  const addManagedPlaylist = useUserStore((state) => state.addManagedPlaylist);
+
   const updateManagedPlaylist = useUserStore(
     (state) => state.updateManagedPlaylist
   );
@@ -93,11 +101,11 @@ export const PlaylistSettingsModal = ({
       syncMode: selectedPlaylist?.syncMode || "APPEND",
       explicitContentFilter: selectedPlaylist?.explicitContentFilter || false,
       trackAgeLimit: selectedPlaylist?.trackAgeLimit || 0,
-      customDays: selectedPlaylist?.customDays ? 
-        (typeof selectedPlaylist.customDays === 'string' ? 
-          JSON.parse(selectedPlaylist.customDays) : selectedPlaylist.customDays) 
+      customDays: selectedPlaylist?.customDays
+        ? typeof selectedPlaylist.customDays === "string"
+          ? JSON.parse(selectedPlaylist.customDays)
+          : selectedPlaylist.customDays
         : ["monday"],
-      customTime: selectedPlaylist?.customTime || "09:00",
     });
 
   const handleUpdateManagedPlaylist = async () => {
@@ -122,8 +130,66 @@ export const PlaylistSettingsModal = ({
   };
 
   const handleCancelOrClose = () => {
-    if (!fromSubscribeModal) setSelectedPlaylist(null);
+    if (!fromSubscribeModal) {
+      setSelectedPlaylist(null);
+      setSubscribeModalFormData(null);
+    }
+
     setShowPlaylistSettingsModal(false);
+
+    if (fromSubscribeModal) {
+      setShowSubscribeModal(true);
+      setSubscribeModalFormData((prevData) => ({
+        ...prevData,
+        ...updatedData,
+      }));
+    }
+  };
+
+  const handleSave = () => {
+    if (modalMode === "edit") {
+      handleUpdateManagedPlaylist();
+    } else {
+      saveSubscriptionSettings();
+    }
+  };
+
+  const saveSubscriptionSettings = async () => {
+    if (!subscribeModalFormData) return;
+
+    const body: SubscribeReqBody = {
+      ...subscribeModalFormData,
+      ...updatedData,
+    };
+
+    const res = await fetch("/api/spotify/playlists/subscribe", {
+      method: "POST",
+      body: JSON.stringify({
+        ...body,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then(async (res) => {
+        const {
+          data: { managedPlaylist },
+          success,
+          message,
+        } = await res.json();
+
+        if (success) {
+          addManagedPlaylist(managedPlaylist);
+          setSelectedPlaylist(null);
+          toast.success(message);
+        } else {
+          toast.error(message);
+        }
+      })
+      .catch((err) => {
+        console.error("Error subscribing:", err);
+        toast.error("Failed to subscribe");
+      });
   };
 
   // Safety check - don't render if selectedPlaylist is missing
@@ -132,9 +198,9 @@ export const PlaylistSettingsModal = ({
   }
 
   return (
-    <div className={`fixed inset-0 flex items-center justify-center z-50 p-4 ${
-      fromSubscribeModal ? '' : 'bg-black/60 backdrop-blur-sm'
-    }`}>
+    <div
+      className={`fixed inset-0 flex items-center justify-center z-50 p-4 bg-black/60 backdrop-blur-sm`}
+    >
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto p-6 relative shadow-xl">
         <button
           onClick={handleCancelOrClose}
@@ -149,23 +215,30 @@ export const PlaylistSettingsModal = ({
             Advanced Settings
           </h2>
           <p className="text-gray-600">
-            Configure how &quot;{selectedPlaylist?.name || 'this playlist'}&quot; receives tracks
-            from subscribed playlists
+            Configure how &quot;{selectedPlaylist?.name || "this playlist"}
+            &quot; receives tracks from subscribed playlists
           </p>
         </div>
 
         <div className="flex items-center p-3 bg-gray-50 rounded-sm border border-gray-200 mb-6">
           <img
-            src={selectedPlaylist?.imageUrl || selectedPlaylist?.images?.[0]?.url || '/placeholder.png'}
-            alt={selectedPlaylist?.name || 'Playlist'}
+            src={
+              selectedPlaylist?.imageUrl ||
+              selectedPlaylist?.images?.[0]?.url ||
+              "/placeholder.png"
+            }
+            alt={selectedPlaylist?.name || "Playlist"}
             className="w-12 h-12 object-cover rounded-sm"
           />
           <div className="ml-3">
             <h3 className="font-medium text-gray-800">
-              {selectedPlaylist?.name || 'Unknown Playlist'}
+              {selectedPlaylist?.name || "Unknown Playlist"}
             </h3>
             <p className="text-gray-500 text-sm">
-              {selectedPlaylist?.trackCount || selectedPlaylist?.tracks?.total || 0} tracks
+              {selectedPlaylist?.trackCount ||
+                selectedPlaylist?.tracks?.total ||
+                0}{" "}
+              tracks
             </p>
           </div>
         </div>
@@ -247,39 +320,6 @@ export const PlaylistSettingsModal = ({
                         <span>{day.label}</span>
                       </label>
                     ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 mb-2 text-sm font-medium">
-                    Select time:
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={updatedData.customTime}
-                      onChange={(e) =>
-                        setUpdatedData((prev) => ({
-                          ...prev,
-                          customTime: e.target.value,
-                        }))
-                      }
-                      className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#CC5500] focus:border-[#CC5500] appearance-none text-gray-700"
-                    >
-                      {timeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                      <svg
-                        className="fill-current h-4 w-4"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                      </svg>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -449,7 +489,7 @@ export const PlaylistSettingsModal = ({
           </button>
           <button
             onClick={() => {
-              handleUpdateManagedPlaylist();
+              handleSave();
             }}
             className="px-6 py-2 bg-[#CC5500] text-white rounded hover:bg-[#B04A00] transition-colors"
           >

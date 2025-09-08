@@ -9,7 +9,7 @@ import {
 import { CuratedPlaylists } from "./CuratedPlaylists";
 import { OFFSET } from "utils/constants";
 import { NavTabs } from "./Navigation/NavTabs";
-import { SubscribeModal } from "./Modals/SubscribeModal";
+import { SubscribeModal, SubscribeReqBody } from "./Modals/SubscribeModal";
 import { PlaylistSettingsModal } from "./Modals/SettingsModal";
 import { Bell } from "lucide-react";
 import { useUserStore } from "store/useUserStore";
@@ -27,7 +27,6 @@ const Dashboard = ({ userData }: any) => {
   const [token, setToken] = useState<string>("");
   const { player, deviceID } = useSpotifyPlayer(token);
   const [previewTracks, setPreviewTracks] = useState<any>([]);
-  const [isLongPress, setIsLongPress] = useState(false);
   const [selectedPlaylist, setSelectedPlaylist] =
     useState<ISpotifyPlaylist | null>(null);
   const [activeTab, setActiveTab] = useState("discover");
@@ -36,6 +35,8 @@ const Dashboard = ({ userData }: any) => {
   const [showPlaylistSettingseModal, setShowPlaylistSettingsModal] =
     useState(false);
   const [topArtists, setTopArtists] = useState<any>([]);
+  const [subscribeModalFormData, setSubscribeModalFormData] =
+    useState<SubscribeReqBody | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   // Fetch the Spotify token from the API
@@ -221,14 +222,20 @@ const Dashboard = ({ userData }: any) => {
               setShowSubscribeModal={setShowSubscribeModal}
               setShowPlaylistSettingsModal={setShowPlaylistSettingsModal}
               //userPlaylists={userPlaylistsState.playlists}
+              setSubscribeModalFormData={setSubscribeModalFormData}
+              subscribeModalFormData={subscribeModalFormData}
             />
           )}
           {showPlaylistSettingseModal && selectedPlaylist && (
             <PlaylistSettingsModal
               setShowPlaylistSettingsModal={setShowPlaylistSettingsModal}
               setSelectedPlaylist={setSelectedPlaylist}
+              setShowSubscribeModal={setShowSubscribeModal}
+              setSubscribeModalFormData={setSubscribeModalFormData}
               selectedPlaylist={selectedPlaylist}
-              fromSubscribeModal={selectedPlaylist.id === "temp-id"}
+              mode={subscribeModalFormData ? "create" : "edit"}
+              subscribeModalFormData={subscribeModalFormData}
+              fromSubscribeModal={!!subscribeModalFormData}
             />
           )}
         </div>
