@@ -7,7 +7,7 @@ export const NavTabs = ({ activeTab, setActiveTab }: any) => {
         onClick={() => setActiveTab("discover")}
         className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
           activeTab === "discover"
-            ? "bg-green-50 text-green-600 border-b-2 border-green-600"
+            ? "bg-orange-50 text-[#CC5500] border-b-2 border-[#CC5500]"
             : "text-gray-600 hover:text-gray-800"
         }`}
       >
@@ -17,7 +17,7 @@ export const NavTabs = ({ activeTab, setActiveTab }: any) => {
         onClick={() => setActiveTab("subscribed")}
         className={`flex-1 py-3 rounded-lg font-medium transition-colors ${
           activeTab === "subscribed"
-            ? "bg-green-50 text-green-600 border-b-2 border-green-600"
+            ? "bg-orange-50 text-[#CC5500] border-b-2 border-[#CC5500]"
             : "text-gray-600 hover:text-gray-800"
         }`}
       >

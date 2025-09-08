@@ -206,7 +206,7 @@ export const PlaylistList = ({
       className="h-full overflow-y-auto overflow-x-hidden min-h-0 flex-1 custom-scrollbar scrollbar-visible pl-3 pr-3 inset-shadow-sm rounded-lg"
       ref={testingRef}
     >
-      <div className="flex flex-col gap-4 pb-4 mt-3 pr-2">
+      <div className="flex flex-col gap-3 pb-4 mt-3 pr-2">
         {loading && !playlists.length && <PlaylistSkeleton />}
         {!loading && !playlists.length && (
           <div className="text-center py-12">
@@ -218,32 +218,32 @@ export const PlaylistList = ({
             .filter((playlist) => playlist)
             .map((playlist, index) => (
               <div
-                key={`${playlist.id}-${index}`}
+                key={`playlist-${playlist.id}-${index}`}
                 className="bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 shadow-lg border border-gray-200 group"
+                onClick={() => {
+                  if (loadingTracks !== playlist.id) {
+                    handleViewTracks(playlist);
+                  }
+                }}
               >
                 <div className="flex flex-col sm:flex-row">
                   <div className="relative overflow-hidden">
                     <img
                       src={playlist.images?.[0]?.url}
                       alt={playlist.name}
-                      className="w-full h-48 sm:w-24 sm:h-24 object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-24 sm:w-20 sm:h-20 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent sm:hidden"></div>
                   </div>
-                  <div className="flex flex-col sm:flex-row grow pt-1 pb-1 sm:pb-2">
+                  <div className="flex flex-col sm:flex-row grow p-3 sm:pt-1 sm:pb-1 sm:pl-3 sm:pr-0">
                     <div
-                      className={`grow min-w-0 flex flex-col justify-between pt-1 pb-1 pl-3 ${
+                      className={`grow min-w-0 flex flex-col justify-between space-y-2 sm:space-y-1 sm:pt-1 sm:pb-1 ${
                         loadingTracks === playlist.id
                           ? "cursor-not-allowed opacity-75"
                           : "cursor-pointer"
                       }`}
-                      onClick={() => {
-                        if (loadingTracks !== playlist.id) {
-                          handleViewTracks(playlist);
-                        }
-                      }}
                     >
-                      <h3 className="font-bold text-gray-900 text-lg sm:text-xl truncate group-hover:text-green-600 transition-colors">
+                      <h3 className="font-bold text-gray-900 text-base sm:text-lg truncate group-hover:text-[#CC5500] transition-colors">
                         {playlist.name}
                       </h3>
                       <p className="text-gray-600 text-sm">
@@ -255,26 +255,26 @@ export const PlaylistList = ({
                       <div className="flex items-center gap-2">
                         {loadingTracks === playlist.id ? (
                           <>
-                            <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                            <p className="text-green-600 text-sm font-medium">
+                            <div className="w-4 h-4 border-2 border-[#CC5500] border-t-transparent rounded-full animate-spin"></div>
+                            <p className="text-[#CC5500] text-sm font-medium">
                               Loading tracks...
                             </p>
                           </>
                         ) : (
                           <>
-                            <Music size={16} className="text-green-500" />
-                            <p className="text-green-600 text-sm font-medium">
+                            <Music size={16} className="text-[#CC5500]" />
+                            <p className="text-[#CC5500] text-sm font-medium">
                               View tracks
                             </p>
                           </>
                         )}
                       </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
+                      <div className="flex flex-wrap gap-1.5 mt-1">
                         {getManagedPlaylistsForSource(playlist.id).map(
                           (managedPlaylist) => (
                             <div
                               key={managedPlaylist.id}
-                              className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full border border-green-200 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all duration-200 cursor-pointer group"
+                              className="flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-full border border-orange-200 hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all duration-200 cursor-pointer group"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const sourcePlaylistId =
@@ -304,17 +304,17 @@ export const PlaylistList = ({
                         )}
                       </div>
                     </div>
-                    <div className="self-center shrink-0 pr-3 max-sm:pr-0">
+                    <div className="self-center sm:self-center shrink-0 sm:pr-3 mt-1 sm:mt-0">
                       {subscribedPlaylists.has(playlist.id) ? (
                         <button
                           onClick={() => {
                             setShowSubscribeModal(true);
                             setSelectedPlaylist({ ...playlist });
                           }}
-                          className="w-full sm:w-auto px-4 py-2 rounded-lg bg-green-50 text-green-600 text-sm font-medium hover:bg-green-100 transition-all duration-200 border border-green-200 flex items-center gap-2"
+                          className="w-full sm:w-auto px-3 py-2 sm:py-1.5 rounded-lg bg-orange-50 text-[#CC5500] text-sm font-medium hover:bg-orange-100 transition-all duration-200 border border-orange-200 flex items-center justify-center gap-1.5"
                         >
-                          <Bell size={14} />
-                          Add to More
+                          <Bell size={12} />
+                          Add More
                         </button>
                       ) : (
                         <button
@@ -322,11 +322,11 @@ export const PlaylistList = ({
                             setShowSubscribeModal(true);
                             setSelectedPlaylist({ ...playlist });
                           }}
-                          className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center group"
+                          className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-lg bg-gradient-to-r from-[#CC5500] to-[#A0522D] text-white text-sm font-semibold hover:from-[#B04A00] hover:to-[#8B4513] transition-all duration-200 shadow-md hover:shadow-lg flex items-center justify-center group"
                         >
                           <Bell
-                            size={16}
-                            className="mr-2 group-hover:animate-pulse"
+                            size={14}
+                            className="mr-1.5 group-hover:animate-pulse"
                           />
                           Subscribe
                         </button>

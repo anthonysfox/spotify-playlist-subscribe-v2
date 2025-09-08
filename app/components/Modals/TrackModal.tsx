@@ -29,7 +29,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="relative p-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+        <div className="relative p-6 bg-gradient-to-r from-[#CC5500] to-[#A0522D] text-white">
           <button
             onClick={onClose}
             className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center transition-colors hover:cursor-pointer"
@@ -45,13 +45,13 @@ export const TrackModal: React.FC<TrackModalProps> = ({
             />
             <div>
               <h2 className="text-2xl font-bold mb-1">{playlist.name}</h2>
-              <p className="text-green-100">
+              <p className="text-orange-100">
                 By{" "}
                 <span className="font-medium">
                   {playlist.owner.display_name}
                 </span>
               </p>
-              <p className="text-green-200 text-sm mt-1">
+              <p className="text-orange-200 text-sm mt-1">
                 {tracks.length} tracks
               </p>
             </div>
@@ -77,7 +77,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                   <div className="flex items-center gap-3">
                     <span className="w-6 text-gray-500 text-sm font-medium">
                       {currentlyPlaying === track.id ? (
-                        <Pause size={14} className="text-green-600" />
+                        <Pause size={14} className="text-[#CC5500]" />
                       ) : (
                         index + 1
                       )}
@@ -93,7 +93,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                       />
                     )}
                     <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 truncate group-hover:text-green-600 transition-colors">
+                      <p className="font-semibold text-gray-900 truncate group-hover:text-[#CC5500] transition-colors">
                         {track.name}
                       </p>
                       <p className="text-gray-500 text-sm truncate">
