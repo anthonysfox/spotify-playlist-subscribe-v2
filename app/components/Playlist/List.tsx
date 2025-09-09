@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { ISpotifyPlaylist } from "utils/types";
-import { Bell, Music } from "lucide-react";
+import { Bell, Music, ExternalLink } from "lucide-react";
 import { PlaylistSkeleton } from "../Skeletons/PlaylistSkeleton";
 import { TrackModal } from "../Modals/TrackModal";
 import { playTrackPreview, stopPlayback } from "utils/spotifyPlayerUtils";
@@ -52,6 +52,35 @@ export const PlaylistList = ({
   const unsubscribeFromSource = useUserStore(
     (state) => state.unsubscribeFromSource
   );
+
+  // Check if preview functionality is supported
+  const isPreviewSupported = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    
+    const userAgent = navigator.userAgent;
+    
+    // Detect Safari properly - Safari has "Safari" but not "Chrome" in user agent
+    // Also check for "Version/" which is specific to Safari
+    const isSafari = /Safari/.test(userAgent) && /Version\//.test(userAgent) && !/Chrome/.test(userAgent);
+    const isFirefox = /Firefox/.test(userAgent);
+    const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
+    
+    console.log('Detection debug:', {
+      userAgent,
+      hasSafari: /Safari/.test(userAgent),
+      hasVersion: /Version\//.test(userAgent),
+      hasChrome: /Chrome/.test(userAgent),
+      isSafari,
+      isFirefox,
+      isMobile
+    });
+    
+    const supported = (isFirefox || (!isMobile && !isSafari));
+    console.log('Final supported result:', supported);
+    
+    // Only support Firefox (any) and non-Safari desktop browsers
+    return supported;
+  }, []);
 
   const subscribedPlaylists = useMemo(() => {
     return new Set(
@@ -236,10 +265,21 @@ export const PlaylistList = ({
                           </>
                         ) : (
                           <>
-                            <Music size={16} className="text-[#CC5500]" />
-                            <p className="text-[#CC5500] text-sm font-medium">
-                              View tracks
-                            </p>
+                            {isPreviewSupported ? (
+                              <>
+                                <Music size={16} className="text-[#CC5500]" />
+                                <p className="text-[#CC5500] text-sm font-medium">
+                                  View tracks
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <ExternalLink size={16} className="text-[#CC5500]" />
+                                <p className="text-[#CC5500] text-sm font-medium">
+                                  View tracks
+                                </p>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
@@ -349,6 +389,7 @@ export const PlaylistList = ({
         tracks={previewTracks}
         currentlyPlaying={currentlyPlaying}
         onTrackPreview={handleTrackPreview}
+        isPreviewSupported={isPreviewSupported}
       />
     </div>
   );

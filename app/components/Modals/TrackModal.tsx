@@ -1,6 +1,7 @@
 import React from "react";
-import { X, Play, Pause } from "lucide-react";
+import { X, Play, Pause, ExternalLink, Plus } from "lucide-react";
 import { formatTime } from "utils";
+import { getDeviceId } from "utils/spotifyPlayerUtils";
 
 interface TrackModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ interface TrackModalProps {
   tracks: Array<{ track: any }>;
   currentlyPlaying: string | null;
   onTrackPreview: (track: any) => void;
+  isPreviewSupported?: boolean;
 }
 
 export const TrackModal: React.FC<TrackModalProps> = ({
@@ -22,7 +24,77 @@ export const TrackModal: React.FC<TrackModalProps> = ({
   tracks,
   currentlyPlaying,
   onTrackPreview,
+  isPreviewSupported = true,
 }) => {
+  
+  const openInSpotify = (trackId: string) => {
+    const spotifyUrl = `https://open.spotify.com/track/${trackId}`;
+    window.open(spotifyUrl, '_blank');
+  };
+
+  const addToQueueAndPlay = async (trackId: string) => {
+    try {
+      const deviceId = getDeviceId();
+      
+      // Get token first
+      const tokenResponse = await fetch('/api/spotify/token');
+      const { token } = await tokenResponse.json();
+      
+      // Call Spotify API directly
+      const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uris: [`spotify:track:${trackId}`],
+          position_ms: 30000,
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Track playing directly from Spotify API');
+        // Update the currently playing state for UI
+        if (currentlyPlaying !== trackId) {
+          onTrackPreview({ id: trackId });
+        }
+        
+        // Auto-pause after 30 seconds
+        setTimeout(async () => {
+          if (currentlyPlaying === trackId) {
+            await pausePlayback();
+          }
+        }, 30000);
+      } else {
+        // Fallback to opening in Spotify
+        openInSpotify(trackId);
+      }
+    } catch (error) {
+      console.error('Failed to play track directly:', error);
+      // Fallback to opening in Spotify
+      openInSpotify(trackId);
+    }
+  };
+
+  const pausePlayback = async () => {
+    try {
+      const response = await fetch('/api/spotify/player/pause', {
+        method: 'PUT',
+      });
+
+      if (response.ok) {
+        console.log('Playback paused');
+        // Clear currently playing state
+        onTrackPreview({ id: null });
+      }
+    } catch (error) {
+      console.error('Failed to pause:', error);
+    }
+  };
+
+  // Debug: Log preview support status
+  console.log('TrackModal - isPreviewSupported:', isPreviewSupported, 'UserAgent:', typeof window !== 'undefined' ? navigator.userAgent : 'undefined');
   if (!isOpen || !playlist) return null;
 
   return (
@@ -72,7 +144,21 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                 <div
                   key={track.id}
                   className="grid grid-cols-[auto_1fr_auto] gap-4 items-center py-3 px-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group"
-                  onClick={() => onTrackPreview(track)}
+                  onClick={() => {
+                    if (currentlyPlaying === track.id) {
+                      if (isPreviewSupported) {
+                        onTrackPreview(track);
+                      } else {
+                        pausePlayback();
+                      }
+                    } else {
+                      if (isPreviewSupported) {
+                        onTrackPreview(track);
+                      } else {
+                        addToQueueAndPlay(track.id);
+                      }
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-3">
                     <span className="w-6 text-gray-500 text-sm font-medium">
@@ -104,9 +190,20 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                     </div>
                   </div>
 
-                  <span className="text-gray-500 text-sm font-medium">
-                    {formatTime(track.duration_ms)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-sm font-medium">
+                      {formatTime(track.duration_ms)}
+                    </span>
+                    {!isPreviewSupported && (
+                      <button
+                        onClick={() => openInSpotify(track.id)}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Open in Spotify"
+                      >
+                        <ExternalLink size={12} className="text-gray-400 hover:text-[#CC5500]" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

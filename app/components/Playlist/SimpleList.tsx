@@ -30,6 +30,35 @@ export const SimplePlaylistList = ({
   const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
 
+  // Check if preview functionality is supported
+  const isPreviewSupported = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    
+    const userAgent = navigator.userAgent;
+    
+    // Detect Safari properly - Safari has "Safari" but not "Chrome" in user agent
+    // Also check for "Version/" which is specific to Safari
+    const isSafari = /Safari/.test(userAgent) && /Version\//.test(userAgent) && !/Chrome/.test(userAgent);
+    const isFirefox = /Firefox/.test(userAgent);
+    const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
+    
+    console.log('SimpleList Detection debug:', {
+      userAgent,
+      hasSafari: /Safari/.test(userAgent),
+      hasVersion: /Version\//.test(userAgent),
+      hasChrome: /Chrome/.test(userAgent),
+      isSafari,
+      isFirefox,
+      isMobile
+    });
+    
+    const supported = (isFirefox || (!isMobile && !isSafari));
+    console.log('SimpleList Final supported result:', supported);
+    
+    // Only support Firefox (any) and non-Safari desktop browsers
+    return supported;
+  }, []);
+
   const subscribedPlaylists = useMemo(() => {
     return new Set(
       managedPlaylists.flatMap((mp) => {
@@ -214,6 +243,7 @@ export const SimplePlaylistList = ({
         tracks={previewTracks}
         currentlyPlaying={currentlyPlaying}
         onTrackPreview={handleTrackPreview}
+        isPreviewSupported={isPreviewSupported}
       />
     </div>
   );

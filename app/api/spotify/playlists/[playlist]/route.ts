@@ -49,6 +49,16 @@ export async function GET(
         Authorization: `Bearer ${token}`,
       },
     });
+
+    if (!spotifyResponse.ok) {
+      const errorData = await spotifyResponse.json();
+      console.error("Spotify API error:", errorData);
+      return NextResponse.json(
+        { error: "Failed to fetch playlist data", details: errorData },
+        { status: spotifyResponse.status }
+      );
+    }
+
     const data = await spotifyResponse.json();
 
     if (fields.length) {
@@ -77,12 +87,26 @@ export async function GET(
           Authorization: `Bearer ${token}`,
         },
       });
+
+      if (!spotifyResponse.ok) {
+        const errorData = await spotifyResponse.json();
+        console.error("Spotify API error:", errorData);
+        return NextResponse.json(
+          { error: "Failed to fetch playlist data", details: errorData },
+          { status: spotifyResponse.status }
+        );
+      }
+
       const data = await spotifyResponse.json();
       response.trackCount = data.tracks.total;
     }
 
     return NextResponse.json(response);
   } catch (error) {
-    return Response.json(error);
+    console.error("Error in playlist API:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
   }
 }
