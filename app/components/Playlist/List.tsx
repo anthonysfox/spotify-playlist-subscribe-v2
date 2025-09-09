@@ -3,6 +3,7 @@ import { ISpotifyPlaylist } from "utils/types";
 import { Bell, Music } from "lucide-react";
 import { PlaylistSkeleton } from "../Skeletons/PlaylistSkeleton";
 import { TrackModal } from "../Modals/TrackModal";
+import { playTrackPreview, stopPlayback } from "utils/spotifyPlayerUtils";
 import { useUserStore } from "store/useUserStore";
 import toast from "react-hot-toast";
 
@@ -20,6 +21,7 @@ export const PlaylistList = ({
   testingRef,
   setShowSubscribeModal,
   sentinelRef,
+  transferPlayback,
 }: {
   playlists: ISpotifyPlaylist[];
   deviceID: string;
@@ -34,6 +36,7 @@ export const PlaylistList = ({
   testingRef: React.RefObject<HTMLDivElement>;
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
   sentinelRef?: React.RefObject<HTMLDivElement>;
+  transferPlayback: () => Promise<void>;
 }) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -112,76 +115,47 @@ export const PlaylistList = ({
 
     // If this track is already playing, stop it
     if (currentlyPlaying === trackId) {
-      await stopTrackPreview(trackId);
+      await stopPlayback();
+      setCurrentlyPlaying(null);
       return;
     }
 
     // Stop any currently playing track
     if (currentlyPlaying) {
-      await stopTrackPreview(currentlyPlaying);
+      await stopPlayback();
     }
 
     try {
-      if (player) {
-        // First, add the track to the queue
-        const playRes = await fetch("/api/spotify/player/play", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            uris: [`spotify:track:${trackId}`],
-            position_ms: 30000,
-            device_id: deviceID,
-          }),
-        });
+      setCurrentlyPlaying(trackId);
+      await playTrackPreview(trackId, transferPlayback);
 
-        if (!playRes.ok) {
-          const errorData = await playRes.json();
-          console.error("Failed to play track:", errorData);
-          return;
-        }
-        setCurrentlyPlaying(trackId);
+      // Set a timeout to clear the playing state after 30 seconds
+      const timeout = setTimeout(() => {
+        setCurrentlyPlaying(null);
+      }, 30000);
 
-        // Set a timeout to stop the track after 30 seconds
-        const timeout = setTimeout(() => {
-          stopTrackPreview(trackId);
-        }, 30000); // 30 seconds
-
-        setPreviewTimeouts((prev) => ({
-          ...prev,
-          [trackId]: timeout,
-        }));
-      } else {
-        console.error("WebPlayer not available");
-      }
+      setPreviewTimeouts((prev) => ({
+        ...prev,
+        [trackId]: timeout,
+      }));
     } catch (error) {
       console.error("Error playing track preview:", error);
+      setCurrentlyPlaying(null);
     }
   };
 
   const stopTrackPreview = async (trackId: string) => {
-    try {
-      console.log("Stopping track preview");
+    await stopPlayback();
+    setCurrentlyPlaying(null);
 
-      if (player) {
-        await player.pause();
-        console.log("Track preview paused via WebPlayer");
-      }
-    } catch (error) {
-      console.error("Error stopping track preview:", error);
-    } finally {
-      setCurrentlyPlaying(null);
-
-      // Clear the timeout
-      if (previewTimeouts[trackId]) {
-        clearTimeout(previewTimeouts[trackId]);
-        setPreviewTimeouts((prev) => {
-          const newTimeouts = { ...prev };
-          delete newTimeouts[trackId];
-          return newTimeouts;
-        });
-      }
+    // Clear the timeout
+    if (previewTimeouts[trackId]) {
+      clearTimeout(previewTimeouts[trackId]);
+      setPreviewTimeouts((prev) => {
+        const newTimeouts = { ...prev };
+        delete newTimeouts[trackId];
+        return newTimeouts;
+      });
     }
   };
 

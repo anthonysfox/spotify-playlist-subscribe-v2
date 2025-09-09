@@ -17,49 +17,36 @@ export const useSpotifyPlayer = (token: string) => {
   });
 
   useEffect(() => {
-    console.log("useSpotifyPlayer: Token received:", !!token);
     if (!token) return;
-
-    // Initialize the player (this is synchronous now)
     playerInstance.initialize(token);
   }, [token, playerInstance]);
 
   useEffect(() => {
-    console.log("useSpotifyPlayer: Setting up state subscription");
     const unsubscribe = playerInstance.subscribeToStateChange((newState) => {
-      console.log("useSpotifyPlayer: State changed:", newState);
       setState({ ...newState });
     });
-
     return unsubscribe;
-  }, [playerInstance, setState]);
+  }, [playerInstance]);
 
-  // --- AUTOMATICALLY TRANSFER PLAYBACK TO THIS DEVICE ---
-  useEffect(() => {
-    // Only transfer if we have a device ID and token
+  const transferPlayback = useCallback(async () => {
     if (state.device_id && token) {
-      const transferPlayback = async () => {
-        try {
-          await fetch("https://api.spotify.com/v1/me/player", {
-            method: "PUT",
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              device_ids: [state.device_id],
-              play: false, // Don't auto-play, just transfer
-            }),
-          });
-          console.log("Playback transferred to device:", state.device_id);
-        } catch (err) {
-          console.error("Failed to transfer playback:", err);
-        }
-      };
-      transferPlayback();
+      try {
+        await fetch("https://api.spotify.com/v1/me/player", {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            device_ids: [state.device_id],
+            play: true, // Start playback immediately
+          }),
+        });
+      } catch (err) {
+        console.error("Failed to transfer playback:", err);
+      }
     }
   }, [state.device_id, token]);
-  // ------------------------------------------------------
 
   const play = useCallback(async () => {
     await playerInstance.play();
@@ -95,15 +82,10 @@ export const useSpotifyPlayer = (token: string) => {
     [playerInstance]
   );
 
-  const result = {
-    // State
+  return {
     state,
-
-    // Player instance
     player: playerInstance.getPlayer(),
     deviceID: playerInstance.getDeviceId(),
-
-    // Methods
     play,
     pause,
     togglePlay,
@@ -111,13 +93,6 @@ export const useSpotifyPlayer = (token: string) => {
     previousTrack,
     seek,
     setVolume,
+    transferPlayback,
   };
-
-  console.log("useSpotifyPlayer returning:", {
-    player: !!result.player,
-    deviceID: result.deviceID,
-    state: result.state,
-  });
-
-  return result;
 };

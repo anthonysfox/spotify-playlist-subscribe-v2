@@ -3,9 +3,13 @@
 import { useUser } from "@clerk/nextjs";
 import Dashboard from "./components/Dashboard";
 import { HomePage } from "./components/HomePage";
+import { useSpotifyPlayer } from "./hooks/useSpotifyPlayer";
+import { useUserStore } from "../store/useUserStore";
 
 export default function Home() {
   const { isLoaded, isSignedIn, user } = useUser();
+  const token = useUserStore((state) => state.spotifyToken);
+  const { transferPlayback } = useSpotifyPlayer(token || "");
 
   // Show loading or nothing while Clerk is loading
   if (!isLoaded) {
@@ -21,7 +25,7 @@ export default function Home() {
   return (
     <div className="grow flex flex-col p-4 h-full w-full">
       {isSignedIn && user ? (
-        <Dashboard userData={user} />
+        <Dashboard userData={user} transferPlayback={transferPlayback} />
       ) : (
         <HomePage />
       )}

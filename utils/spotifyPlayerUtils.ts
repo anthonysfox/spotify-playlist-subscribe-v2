@@ -36,45 +36,45 @@ export const isPlayerReady = () => {
 /**
  * Play a track preview (add to queue, skip to it, seek to 30 seconds, auto-stop after 30 seconds)
  */
-export const playTrackPreview = async (trackId: string) => {
+export const playTrackPreview = async (trackId: string, transferPlayback: () => Promise<void>) => {
   const instance = SpotifyPlayerInstance.getInstance();
-  const deviceId = instance.getDeviceId();
+  let deviceId = instance.getDeviceId();
 
   if (!deviceId) {
-    console.error("No active device found");
-    return;
+    await transferPlayback();
+    deviceId = instance.getDeviceId();
+    if (!deviceId) {
+      console.error("No active device found after transfer");
+      return;
+    }
   }
 
   try {
-    // Add track to queue
-    const queueRes = await fetch("/api/spotify/player/queue", {
-      method: "POST",
+    const playRes = await fetch("/api/spotify/player/play-preview", {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        uri: `spotify:track:${trackId}`,
-        device_id: deviceId,
+        trackId,
+        deviceId,
       }),
     });
 
-    if (!queueRes.ok) {
-      const errorData = await queueRes.json();
-      console.error("Failed to add track to queue:", errorData);
+    if (!playRes.ok) {
+      const errorData = await playRes.json();
+      console.error("Failed to play track:", errorData);
       return;
     }
 
-    // Skip to the queued track
-    await instance.nextTrack();
-
-    // Wait a moment for the track to load, then seek to 30 seconds
+    // Seek to 30 seconds after a short delay
     setTimeout(async () => {
       try {
-        await instance.seek(30000); // 30 seconds
+        await instance.seek(30000);
       } catch (error) {
         console.error("Error seeking to 30 seconds:", error);
       }
-    }, 1000);
+    }, 500);
 
     // Auto-stop after 30 seconds
     setTimeout(async () => {

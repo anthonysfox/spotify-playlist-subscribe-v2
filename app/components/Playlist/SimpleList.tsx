@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ISpotifyPlaylist } from "../../../utils/types";
 import { Bell, Plus, Music } from "lucide-react";
+import { playTrackPreview, stopPlayback } from "../../../utils/spotifyPlayerUtils";
 import { useUserStore } from "../../../store/useUserStore";
 import { TrackModal } from "../Modals/TrackModal";
 
@@ -10,6 +11,7 @@ export const SimplePlaylistList = ({
   setShowSubscribeModal,
   player,
   deviceID,
+  transferPlayback,
 }: {
   playlists: ISpotifyPlaylist[];
   setSelectedPlaylist: React.Dispatch<
@@ -18,6 +20,7 @@ export const SimplePlaylistList = ({
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
   player?: any;
   deviceID?: string;
+  transferPlayback: () => Promise<void>;
 }) => {
   const managedPlaylists = useUserStore((state) => state.managedPlaylists);
   const [trackModalOpen, setTrackModalOpen] = useState(false);
@@ -75,50 +78,25 @@ export const SimplePlaylistList = ({
   };
 
   const handleTrackPreview = async (track: any) => {
-    // Track preview logic (same as original)
     const trackId = track.id;
 
     if (currentlyPlaying === trackId) {
-      await stopTrackPreview(trackId);
+      await stopPlayback();
+      setCurrentlyPlaying(null);
       return;
     }
 
     if (currentlyPlaying) {
-      await stopTrackPreview(currentlyPlaying);
+      await stopPlayback();
     }
 
-    try {
-      if (player && deviceID) {
-        const playRes = await fetch("/api/spotify/player/play", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            uris: [`spotify:track:${trackId}`],
-            position_ms: 30000,
-            device_id: deviceID,
-          }),
-        });
-
-        if (playRes.ok) {
-          setCurrentlyPlaying(trackId);
-          setTimeout(() => stopTrackPreview(trackId), 30000);
-        }
-      }
-    } catch (error) {
-      console.error("Error playing track preview:", error);
-    }
+    setCurrentlyPlaying(trackId);
+    await playTrackPreview(trackId, transferPlayback);
   };
 
   const stopTrackPreview = async (trackId: string) => {
-    try {
-      if (player) {
-        await player.pause();
-      }
-    } catch (error) {
-      console.error("Error stopping track preview:", error);
-    } finally {
-      setCurrentlyPlaying(null);
-    }
+    await stopPlayback();
+    setCurrentlyPlaying(null);
   };
 
   const handleTrackModalClose = () => {

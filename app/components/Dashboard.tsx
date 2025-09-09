@@ -19,7 +19,7 @@ import toast from "react-hot-toast";
 
 const playlistEndpoint = "/api/spotify/playlists";
 
-const Dashboard = ({ userData }: any) => {
+const Dashboard = ({ userData, transferPlayback }: { userData: any; transferPlayback: () => Promise<void> }) => {
   const setUser = useUserStore((state) => state.setUser);
   const setManagedPlaylists = useUserStore(
     (state) => state.setManagedPlaylists
@@ -214,6 +214,7 @@ const Dashboard = ({ userData }: any) => {
             player={player}
             deviceID={deviceID || ""}
             isActive={activeTab === "discover"}
+            transferPlayback={transferPlayback}
           />
           {showSubscribeModal && (
             <SubscribeModal

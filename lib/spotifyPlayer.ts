@@ -44,6 +44,7 @@ class SpotifyPlayerInstance {
   };
   private stateCallbacks: PlayerStateCallback[] = [];
   private isInitialized = false;
+  private isSDKLoaded = false;
 
   private constructor() {}
 
@@ -55,116 +56,100 @@ class SpotifyPlayerInstance {
   }
 
   public initialize(token: string): void {
-    console.log(
-      "SpotifyPlayerInstance: initialize called with token:",
-      !!token
-    );
-    if (this.isInitialized && this.token === token) {
-      console.log("SpotifyPlayerInstance: Already initialized with same token");
+    if (!token) {
+      console.error("SpotifyPlayerInstance: Initialization failed. Token is missing.");
       return;
+    }
+
+    if (this.isInitialized && this.token === token) {
+      return; // Already initialized with the same token
     }
 
     this.token = token;
     this.isInitialized = true;
-    console.log(
-      "SpotifyPlayerInstance: Token set, isInitialized:",
-      this.isInitialized
-    );
 
-    // Load the Spotify SDK if not already loaded
-    if (!window.Spotify) {
-      console.log("SpotifyPlayerInstance: Loading Spotify SDK...");
-      const script = document.createElement("script");
-      script.src = "https://sdk.scdn.co/spotify-player.js";
-      script.async = true;
-      document.body.appendChild(script);
-    } else {
-      console.log("SpotifyPlayerInstance: Spotify SDK already loaded");
+    if (!this.isSDKLoaded) {
+      this.loadSpotifySDK();
     }
 
-    // Set up the SDK ready callback
     window.onSpotifyWebPlaybackSDKReady = () => {
-      console.log("SpotifyPlayerInstance: SDK ready callback triggered");
+      this.isSDKLoaded = true;
       this.createPlayer();
     };
 
-    // If SDK is already loaded, create player immediately
     if (window.Spotify) {
-      console.log("SpotifyPlayerInstance: Creating player immediately");
       this.createPlayer();
     }
   }
 
+  private loadSpotifySDK() {
+    if (document.querySelector('script[src="https://sdk.scdn.co/spotify-player.js"]')) {
+      return; // Script already exists
+    }
+    const script = document.createElement("script");
+    script.src = "https://sdk.scdn.co/spotify-player.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }
+
   private createPlayer() {
+    if (this.player) {
+      this.player.disconnect();
+    }
+
     try {
-      console.log("SpotifyPlayerInstance: Creating Spotify player...");
       this.player = new window.Spotify.Player({
         name: "Web Playback SDK",
         getOAuthToken: (cb: (token: string) => void) => {
-          console.log("SpotifyPlayerInstance: Providing OAuth token");
-          cb(this.token!);
+          if (!this.token) {
+            console.error("OAuth token is not available.");
+            return;
+          }
+          cb(this.token);
         },
         volume: 0.5,
       });
 
-      console.log("SpotifyPlayerInstance: Player created:", !!this.player);
-
-      this.player.on("playback_error", ({ message }: { message: string }) => {
-        console.error("Failed to perform playback", message);
-      });
-
-      this.player.addListener(
-        "ready",
-        ({ device_id }: { device_id: string }) => {
-          console.log(
-            "SpotifyPlayerInstance: Player ready with device ID:",
-            device_id
-          );
-          this.state.device_id = device_id;
-          console.log("Ready with Device ID", device_id);
-          this.notifyStateChange();
-        }
-      );
-
-      this.player.addListener(
-        "not_ready",
-        ({ device_id }: { device_id: string }) => {
-          console.log("SpotifyPlayerInstance: Device went offline:", device_id);
-          console.log("Device ID has gone offline", device_id);
-          this.state.device_id = null;
-          this.notifyStateChange();
-        }
-      );
-
-      this.player.addListener("player_state_changed", (state: any) => {
-        if (!state) {
-          return;
-        }
-
-        console.log("SpotifyPlayerInstance: Player state changed");
-        this.state.current_track = state.track_window.current_track;
-        this.state.is_paused = state.paused;
-
-        this.player.getCurrentState().then((state: any) => {
-          this.state.is_active = !!state;
-          this.notifyStateChange();
-        });
-      });
-
-      console.log("SpotifyPlayerInstance: Connecting player...");
+      this.addPlayerListeners();
       this.player.connect();
-      console.log("SpotifyPlayerInstance: Player connected");
+
     } catch (error) {
-      console.error("SpotifyPlayerInstance: Error creating player:", error);
+      console.error("Error creating Spotify player:", error);
     }
+  }
+
+  private addPlayerListeners() {
+    this.player.on("playback_error", ({ message }: { message: string }) => {
+      console.error("Playback Error:", message);
+    });
+
+    this.player.addListener("ready", ({ device_id }: { device_id: string }) => {
+      this.state.device_id = device_id;
+      this.notifyStateChange();
+    });
+
+    this.player.addListener("not_ready", () => {
+      this.state.device_id = null;
+      this.notifyStateChange();
+    });
+
+    this.player.addListener("player_state_changed", (newState: any) => {
+      if (!newState) {
+        this.state.is_active = false;
+        this.notifyStateChange();
+        return;
+      }
+
+      this.state.current_track = newState.track_window.current_track;
+      this.state.is_paused = newState.paused;
+      this.state.is_active = true;
+      this.notifyStateChange();
+    });
   }
 
   public subscribeToStateChange(callback: PlayerStateCallback): () => void {
     this.stateCallbacks.push(callback);
-    // Immediately call with current state
     callback(this.state);
-
-    // Return unsubscribe function
     return () => {
       const index = this.stateCallbacks.indexOf(callback);
       if (index > -1) {
@@ -177,61 +162,20 @@ class SpotifyPlayerInstance {
     this.stateCallbacks.forEach((callback) => callback(this.state));
   }
 
-  public getPlayer(): any {
-    return this.player;
-  }
+  // --- Player Actions ---
+  public getPlayer = () => this.player;
+  public getState = () => this.state;
+  public getDeviceId = () => this.state.device_id;
 
-  public getState(): PlayerState {
-    return this.state;
-  }
+  public play = async () => this.player?.resume();
+  public pause = async () => this.player?.pause();
+  public togglePlay = async () => this.player?.togglePlay();
+  public nextTrack = async () => this.player?.nextTrack();
+  public previousTrack = async () => this.player?.previousTrack();
+  public seek = async (pos: number) => this.player?.seek(pos);
+  public setVolume = async (vol: number) => this.player?.setVolume(vol);
 
-  public getDeviceId(): string | null {
-    return this.state.device_id;
-  }
-
-  public async play(): Promise<void> {
-    if (this.player) {
-      await this.player.resume();
-    }
-  }
-
-  public async pause(): Promise<void> {
-    if (this.player) {
-      await this.player.pause();
-    }
-  }
-
-  public async togglePlay(): Promise<void> {
-    if (this.player) {
-      await this.player.togglePlay();
-    }
-  }
-
-  public async nextTrack(): Promise<void> {
-    if (this.player) {
-      await this.player.nextTrack();
-    }
-  }
-
-  public async previousTrack(): Promise<void> {
-    if (this.player) {
-      await this.player.previousTrack();
-    }
-  }
-
-  public async seek(positionMs: number): Promise<void> {
-    if (this.player) {
-      await this.player.seek(positionMs);
-    }
-  }
-
-  public async setVolume(volume: number): Promise<void> {
-    if (this.player) {
-      await this.player.setVolume(volume);
-    }
-  }
-
-  public disconnect(): void {
+  public disconnect() {
     if (this.player) {
       this.player.disconnect();
     }
@@ -241,13 +185,7 @@ class SpotifyPlayerInstance {
     this.state = {
       is_paused: true,
       is_active: false,
-      current_track: {
-        name: "",
-        album: { images: [{ url: "" }] },
-        artists: [{ name: "" }],
-        duration_ms: 0,
-        id: "",
-      },
+      current_track: { name: "", album: { images: [{ url: "" }] }, artists: [{ name: "" }], duration_ms: 0, id: "" },
       device_id: null,
     };
   }
