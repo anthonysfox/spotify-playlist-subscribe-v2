@@ -27,6 +27,9 @@ export const TrackModal: React.FC<TrackModalProps> = ({
   isPreviewSupported = true,
 }) => {
   
+  // Detect if we should use queue method (for mobile) or Web Playback SDK (desktop)
+  const isMobile = typeof window !== 'undefined' && /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
+  
   const openInSpotify = (trackId: string) => {
     const spotifyUrl = `https://open.spotify.com/track/${trackId}`;
     window.open(spotifyUrl, '_blank');
@@ -146,16 +149,16 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                   className="grid grid-cols-[auto_1fr_auto] gap-4 items-center py-3 px-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group"
                   onClick={() => {
                     if (currentlyPlaying === track.id) {
-                      if (isPreviewSupported) {
-                        onTrackPreview(track);
-                      } else {
+                      if (isMobile) {
                         pausePlayback();
+                      } else {
+                        onTrackPreview(track);
                       }
                     } else {
-                      if (isPreviewSupported) {
-                        onTrackPreview(track);
-                      } else {
+                      if (isMobile) {
                         addToQueueAndPlay(track.id);
+                      } else {
+                        onTrackPreview(track);
                       }
                     }
                   }}
