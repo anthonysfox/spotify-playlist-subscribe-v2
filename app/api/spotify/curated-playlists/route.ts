@@ -321,7 +321,10 @@ export async function GET(request: Request) {
     // Extract successful responses and flatten playlist items
     const playlists = responses
       .filter((response) => response.status === "fulfilled")
-      .flatMap((response) => response.value.playlists?.items || []);
+      .flatMap(
+        (response) =>
+          response.value.playlists?.items.filter((isThere) => isThere) || []
+      );
 
     // Remove duplicates based on playlist ID
     const uniquePlaylists = playlists.filter(

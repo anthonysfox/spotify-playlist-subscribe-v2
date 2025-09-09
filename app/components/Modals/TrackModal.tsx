@@ -1,7 +1,7 @@
-import React from "react";
-import { X, Play, Pause, ExternalLink, Plus } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { X, Play, Pause, ExternalLink } from "lucide-react";
 import { formatTime } from "utils";
-import { getDeviceId } from "utils/spotifyPlayerUtils";
+import { getTrackPreviewUrl } from "utils/itunesApi";
 
 interface TrackModalProps {
   isOpen: boolean;
@@ -12,9 +12,6 @@ interface TrackModalProps {
     images: Array<{ url: string }>;
   } | null;
   tracks: Array<{ track: any }>;
-  currentlyPlaying: string | null;
-  onTrackPreview: (track: any) => void;
-  isPreviewSupported?: boolean;
 }
 
 export const TrackModal: React.FC<TrackModalProps> = ({
@@ -22,90 +19,76 @@ export const TrackModal: React.FC<TrackModalProps> = ({
   onClose,
   playlist,
   tracks,
-  currentlyPlaying,
-  onTrackPreview,
-  isPreviewSupported = true,
 }) => {
-  
-  // Detect if we should use queue method (for mobile) or Web Playback SDK (desktop)
-  const isMobile = typeof window !== 'undefined' && /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
-  console.log('TrackModal - isMobile:', isMobile, 'UserAgent:', typeof window !== 'undefined' ? navigator.userAgent : 'undefined');
-  
-  const openInSpotify = (trackId: string) => {
-    const spotifyUrl = `https://open.spotify.com/track/${trackId}`;
-    window.open(spotifyUrl, '_blank');
+  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
+  const [hoveredTrack, setHoveredTrack] = useState<string | null>(null);
+  const [previewURL, setPreviewURL] = useState<string>("");
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      stopCurrentPreview();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (previewURL && audioRef.current) {
+      audioRef.current.load();
+      audioRef.current.play().catch((error) => {
+        console.error("Error playing audio:", error);
+      });
+    }
+  }, [previewURL]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopCurrentPreview();
+    };
+  }, []);
+
+  const stopCurrentPreview = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+      previewTimeoutRef.current = null;
+    }
+    setCurrentlyPlaying(null);
   };
 
-  const addToQueueAndPlay = async (trackId: string) => {
-    console.log('Mobile: Attempting to play track', trackId);
-    try {
-      const deviceId = getDeviceId();
-      console.log('Mobile: Device ID:', deviceId);
-      
-      // Get token first
-      const tokenResponse = await fetch('/api/spotify/token');
-      const { token } = await tokenResponse.json();
-      console.log('Mobile: Got token:', !!token);
-      
-      // Call Spotify API directly
-      const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          uris: [`spotify:track:${trackId}`],
-          position_ms: 30000,
-        }),
-      });
-
-      if (response.ok) {
-        console.log('Track playing directly from Spotify API');
-        // Update the currently playing state for UI
-        if (currentlyPlaying !== trackId) {
-          onTrackPreview({ id: trackId });
-        }
-        
-        // Auto-pause after 30 seconds
-        setTimeout(async () => {
-          if (currentlyPlaying === trackId) {
-            await pausePlayback();
-          }
-        }, 30000);
-      } else {
-        // Fallback to opening in Spotify
-        openInSpotify(trackId);
-      }
-    } catch (error) {
-      console.error('Failed to play track directly:', error);
-      // Fallback to opening in Spotify
-      openInSpotify(trackId);
+  const playPreview = (track: any) => {
+    if (currentlyPlaying === track.id) {
+      stopCurrentPreview();
+    } else {
+      setCurrentlyPlaying(track.id);
+      getTrackPreview(track);
     }
   };
 
-  const pausePlayback = async () => {
-    try {
-      const response = await fetch('/api/spotify/player/pause', {
-        method: 'PUT',
-      });
-
-      if (response.ok) {
-        console.log('Playback paused');
-        // Clear currently playing state
-        onTrackPreview({ id: null });
-      }
-    } catch (error) {
-      console.error('Failed to pause:', error);
+  const getTrackPreview = async (track: any) => {
+    audioRef.current?.pause();
+    const trackURL = await getTrackPreviewUrl(
+      track.name,
+      track.artists?.map((artist: any) => artist.name).join(", ") || "",
+      track.album.name,
+      track.duration_ms
+    );
+    console.log(trackURL);
+    if (audioRef.current && trackURL) {
+      setPreviewURL(trackURL);
     }
   };
 
-  // Debug: Log preview support status
-  console.log('TrackModal - isPreviewSupported:', isPreviewSupported, 'UserAgent:', typeof window !== 'undefined' ? navigator.userAgent : 'undefined');
   if (!isOpen || !playlist) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <audio ref={audioRef} src={previewURL} className="hidden" />
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="relative p-6 bg-gradient-to-r from-[#CC5500] to-[#A0522D] text-white">
@@ -151,26 +134,18 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                 <div
                   key={track.id}
                   className="grid grid-cols-[auto_1fr_auto] gap-4 items-center py-3 px-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group"
+                  onMouseEnter={() => setHoveredTrack(track.id)}
+                  onMouseLeave={() => setHoveredTrack(null)}
                   onClick={() => {
-                    if (currentlyPlaying === track.id) {
-                      if (isMobile) {
-                        pausePlayback();
-                      } else {
-                        onTrackPreview(track);
-                      }
-                    } else {
-                      if (isMobile) {
-                        addToQueueAndPlay(track.id);
-                      } else {
-                        onTrackPreview(track);
-                      }
-                    }
+                    playPreview(track);
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="w-6 text-gray-500 text-sm font-medium">
+                    <span className="w-6 text-gray-500 text-sm font-medium flex items-center justify-center">
                       {currentlyPlaying === track.id ? (
                         <Pause size={14} className="text-[#CC5500]" />
+                      ) : hoveredTrack === track.id ? (
+                        <Play size={14} className="text-gray-500" />
                       ) : (
                         index + 1
                       )}
@@ -201,15 +176,6 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                     <span className="text-gray-500 text-sm font-medium">
                       {formatTime(track.duration_ms)}
                     </span>
-                    {!isPreviewSupported && (
-                      <button
-                        onClick={() => openInSpotify(track.id)}
-                        className="p-1 rounded-full hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100"
-                        title="Open in Spotify"
-                      >
-                        <ExternalLink size={12} className="text-gray-400 hover:text-[#CC5500]" />
-                      </button>
-                    )}
                   </div>
                 </div>
               ))}
