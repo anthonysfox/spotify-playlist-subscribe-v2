@@ -7,6 +7,7 @@ import { Suspense } from "react";
 
 import { ClerkProvider } from "@clerk/nextjs";
 import { Metadata, Viewport } from "next";
+import InstallPrompt from "./components/InstallPrompt";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -16,14 +17,16 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "PlaylistFox - Automatic Spotify Playlist Updates",
   description: "Keep your Spotify playlists fresh with automatic track updates from your favorite sources",
-  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "PlaylistFox",
   },
   icons: {
-    icon: "/logo.png",
+    icon: [
+      { url: "/logo.png", sizes: "32x32", type: "image/png" },
+      { url: "/logo.png", sizes: "16x16", type: "image/png" },
+    ],
     apple: "/logo.png",
   },
 };
@@ -50,6 +53,7 @@ export default async function RootLayout({
               <Toaster position="bottom-center" />
             </div>
           </main>
+          <InstallPrompt />
         </body>
       </html>
     </ClerkProvider>
