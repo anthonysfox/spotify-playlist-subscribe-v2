@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Metadata, Viewport } from "next";
 import InstallPrompt from "./components/InstallPrompt";
+import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -53,6 +54,7 @@ export default async function RootLayout({
               <Toaster position="bottom-center" />
             </div>
           </main>
+          <ServiceWorkerRegistration />
           <InstallPrompt />
         </body>
       </html>
