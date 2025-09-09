@@ -29,6 +29,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
   
   // Detect if we should use queue method (for mobile) or Web Playback SDK (desktop)
   const isMobile = typeof window !== 'undefined' && /Mobile|Android|iPhone|iPad/.test(navigator.userAgent);
+  console.log('TrackModal - isMobile:', isMobile, 'UserAgent:', typeof window !== 'undefined' ? navigator.userAgent : 'undefined');
   
   const openInSpotify = (trackId: string) => {
     const spotifyUrl = `https://open.spotify.com/track/${trackId}`;
@@ -36,12 +37,15 @@ export const TrackModal: React.FC<TrackModalProps> = ({
   };
 
   const addToQueueAndPlay = async (trackId: string) => {
+    console.log('Mobile: Attempting to play track', trackId);
     try {
       const deviceId = getDeviceId();
+      console.log('Mobile: Device ID:', deviceId);
       
       // Get token first
       const tokenResponse = await fetch('/api/spotify/token');
       const { token } = await tokenResponse.json();
+      console.log('Mobile: Got token:', !!token);
       
       // Call Spotify API directly
       const response = await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${deviceId}`, {
