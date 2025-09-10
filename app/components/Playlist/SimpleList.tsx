@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { ISpotifyPlaylist } from "../../../utils/types";
-import { Bell, Plus, Music } from "lucide-react";
+import { Bell, Plus, Music, ExternalLink } from "lucide-react";
 import { useUserStore } from "../../../store/useUserStore";
 import { TrackModal } from "../Modals/TrackModal";
 
@@ -21,6 +21,17 @@ export const SimplePlaylistList = ({
     useState<ISpotifyPlaylist | null>(null);
   const [previewTracks, setPreviewTracks] = useState<any[]>([]);
   const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile devices
+  useEffect(() => {
+    const checkIsMobile = () => {
+      const userAgent = navigator.userAgent;
+      return /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+    };
+    
+    setIsMobile(checkIsMobile());
+  }, []);
 
   const subscribedPlaylists = useMemo(() => {
     return new Set(
@@ -50,6 +61,14 @@ export const SimplePlaylistList = ({
   };
 
   const handleViewTracks = async (playlist: ISpotifyPlaylist) => {
+    // On mobile, open Spotify app directly
+    if (isMobile) {
+      const spotifyUrl = `https://open.spotify.com/playlist/${playlist.id}`;
+      window.open(spotifyUrl, '_blank');
+      return;
+    }
+
+    // On desktop, show track modal with previews
     setSelectedPlaylistForModal(playlist);
     setPreviewTracks([]);
     setLoadingTracks(playlist.id);
@@ -111,10 +130,21 @@ export const SimplePlaylistList = ({
                     </>
                   ) : (
                     <>
-                      <Music size={12} className="text-[#CC5500]" />
-                      <span className="text-xs text-[#CC5500]">
-                        View tracks
-                      </span>
+                      {isMobile ? (
+                        <>
+                          <ExternalLink size={12} className="text-[#CC5500]" />
+                          <span className="text-xs text-[#CC5500]">
+                            Open in Spotify
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Music size={12} className="text-[#CC5500]" />
+                          <span className="text-xs text-[#CC5500]">
+                            View tracks
+                          </span>
+                        </>
+                      )}
                     </>
                   )}
                 </div>
