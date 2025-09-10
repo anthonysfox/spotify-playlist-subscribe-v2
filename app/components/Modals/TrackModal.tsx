@@ -36,15 +36,41 @@ export const TrackModal: React.FC<TrackModalProps> = ({
 
   useEffect(() => {
     if (previewURL && audioRef.current) {
-      audioRef.current.load();
-      audioRef.current.play().catch((error) => {
-        console.error("Error playing audio:", error);
-      });
+      const audio = audioRef.current;
+      
+      // Reset audio element completely for mobile compatibility
+      audio.pause();
+      audio.currentTime = 0;
+      audio.src = previewURL;
+      audio.load();
+      
+      // Add event listeners for better mobile support
+      const handleCanPlay = () => {
+        audio.play().catch((error) => {
+          console.error("Error playing audio:", error);
+          // If autoplay fails, user needs to manually trigger
+        });
+      };
+      
+      const handleError = () => {
+        console.error("Audio loading error");
+        setCurrentlyPlaying(null);
+        setPreviewURL("");
+      };
+      
+      audio.addEventListener('canplaythrough', handleCanPlay);
+      audio.addEventListener('error', handleError);
       
       // Auto-stop after 30 seconds
       previewTimeoutRef.current = setTimeout(() => {
         stopCurrentPreview();
       }, 30000);
+      
+      // Cleanup event listeners
+      return () => {
+        audio.removeEventListener('canplaythrough', handleCanPlay);
+        audio.removeEventListener('error', handleError);
+      };
     }
   }, [previewURL]);
 
@@ -57,8 +83,12 @@ export const TrackModal: React.FC<TrackModalProps> = ({
 
   const stopCurrentPreview = () => {
     if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+      const audio = audioRef.current;
+      audio.pause();
+      audio.currentTime = 0;
+      // Remove src to fully reset the audio element on mobile
+      audio.removeAttribute('src');
+      audio.load();
     }
     if (previewTimeoutRef.current) {
       clearTimeout(previewTimeoutRef.current);
@@ -75,6 +105,16 @@ export const TrackModal: React.FC<TrackModalProps> = ({
     } else {
       setCurrentlyPlaying(track.id);
       getTrackPreview(track);
+    }
+  };
+
+  const handleManualPlay = async () => {
+    if (audioRef.current && previewURL) {
+      try {
+        await audioRef.current.play();
+      } catch (error) {
+        console.error("Manual play failed:", error);
+      }
     }
   };
 
@@ -110,7 +150,14 @@ export const TrackModal: React.FC<TrackModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <audio ref={audioRef} src={previewURL || undefined} className="hidden" />
+      <audio 
+        ref={audioRef} 
+        src={previewURL || undefined} 
+        className="hidden"
+        preload="none"
+        playsInline
+        controls={false}
+      />
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="relative p-6 bg-gradient-to-r from-[#CC5500] to-[#A0522D] text-white">
@@ -158,8 +205,13 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                   className="grid grid-cols-[auto_1fr_auto] gap-4 items-center py-3 px-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group"
                   onMouseEnter={() => setHoveredTrack(track.id)}
                   onMouseLeave={() => setHoveredTrack(null)}
-                  onClick={() => {
-                    playPreview(track);
+                  onClick={async () => {
+                    if (currentlyPlaying === track.id && previewURL) {
+                      // If already playing this track, try to play it manually (helpful for mobile)
+                      await handleManualPlay();
+                    } else {
+                      playPreview(track);
+                    }
                   }}
                 >
                   <div className="flex items-center gap-3">
