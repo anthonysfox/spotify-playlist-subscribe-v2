@@ -24,10 +24,7 @@ interface CuratedPlaylistsProps {
   previewTracks: any;
   setPreviewTracks: React.Dispatch<React.SetStateAction<any>>;
   listRef: React.RefObject<HTMLDivElement>;
-  player: any;
-  deviceID: string;
   isActive: boolean;
-  transferPlayback: () => Promise<void>;
 }
 
 export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
@@ -38,10 +35,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   previewTracks,
   setPreviewTracks,
   listRef,
-  player,
-  deviceID,
   isActive,
-  transferPlayback,
 }) => {
   const [activeCategory, setActiveCategory] = useState("popular");
   const [activeSubOption, setActiveSubOption] = useState("trending"); // Default sub-option
@@ -385,9 +379,6 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
             playlists={playlists}
             setSelectedPlaylist={setSelectedPlaylist}
             setShowSubscribeModal={setShowSubscribeModal}
-            player={player}
-            deviceID={deviceID}
-            transferPlayback={transferPlayback}
           />
           
           {/* Loading indicator */}

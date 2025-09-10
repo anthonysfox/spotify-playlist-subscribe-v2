@@ -3,7 +3,6 @@ import { ISpotifyPlaylist } from "utils/types";
 import { Bell, Music, ExternalLink } from "lucide-react";
 import { PlaylistSkeleton } from "../Skeletons/PlaylistSkeleton";
 import { TrackModal } from "../Modals/TrackModal";
-import { playTrackPreview, stopPlayback } from "utils/spotifyPlayerUtils";
 import { useUserStore } from "store/useUserStore";
 import toast from "react-hot-toast";
 
@@ -13,19 +12,14 @@ export const PlaylistList = ({
   playlists,
   loading,
   loadedAllData,
-  deviceID,
-  player,
   setSelectedPlaylist,
   previewTracks,
   setPreviewTracks,
   testingRef,
   setShowSubscribeModal,
   sentinelRef,
-  transferPlayback,
 }: {
   playlists: ISpotifyPlaylist[];
-  deviceID: string;
-  player: any;
   loading: boolean;
   loadedAllData: boolean;
   setSelectedPlaylist: React.Dispatch<
@@ -36,7 +30,6 @@ export const PlaylistList = ({
   testingRef: React.RefObject<HTMLDivElement>;
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
   sentinelRef?: React.RefObject<HTMLDivElement>;
-  transferPlayback: () => Promise<void>;
 }) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);

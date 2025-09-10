@@ -1,11 +1,30 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-const isProtectedRoute = createRouteMatcher(["/api(.*)"]);
 
-export default clerkMiddleware();
+// Define routes that should be protected
+const isProtectedRoute = createRouteMatcher([
+  "/api/spotify(.*)",
+  "/api/users(.*)",
+  "/profile(.*)",
+  "/dashboard(.*)"
+]);
 
-// export default clerkMiddleware((auth, req) => {
-//   if (isProtectedRoute(req)) auth.protect();
-// });
+// Define public API routes that don't need auth
+const isPublicApiRoute = createRouteMatcher([
+  "/api/webhooks(.*)",
+  "/api/cron(.*)"
+]);
+
+export default clerkMiddleware(async (auth, req) => {
+  // Don't protect public API routes
+  if (isPublicApiRoute(req)) {
+    return;
+  }
+  
+  // Protect other routes that need authentication
+  if (isProtectedRoute(req)) {
+    await auth.protect();
+  }
+});
 
 export const config = {
   matcher: [

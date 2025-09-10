@@ -13,19 +13,17 @@ import { SubscribeModal, SubscribeReqBody } from "./Modals/SubscribeModal";
 import { PlaylistSettingsModal } from "./Modals/SettingsModal";
 import { Bell } from "lucide-react";
 import { useUserStore } from "store/useUserStore";
-import { useSpotifyPlayer } from "hooks/useSpotifyPlayer";
 import { Subscriptions } from "./Playlist/Subscriptions";
 import toast from "react-hot-toast";
 
 const playlistEndpoint = "/api/spotify/playlists";
 
-const Dashboard = ({ userData, transferPlayback }: { userData: any; transferPlayback: () => Promise<void> }) => {
+const Dashboard = ({ userData }: { userData: any }) => {
   const setUser = useUserStore((state) => state.setUser);
   const setManagedPlaylists = useUserStore(
     (state) => state.setManagedPlaylists
   );
   const [token, setToken] = useState<string>("");
-  const { player, deviceID } = useSpotifyPlayer(token);
   const [previewTracks, setPreviewTracks] = useState<any>([]);
   const [selectedPlaylist, setSelectedPlaylist] =
     useState<ISpotifyPlaylist | null>(null);
@@ -211,10 +209,7 @@ const Dashboard = ({ userData, transferPlayback }: { userData: any; transferPlay
             previewTracks={previewTracks}
             setPreviewTracks={setPreviewTracks}
             listRef={listRef}
-            player={player}
-            deviceID={deviceID || ""}
             isActive={activeTab === "discover"}
-            transferPlayback={transferPlayback}
           />
           {showSubscribeModal && (
             <SubscribeModal

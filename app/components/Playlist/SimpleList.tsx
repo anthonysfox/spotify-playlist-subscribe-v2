@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { ISpotifyPlaylist } from "../../../utils/types";
 import { Bell, Plus, Music } from "lucide-react";
-import { playTrackPreview, stopPlayback } from "../../../utils/spotifyPlayerUtils";
 import { useUserStore } from "../../../store/useUserStore";
 import { TrackModal } from "../Modals/TrackModal";
 
@@ -9,18 +8,12 @@ export const SimplePlaylistList = ({
   playlists,
   setSelectedPlaylist,
   setShowSubscribeModal,
-  player,
-  deviceID,
-  transferPlayback,
 }: {
   playlists: ISpotifyPlaylist[];
   setSelectedPlaylist: React.Dispatch<
     React.SetStateAction<ISpotifyPlaylist | null>
   >;
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
-  player?: any;
-  deviceID?: string;
-  transferPlayback: () => Promise<void>;
 }) => {
   const managedPlaylists = useUserStore((state) => state.managedPlaylists);
   const [trackModalOpen, setTrackModalOpen] = useState(false);
@@ -28,36 +21,6 @@ export const SimplePlaylistList = ({
     useState<ISpotifyPlaylist | null>(null);
   const [previewTracks, setPreviewTracks] = useState<any[]>([]);
   const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
-  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
-
-  // Check if preview functionality is supported
-  const isPreviewSupported = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    
-    const userAgent = navigator.userAgent;
-    
-    // Detect Safari properly - Safari has "Safari" but not "Chrome" in user agent
-    // Also check for "Version/" which is specific to Safari
-    const isSafari = /Safari/.test(userAgent) && /Version\//.test(userAgent) && !/Chrome/.test(userAgent);
-    const isFirefox = /Firefox/.test(userAgent);
-    const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
-    
-    console.log('SimpleList Detection debug:', {
-      userAgent,
-      hasSafari: /Safari/.test(userAgent),
-      hasVersion: /Version\//.test(userAgent),
-      hasChrome: /Chrome/.test(userAgent),
-      isSafari,
-      isFirefox,
-      isMobile
-    });
-    
-    const supported = (isFirefox || (!isMobile && !isSafari));
-    console.log('SimpleList Final supported result:', supported);
-    
-    // Only support Firefox (any) and non-Safari desktop browsers
-    return supported;
-  }, []);
 
   const subscribedPlaylists = useMemo(() => {
     return new Set(
@@ -106,34 +69,12 @@ export const SimplePlaylistList = ({
     }
   };
 
-  const handleTrackPreview = async (track: any) => {
-    const trackId = track.id;
-
-    if (currentlyPlaying === trackId) {
-      await stopPlayback();
-      setCurrentlyPlaying(null);
-      return;
-    }
-
-    if (currentlyPlaying) {
-      await stopPlayback();
-    }
-
-    setCurrentlyPlaying(trackId);
-    await playTrackPreview(trackId, transferPlayback);
-  };
-
-  const stopTrackPreview = async (trackId: string) => {
-    await stopPlayback();
-    setCurrentlyPlaying(null);
-  };
-
   const handleTrackModalClose = () => {
     setTrackModalOpen(false);
     setSelectedPlaylistForModal(null);
     setPreviewTracks([]);
-    if (currentlyPlaying) stopTrackPreview(currentlyPlaying);
   };
+
   return (
     <div className="w-full overflow-hidden">
       <div className="flex flex-col gap-2 pb-4">
@@ -241,9 +182,6 @@ export const SimplePlaylistList = ({
         onClose={handleTrackModalClose}
         playlist={selectedPlaylistForModal}
         tracks={previewTracks}
-        currentlyPlaying={currentlyPlaying}
-        onTrackPreview={handleTrackPreview}
-        isPreviewSupported={isPreviewSupported}
       />
     </div>
   );
