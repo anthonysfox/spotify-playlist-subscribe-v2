@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     (managedPlaylist &&
       (!managedPlaylist.id ||
         !managedPlaylist.name ||
-        !managedPlaylist.trackCount)) ||
+        managedPlaylist.trackCount === undefined)) ||
     !sourcePlaylist ||
     !sourcePlaylist.id ||
     !sourcePlaylist.name ||
@@ -214,7 +214,7 @@ export async function POST(request: Request) {
           const syncUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/cron/sync?playlistId=${finalManagedPlaylist.id}&sourceId=${existingSourcePlaylist.id}&force=true`;
 
           fetch(syncUrl, {
-            method: "POST",
+            method: "GET",
             headers: {
               Authorization: `Bearer ${process.env.CRON_SECRET}`,
               "Content-Type": "application/json",

@@ -1,9 +1,58 @@
 import { PrismaClient } from "@prisma/client";
-import { softDeleteMiddleware } from "./prisma-middleware";
 
 const prismaClientSingleton = () => {
-  const client = new PrismaClient();
-  client.$use(softDeleteMiddleware);
+  const client = new PrismaClient().$extends({
+    query: {
+      user: {
+        async findMany({ args, query }) {
+          // Auto filter out soft deleted records
+          if (args.where?.deletedAt === undefined) {
+            args.where = { ...args.where, deletedAt: null };
+          }
+          return query(args);
+        },
+        async findFirst({ args, query }) {
+          // Auto filter out soft deleted records
+          if (args.where?.deletedAt === undefined) {
+            args.where = { ...args.where, deletedAt: null };
+          }
+          return query(args);
+        },
+      },
+      managedPlaylist: {
+        async findMany({ args, query }) {
+          // Auto filter out soft deleted records
+          if (args.where?.deletedAt === undefined) {
+            args.where = { ...args.where, deletedAt: null };
+          }
+          return query(args);
+        },
+        async findFirst({ args, query }) {
+          // Auto filter out soft deleted records
+          if (args.where?.deletedAt === undefined) {
+            args.where = { ...args.where, deletedAt: null };
+          }
+          return query(args);
+        },
+      },
+      sourcePlaylist: {
+        async findMany({ args, query }) {
+          // Auto filter out soft deleted records
+          if (args.where?.deletedAt === undefined) {
+            args.where = { ...args.where, deletedAt: null };
+          }
+          return query(args);
+        },
+        async findFirst({ args, query }) {
+          // Auto filter out soft deleted records
+          if (args.where?.deletedAt === undefined) {
+            args.where = { ...args.where, deletedAt: null };
+          }
+          return query(args);
+        },
+      },
+    },
+  });
   return client;
 };
 
