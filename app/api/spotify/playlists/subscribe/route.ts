@@ -307,6 +307,26 @@ async function createSpotifyPlaylist(
 ) {
   const spotifyCreatePlaylistAPI: string = `https://api.spotify.com/v1/users/${spotifyUserId}/playlists`;
 
+  const descriptions = [
+    "🦊 Auto-updated by PlaylistFox from your favorite playlists",
+    "🦊 Fresh tracks delivered by PlaylistFox",
+    "🦊 Your personal mixtape, courtesy of PlaylistFox",
+    "🦊 PlaylistFox keeps this playlist fresh for you",
+    "🦊 Curated and updated by PlaylistFox",
+    "🦊 Your soundtrack, supercharged by PlaylistFox",
+
+    // New batch:
+    "🦊 PlaylistFox is hunting down your next favorite song",
+    "🦊 Automatically foxed up with fresh music",
+    "🦊 Your music, cleverly curated by PlaylistFox",
+    "🦊 PlaylistFox: making your playlists smarter, not harder",
+    "🦊 Sly beats, served fresh by PlaylistFox",
+    "🦊 PlaylistFox prowls for your perfect tracks",
+  ];
+
+  const randomDescription =
+    descriptions[Math.floor(Math.random() * descriptions.length)];
+
   const spotifyPlaylistCreateResp = await fetch(spotifyCreatePlaylistAPI, {
     method: "POST",
     headers: {
@@ -315,6 +335,7 @@ async function createSpotifyPlaylist(
     body: JSON.stringify({
       name: playlistName,
       public: false,
+      description: randomDescription,
     }),
   });
 
