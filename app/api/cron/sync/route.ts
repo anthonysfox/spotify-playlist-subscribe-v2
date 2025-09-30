@@ -18,11 +18,10 @@ export async function GET(request: NextRequest) {
 
   try {
     // 1. Authentication - Verify cron request
-    const authHeader = request.headers.get("Authorization");
-    const isInternalCall = request.headers.get("x-vercel-cron");
+    const authHeader = request.headers.get("authorization");
 
-    if (!isInternalCall && authHeader !== process.env.CRON_SECRET) {
-      return new Response("Unauthorized", { status: 401 });
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 2. Get optional parameters
