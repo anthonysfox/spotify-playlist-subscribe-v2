@@ -314,17 +314,26 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
 // Helper function to calculate next sync time
 function calculateNextSyncTime(interval: string): Date {
   const now = new Date();
+  let nextSync: Date;
 
   switch (interval) {
     case "DAILY":
-      return addDays(now, 1);
+      nextSync = addDays(now, 1);
+      break;
     case "WEEKLY":
-      return addWeeks(now, 1);
+      nextSync = addWeeks(now, 1);
+      break;
     case "MONTHLY":
-      return addMonths(now, 1);
+      nextSync = addMonths(now, 1);
+      break;
     default:
-      return addWeeks(now, 1); // Default to weekly
+      nextSync = addWeeks(now, 1); // Default to weekly
   }
+
+  // Normalize to midnight to ensure consistent sync times
+  nextSync.setHours(0, 0, 0, 0);
+
+  return nextSync;
 }
 
 // Improved getTracks with better error handling

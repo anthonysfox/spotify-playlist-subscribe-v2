@@ -362,19 +362,28 @@ async function createSpotifyPlaylist(
 
 function calculateNextSyncTime(syncFrequency: string, customDays: string[]) {
   const now = new Date();
+  let nextSync: Date;
 
   switch (syncFrequency) {
     case "DAILY":
-      return addDays(now, 1);
+      nextSync = addDays(now, 1);
+      break;
     case "WEEKLY":
-      return addDays(now, 7);
+      nextSync = addDays(now, 7);
+      break;
     case "MONTHLY":
-      return addDays(now, 30);
+      nextSync = addDays(now, 30);
+      break;
     case "CUSTOM":
       return calculateNextCustomRun(customDays);
     default:
-      return addDays(now, 7);
+      nextSync = addDays(now, 7);
   }
+
+  // Normalize to midnight to ensure consistent sync times
+  nextSync.setHours(0, 0, 0, 0);
+
+  return nextSync;
 }
 
 function calculateNextCustomRun(days?: string[]) {
