@@ -380,8 +380,8 @@ function calculateNextSyncTime(syncFrequency: string, customDays: string[]) {
       nextSync = addDays(now, 7);
   }
 
-  // Normalize to midnight to ensure consistent sync times
-  nextSync.setHours(0, 0, 0, 0);
+  // Normalize to midnight UTC to ensure consistent sync times across timezones
+  nextSync.setUTCHours(0, 0, 0, 0);
 
   return nextSync;
 }
@@ -407,17 +407,17 @@ function calculateNextCustomRun(days?: string[]) {
 
   if (!targetDays.length) return null;
 
-  // Always sync at midnight (00:00)
+  // Always sync at midnight UTC (00:00)
   for (let i = 0; i < 7; i++) {
     const candidateDate = addDays(now, i);
-    const dayOfWeek = candidateDate.getDay();
+    const dayOfWeek = candidateDate.getUTCDay();
 
     if (targetDays.includes(dayOfWeek)) {
-      // Set time to midnight
+      // Set time to midnight UTC
       const scheduledTime = new Date(candidateDate);
-      scheduledTime.setHours(0, 0, 0, 0);
+      scheduledTime.setUTCHours(0, 0, 0, 0);
 
-      // If it's today and we've already passed midnight, skip to next occurrence
+      // If it's today and we've already passed midnight UTC, skip to next occurrence
       if (i === 0 && scheduledTime <= now) {
         continue;
       }
@@ -428,8 +428,8 @@ function calculateNextCustomRun(days?: string[]) {
 
   // Find the next occurrence if no match found in the next 7 days
   const firstTargetDay = Math.min(...targetDays);
-  const daysUntilTarget = (firstTargetDay + 7 - now.getDay()) % 7 || 7;
+  const daysUntilTarget = (firstTargetDay + 7 - now.getUTCDay()) % 7 || 7;
   const nextRun = addDays(now, daysUntilTarget);
-  nextRun.setHours(0, 0, 0, 0);
+  nextRun.setUTCHours(0, 0, 0, 0);
   return nextRun;
 }

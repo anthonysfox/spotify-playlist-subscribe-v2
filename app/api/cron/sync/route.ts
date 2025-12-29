@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     if (!forceSync) {
       whereConditions.OR = [
-        { nextSyncTime: { lte: new Date() } },
+        { nextSyncTime: { lte: new Date() } }, // Sync if next sync time is in the past
         { nextSyncTime: null }, // Never synced playlists
       ];
     }
@@ -330,8 +330,8 @@ function calculateNextSyncTime(interval: string): Date {
       nextSync = addWeeks(now, 1); // Default to weekly
   }
 
-  // Normalize to midnight to ensure consistent sync times
-  nextSync.setHours(0, 0, 0, 0);
+  // Normalize to midnight UTC to ensure consistent sync times across timezones
+  nextSync.setUTCHours(0, 0, 0, 0);
 
   return nextSync;
 }
