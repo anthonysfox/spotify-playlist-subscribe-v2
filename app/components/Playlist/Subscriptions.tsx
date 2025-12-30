@@ -53,7 +53,7 @@ export const Subscriptions = ({
   ) => {
     await unsubscribeFromSource(sourcePlaylistID, managedPlaylistId);
   };
-  console.log(managedPlaylists);
+
   return (
     <div className="flex flex-col grow min-h-0">
       {!isLoading ? (
@@ -145,7 +145,12 @@ export const Subscriptions = ({
                               {managedPlaylist.nextSyncTime
                                 ? new Date(
                                     managedPlaylist.nextSyncTime
-                                  ).toLocaleDateString()
+                                  ).toLocaleDateString(undefined, {
+                                    timeZone: "UTC",
+                                    year: "numeric",
+                                    month: "numeric",
+                                    day: "numeric",
+                                  })
                                 : "Not scheduled"}
                             </span>
                           </div>
@@ -184,7 +189,9 @@ export const Subscriptions = ({
                                   }
                                   className="ml-2 sm:ml-4 px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-red-50 text-red-600 text-xs sm:text-sm font-medium hover:bg-red-100 transition-all duration-200 border border-red-200 shadow-sm hover:shadow-md flex-shrink-0"
                                 >
-                                  <span className="hidden sm:inline">Unsubscribe</span>
+                                  <span className="hidden sm:inline">
+                                    Unsubscribe
+                                  </span>
                                   <span className="sm:hidden">×</span>
                                 </button>
                               </div>
