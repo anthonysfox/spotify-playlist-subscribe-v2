@@ -1,36 +1,33 @@
 name: Scheduled Playlist Sync
 
 on:
-  # Run daily at midnight UTC
   schedule:
-    - cron: '0 0 * * *'
-
-  # Allow manual trigger from GitHub Actions UI
+    - cron: "0 0 * * *"
   workflow_dispatch:
+
+concurrency:
+  group: scheduled-playlist-sync
+  cancel-in-progress: false
 
 jobs:
   sync-playlists:
     runs-on: ubuntu-latest
-
     steps:
       - name: Trigger Playlist Sync
         run: |
-          curl -X GET "${{ secrets.APP_URL }}/api/cron/sync" \
+          curl --fail-with-body -X GET "${{ secrets.APP_URL }}/api/cron/sync" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
             -H "Content-Type: application/json" \
             -w "\nHTTP Status: %{http_code}\n" \
             -o response.json
-
           echo "Response:"
           cat response.json
 
       - name: Check sync status
         run: |
-          if [ -f response.json ]; then
-            success=$(cat response.json | grep -o '"success"[[:space:]]*:[[:space:]]*true' || echo "")
-            if [ -z "$success" ]; then
-              echo "Sync failed or returned unexpected response"
-              exit 1
-            fi
-            echo "Sync completed successfully"
+          jq .
+          if [ "$(jq -r '.success' response.json)" != "true" ]; then
+            echo "Sync failed: $(jq -r '.error // .message // "unknown error"' response.json)"
+            exit 1
           fi
+          echo "Sync completed successfully"
