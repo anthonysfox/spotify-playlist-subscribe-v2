@@ -12,6 +12,7 @@ concurrency:
 jobs:
   sync-playlists:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Trigger Playlist Sync
         run: |
