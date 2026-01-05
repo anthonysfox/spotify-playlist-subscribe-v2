@@ -71,7 +71,7 @@ const Dashboard = ({ userData }: { userData: any }) => {
   }, [userData, setUser]);
 
   useEffect(() => {
-    fetch("/api/users/managed-playlists")
+    fetch("/api/users/me/managed-playlists")
       .then((resp) => resp.json())
       .then((data) => setManagedPlaylists([...data]))
       .catch((error) => {

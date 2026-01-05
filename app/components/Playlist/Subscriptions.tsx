@@ -5,7 +5,7 @@ import { PlaylistSettingsModal } from "../Modals/SettingsModal";
 import { useUserStore } from "store/useUserStore";
 import { SubscriptionSkeleton } from "../Skeletons/SubscriptionSkeleton";
 import toast from "react-hot-toast";
-import { ManagedPlaylist } from "@prisma/client";
+import type { ManagedPlaylist } from "@/generated/prisma/client";
 
 interface ISubscriptionsProps {
   setSelectedPlaylist: React.Dispatch<
@@ -38,7 +38,7 @@ export const Subscriptions = ({
   useEffect(() => {
     async function fetchSubscriptions() {
       setIsLoading(true);
-      const api = `/api/users/managed-playlists`;
+      const api = `/api/users/me/managed-playlists`;
       const res = await fetch(api);
       const data = await res.json();
       setManagedPlaylists([...data]);

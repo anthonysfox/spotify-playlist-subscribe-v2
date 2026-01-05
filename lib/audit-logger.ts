@@ -1,4 +1,4 @@
-import { AuditAction } from '@prisma/client'
+import { AuditAction } from "@/generated/prisma/client";
 import prisma from './prisma'
 
 interface AuditLogData {

@@ -145,7 +145,7 @@ export const useUserStore = create<UserStore>()(
         ) => {
           try {
             const response = await fetch(
-              `/api/users/managed-playlists/${managedPlaylistId}/subscriptions/${sourcePlaylistId}`,
+              `/api/users/me/managed-playlists/${managedPlaylistId}/subscriptions/${sourcePlaylistId}`,
               {
                 method: "DELETE",
               }

@@ -1,7 +1,13 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 
 const prismaClientSingleton = () => {
-  const client = new PrismaClient().$extends({
+  const adapter = new PrismaPg({
+    connectionString:
+      process.env.POSTGRES_PRISMA_URL ?? process.env.POSTGRES_URL_NON_POOLING,
+  });
+
+  const client = new PrismaClient({ adapter }).$extends({
     query: {
       user: {
         async findMany({ args, query }) {
