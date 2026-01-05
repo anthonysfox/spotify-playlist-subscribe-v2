@@ -8,6 +8,13 @@ const nextConfig = {
     "local-origin.dev",
     "*.local-origin.dev",
   ],
+  webpack: (config) => {
+    config.resolve.extensionAlias = {
+      ".js": [".ts", ".tsx", ".js", ".jsx"],
+      ".jsx": [".tsx", ".jsx"],
+    };
+    return config;
+  },
 };
 
 export default nextConfig;
