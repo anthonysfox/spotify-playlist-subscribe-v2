@@ -98,7 +98,7 @@ model ManagedPlaylist {
   lastMetadataRefreshAt DateTime @default(now()) // Last time we refreshed metadata (name, image, etc.)
 
   // The calculated time for the next scheduled sync for this playlist.
-  nextSyncTime DateTime?
+  nextSyncTime DateTime? @db.Timestamptz
 
   // Links to the source playlists this managed playlist subscribes from
   subscriptions ManagedPlaylistSourceSubscription[]

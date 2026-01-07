@@ -2,7 +2,7 @@ import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { AuditLogger } from "@/lib/audit-logger";
-import { addDays, addWeeks, addMonths } from "date-fns";
+import { addDays, addMonths, addWeeks } from "date-fns";
 
 interface SyncResult {
   playlistId: string;
@@ -62,6 +62,9 @@ export async function GET(request: NextRequest) {
     const playlistsToSync = await prisma.managedPlaylist.findMany({
       where: whereConditions,
       include: {
+        user: {
+          select: { timezone: true },
+        },
         subscriptions: {
           where: {
             sourcePlaylist: {
@@ -86,12 +89,27 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 5. Process playlists with rate limiting
+    // 5. Filter to local midnight window
+    const now = new Date();
+    const midnightEligible = playlistsToSync.filter((playlist) =>
+      isLocalMidnightWindow(now, playlist.user?.timezone)
+    );
+
+    if (midnightEligible.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: "No playlists in local midnight window",
+        processed: 0,
+        results: [],
+      });
+    }
+
+    // 6. Process playlists with rate limiting
     const results: SyncResult[] = [];
     const BATCH_SIZE = 3; // Reduce concurrent API calls
 
-    for (let i = 0; i < playlistsToSync.length; i += BATCH_SIZE) {
-      const batch = playlistsToSync.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < midnightEligible.length; i += BATCH_SIZE) {
+      const batch = midnightEligible.slice(i, i + BATCH_SIZE);
 
       const batchResults = await Promise.allSettled(
         batch.map((playlist) => syncSinglePlaylist(playlist))
@@ -330,10 +348,25 @@ function calculateNextSyncTime(interval: string): Date {
       nextSync = addWeeks(now, 1); // Default to weekly
   }
 
-  // Normalize to midnight UTC to ensure consistent sync times across timezones
+  // Normalize to midnight UTC
   nextSync.setUTCHours(0, 0, 0, 0);
 
   return nextSync;
+}
+
+function isLocalMidnightWindow(now: Date, timeZone?: string | null) {
+  const zone = timeZone || "UTC";
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: zone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = formatter.formatToParts(now);
+  const hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+
+  return hour === 0 && minute < 10;
 }
 
 // Improved getTracks with better error handling

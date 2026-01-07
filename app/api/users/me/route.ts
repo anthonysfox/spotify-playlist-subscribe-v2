@@ -2,6 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 
+export async function GET(request: NextRequest) {
+  const { userId } = await auth();
+  console.log(userId);
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const user = await prisma.user.findFirst({
+      where: { clerkUserId: userId },
+    });
+
+    return NextResponse.json(
+      { success: true, data: { user } },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("[GET /api/users/me] Error:", error);
+    return NextResponse.json({ error: "Failed to get user" }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: NextRequest) {
   const { userId } = await auth();
 
@@ -16,10 +41,7 @@ export async function PATCH(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   const timezone = body?.timezone?.trim();
