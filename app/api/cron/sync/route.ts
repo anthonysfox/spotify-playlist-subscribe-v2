@@ -364,9 +364,8 @@ function isLocalMidnightWindow(now: Date, timeZone?: string | null) {
   });
   const parts = formatter.formatToParts(now);
   const hour = Number(parts.find((part) => part.type === "hour")?.value);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value);
 
-  return hour === 0 && minute < 10;
+  return hour === 0;
 }
 
 // Improved getTracks with better error handling
