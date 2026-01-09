@@ -1,5 +1,3 @@
-import { addDays, addMonths, addWeeks } from "date-fns";
-
 type SyncScheduleOptions = {
   timeZone?: string | null;
   customDays?: string[] | string | null;
@@ -75,6 +73,22 @@ function getLocalMidnightBase(now: Date, timeZone: string) {
   return new Date(Date.UTC(parts.year, parts.month - 1, parts.day, 0, 0, 0));
 }
 
+function addUtcDays(date: Date, days: number) {
+  const next = new Date(date.getTime());
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function addUtcWeeks(date: Date, weeks: number) {
+  return addUtcDays(date, weeks * 7);
+}
+
+function addUtcMonths(date: Date, months: number) {
+  const next = new Date(date.getTime());
+  next.setUTCMonth(next.getUTCMonth() + months);
+  return next;
+}
+
 function normalizeCustomDays(days?: string[] | string | null) {
   if (!days) return null;
   if (Array.isArray(days)) return days;
@@ -123,7 +137,7 @@ export function calculateNextCustomRun(
   const localMidnight = getLocalMidnightBase(now, zone);
 
   for (let i = 0; i <= 7; i += 1) {
-    const candidateLocalDate = addDays(localMidnight, i);
+    const candidateLocalDate = addUtcDays(localMidnight, i);
     const dayOfWeek = candidateLocalDate.getUTCDay();
 
     if (!targetDays.includes(dayOfWeek)) continue;
@@ -168,16 +182,16 @@ export function calculateNextSyncTime(
 
   switch (syncFrequency) {
     case "DAILY":
-      nextLocal = addDays(localMidnight, 1);
+      nextLocal = addUtcDays(localMidnight, 1);
       break;
     case "WEEKLY":
-      nextLocal = addWeeks(localMidnight, 1);
+      nextLocal = addUtcWeeks(localMidnight, 1);
       break;
     case "MONTHLY":
-      nextLocal = addMonths(localMidnight, 1);
+      nextLocal = addUtcMonths(localMidnight, 1);
       break;
     default:
-      nextLocal = addWeeks(localMidnight, 1);
+      nextLocal = addUtcWeeks(localMidnight, 1);
   }
 
   return zonedTimeToUtcDate(
