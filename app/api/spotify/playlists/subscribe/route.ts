@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
-import { addDays } from "date-fns";
+import { calculateNextSyncTime } from "utils/sync-schedule";
 
 export async function POST(request: Request) {
   const { userId, token, spotifyUserId } = await getClerkOAuthToken();
@@ -135,7 +135,10 @@ export async function POST(request: Request) {
         } else {
           // No managed playlist record exists for this Spotify ID, create it for the current user.
 
-          const nextSyncTime = calculateNextSyncTime(syncFrequency, customDays);
+          const nextSyncTime = calculateNextSyncTime(syncFrequency, {
+            timeZone: user?.timezone,
+            customDays,
+          });
 
           finalManagedPlaylist = await prisma.managedPlaylist.create({
             data: {
@@ -358,78 +361,4 @@ async function createSpotifyPlaylist(
     trackCount: count,
     imageUrl: images?.[0]?.url || "",
   };
-}
-
-function calculateNextSyncTime(syncFrequency: string, customDays: string[]) {
-  const now = new Date();
-  let nextSync: Date;
-
-  switch (syncFrequency) {
-    case "DAILY":
-      nextSync = addDays(now, 1);
-      break;
-    case "WEEKLY":
-      nextSync = addDays(now, 7);
-      break;
-    case "MONTHLY":
-      nextSync = addDays(now, 30);
-      break;
-    case "CUSTOM":
-      return calculateNextCustomRun(customDays);
-    default:
-      nextSync = addDays(now, 7);
-  }
-
-  // Normalize to midnight UTC to ensure consistent sync times across timezones
-  nextSync.setUTCHours(0, 0, 0, 0);
-
-  return nextSync;
-}
-
-function calculateNextCustomRun(days?: string[]) {
-  if (!days) return null;
-
-  const now = new Date();
-
-  const dayMap: { [key: string]: number } = {
-    sunday: 0,
-    monday: 1,
-    tuesday: 2,
-    wednesday: 3,
-    thursday: 4,
-    friday: 5,
-    saturday: 6,
-  };
-
-  const targetDays = days
-    .map((day) => dayMap[day.toLowerCase()])
-    .filter((day) => day !== undefined);
-
-  if (!targetDays.length) return null;
-
-  // Always sync at midnight UTC (00:00)
-  for (let i = 0; i < 7; i++) {
-    const candidateDate = addDays(now, i);
-    const dayOfWeek = candidateDate.getUTCDay();
-
-    if (targetDays.includes(dayOfWeek)) {
-      // Set time to midnight UTC
-      const scheduledTime = new Date(candidateDate);
-      scheduledTime.setUTCHours(0, 0, 0, 0);
-
-      // If it's today and we've already passed midnight UTC, skip to next occurrence
-      if (i === 0 && scheduledTime <= now) {
-        continue;
-      }
-
-      return scheduledTime;
-    }
-  }
-
-  // Find the next occurrence if no match found in the next 7 days
-  const firstTargetDay = Math.min(...targetDays);
-  const daysUntilTarget = (firstTargetDay + 7 - now.getUTCDay()) % 7 || 7;
-  const nextRun = addDays(now, daysUntilTarget);
-  nextRun.setUTCHours(0, 0, 0, 0);
-  return nextRun;
 }

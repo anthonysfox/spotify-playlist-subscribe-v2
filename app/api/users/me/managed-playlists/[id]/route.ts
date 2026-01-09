@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
-import { addDays, setHours, setMinutes } from "date-fns";
+import { calculateNextSyncTime } from "utils/sync-schedule";
 
 export async function PUT(
   request: NextRequest,
@@ -42,6 +42,11 @@ export async function PUT(
         id,
         userId,
       },
+      include: {
+        user: {
+          select: { timezone: true },
+        },
+      },
     });
 
     if (!managedPlaylist) {
@@ -64,10 +69,11 @@ export async function PUT(
 
     // Calc next sync time if frequency or custom schedule changed
     if (syncInterval) {
-      updateData.nextSyncTime =
-        syncInterval === "CUSTOM" && customDays && customTime
-          ? calculateNextCustomRun(customDays, customTime)
-          : calculateNextSyncTime(syncInterval);
+      updateData.nextSyncTime = calculateNextSyncTime(syncInterval, {
+        timeZone: managedPlaylist.user?.timezone,
+        customDays,
+        customTime,
+      });
     }
 
     const updatedPlaylist = await prisma.managedPlaylist.update({
@@ -127,61 +133,4 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
-
-function calculateNextSyncTime(syncFrequency: string) {
-  const now = new Date();
-
-  switch (syncFrequency) {
-    case "DAILY":
-      return addDays(now, 1);
-    case "WEEKLY":
-      return addDays(now, 7);
-    case "MONTHLY":
-      return addDays(now, 30);
-    default:
-      return addDays(now, 7);
-  }
-}
-
-function calculateNextCustomRun(days?: string[], time?: string) {
-  if (!days || !time) return null;
-
-  const [hours, minutes] = time.split(":").map(Number);
-  const now = new Date();
-
-  const dayMap: { [key: string]: number } = {
-    sunday: 0,
-    monday: 1,
-    tuesday: 2,
-    wednesday: 3,
-    thursday: 4,
-    friday: 5,
-    saturday: 6,
-  };
-
-  const targetDays = days
-    .map((day) => dayMap[day.toLowerCase()])
-    .filter((day) => day !== undefined);
-
-  if (!targetDays.length) return null;
-
-  for (let i = 0; i < 7; i++) {
-    const candidateDate = addDays(now, i);
-    const dayOfWeek = candidateDate.getDay();
-
-    if (targetDays.includes(dayOfWeek)) {
-      let scheduledTime = setHours(setMinutes(candidateDate, minutes), hours);
-
-      if (i == 0 && scheduledTime <= now) {
-        continue;
-      }
-
-      return scheduledTime;
-    }
-  }
-
-  const firstTargetDay = Math.min(...targetDays);
-  const daysUntilTarget = (firstTargetDay + 7 - now.getDay()) % 7 || 7;
-  return setHours(setMinutes(now, daysUntilTarget), hours);
 }

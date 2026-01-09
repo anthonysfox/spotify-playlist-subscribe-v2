@@ -2,7 +2,7 @@ import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { AuditLogger } from "@/lib/audit-logger";
-import { addDays, addMonths, addWeeks } from "date-fns";
+import { calculateNextSyncTime } from "utils/sync-schedule";
 
 interface SyncResult {
   playlistId: string;
@@ -89,27 +89,12 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // 5. Filter to local midnight window
-    const now = new Date();
-    const midnightEligible = playlistsToSync.filter((playlist) =>
-      isLocalMidnightWindow(now, playlist.user?.timezone)
-    );
-
-    if (midnightEligible.length === 0) {
-      return NextResponse.json({
-        success: true,
-        message: "No playlists in local midnight window",
-        processed: 0,
-        results: [],
-      });
-    }
-
-    // 6. Process playlists with rate limiting
+    // 5. Process playlists with rate limiting
     const results: SyncResult[] = [];
     const BATCH_SIZE = 3; // Reduce concurrent API calls
 
-    for (let i = 0; i < midnightEligible.length; i += BATCH_SIZE) {
-      const batch = midnightEligible.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < playlistsToSync.length; i += BATCH_SIZE) {
+      const batch = playlistsToSync.slice(i, i + BATCH_SIZE);
 
       const batchResults = await Promise.allSettled(
         batch.map((playlist) => syncSinglePlaylist(playlist))
@@ -295,7 +280,10 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
     }
 
     // Update managed playlist sync metadata
-    const nextSyncTime = calculateNextSyncTime(managedPlaylist.syncInterval);
+    const nextSyncTime = calculateNextSyncTime(managedPlaylist.syncInterval, {
+      timeZone: managedPlaylist.user?.timezone,
+      customDays: managedPlaylist.customDays,
+    });
     await prisma.managedPlaylist.update({
       where: { id },
       data: {
@@ -327,45 +315,6 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
       duration: Date.now() - syncStartTime,
     };
   }
-}
-
-// Helper function to calculate next sync time
-function calculateNextSyncTime(interval: string): Date {
-  const now = new Date();
-  let nextSync: Date;
-
-  switch (interval) {
-    case "DAILY":
-      nextSync = addDays(now, 1);
-      break;
-    case "WEEKLY":
-      nextSync = addWeeks(now, 1);
-      break;
-    case "MONTHLY":
-      nextSync = addMonths(now, 1);
-      break;
-    default:
-      nextSync = addWeeks(now, 1); // Default to weekly
-  }
-
-  // Normalize to midnight UTC
-  nextSync.setUTCHours(0, 0, 0, 0);
-
-  return nextSync;
-}
-
-function isLocalMidnightWindow(now: Date, timeZone?: string | null) {
-  const zone = timeZone || "UTC";
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: zone,
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-  const parts = formatter.formatToParts(now);
-  const hour = Number(parts.find((part) => part.type === "hour")?.value);
-
-  return hour === 0;
 }
 
 // Improved getTracks with better error handling
