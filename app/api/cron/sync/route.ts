@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { AuditLogger } from "@/lib/audit-logger";
 import { calculateNextSyncTime } from "utils/sync-schedule";
+import { randomUUID } from "crypto";
 
 interface SyncResult {
   playlistId: string;
@@ -15,6 +16,7 @@ interface SyncResult {
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
+  const entityId = randomUUID();
 
   try {
     // 1. Authentication - Verify cron request
@@ -27,9 +29,9 @@ export async function GET(request: NextRequest) {
     // 2. Get optional parameters
     const { searchParams } = request.nextUrl;
     const forceSync = searchParams.get("force") === "true";
-    const specificUserId = searchParams.get("userId");
-    const specificPlaylistId = searchParams.get("playlistId");
-    const specificSourceId = searchParams.get("sourceId");
+    const specificUserId = searchParams.get("userId") || "";
+    const specificPlaylistId = searchParams.get("playlistId") || "";
+    const specificSourceId = searchParams.get("sourceId") || "";
 
     console.log(`🔄 Starting sync job at ${new Date().toISOString()}`, {
       forceSync,
@@ -37,6 +39,15 @@ export async function GET(request: NextRequest) {
       specificPlaylistId,
       specificSourceId,
     });
+    await AuditLogger.logBulkSyncStarted(
+      {
+        forceSync,
+        userId: specificUserId,
+        playlistId: specificPlaylistId,
+        sourceId: specificSourceId,
+      },
+      entityId
+    );
 
     // 3. Build query conditions
     const whereConditions: any = {
@@ -81,11 +92,22 @@ export async function GET(request: NextRequest) {
     console.log(`📋 Found ${playlistsToSync.length} playlists to sync`);
 
     if (playlistsToSync.length === 0) {
+      const summary = {
+        successful: 0,
+        processed: 0,
+        totalSongsAdded: 0,
+        duration: Date.now() - startTime,
+        skipped: 0,
+        failed: 0,
+      };
+      const context = {
+        reason: "no_due_playlists",
+      };
+      await AuditLogger.logBulkSyncCompleted(summary, entityId, context);
+
       return NextResponse.json({
         success: true,
-        message: "No playlists due for sync",
-        processed: 0,
-        results: [],
+        message: "No playlists due to sync",
       });
     }
 
@@ -140,7 +162,7 @@ export async function GET(request: NextRequest) {
     console.log(`✅ Sync job completed:`, summary);
 
     // 7. Log to audit trail
-    // await AuditLogger.logBulkSync(summary, results.slice(0, 20)); // Limit audit log size
+    await AuditLogger.logBulkSyncCompleted(summary, entityId); // Limit audit log size
 
     return NextResponse.json({
       success: true,
@@ -149,13 +171,25 @@ export async function GET(request: NextRequest) {
       results: results.slice(0, 10), // Limit response size
     });
   } catch (error: any) {
-    console.error("❌ Sync job failed:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : String(error || "Unknown error");
+
+    console.error("❌ Sync job failed:", errorMessage);
+
+    await AuditLogger.logBulkSyncFailed(
+      {
+        status: "failed",
+        error: errorMessage,
+        duration: Date.now() - startTime,
+      },
+      entityId
+    );
 
     return NextResponse.json(
       {
         success: false,
         error: "Sync job failed",
-        message: error.message,
+        message: errorMessage,
         duration: Date.now() - startTime,
       },
       { status: 500 }

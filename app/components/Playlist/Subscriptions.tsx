@@ -1,5 +1,5 @@
 import { Bell, Music, Clock, Hash, Calendar, Settings } from "lucide-react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 import { PlaylistSettingsModal } from "../Modals/SettingsModal";
 import { useUserStore } from "store/useUserStore";
@@ -34,6 +34,7 @@ export const Subscriptions = ({
   );
   const isLoading = useUserStore((state) => state.isLoading);
   const setIsLoading = useUserStore((state) => state.setLoading);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     async function fetchSubscriptions() {
@@ -54,15 +55,43 @@ export const Subscriptions = ({
     await unsubscribeFromSource(sourcePlaylistID, managedPlaylistId);
   };
 
+  const handleSyncNow = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    try {
+      const response = await fetch("/api/users/me/sync", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok || data?.success === false) {
+        throw new Error(data?.message || data?.error || "Sync failed");
+      }
+      toast.success(
+        data?.message || "Sync started. Playlists will update shortly."
+      );
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to start sync");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="flex flex-col grow min-h-0">
       {!isLoading ? (
         <>
           {managedPlaylists.length ? (
             <div className="grow overflow-auto p-6">
-              <h2 className="text-2xl font-bold mb-6 text-gray-900">
-                Auto-Synced Playlists
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Auto-Synced Playlists
+                </h2>
+                <button
+                  onClick={handleSyncNow}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={isSyncing}
+                >
+                  {isSyncing ? "Syncing..." : "Sync Now"}
+                </button>
+              </div>
               <div className="grid gap-6">
                 {managedPlaylists.map(
                   (managedPlaylist: any, groupIndex: number) => (

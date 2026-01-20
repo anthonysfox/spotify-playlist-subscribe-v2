@@ -36,6 +36,7 @@ const Dashboard = ({ userData }: { userData: any }) => {
   const [subscribeModalFormData, setSubscribeModalFormData] =
     useState<SubscribeReqBody | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const hasEnsuredTimezone = useRef(false);
 
   // Fetch the Spotify token from the API
   useEffect(() => {
@@ -69,6 +70,33 @@ const Dashboard = ({ userData }: { userData: any }) => {
     };
     setUser(transformedUser);
   }, [userData, setUser]);
+
+  useEffect(() => {
+    if (hasEnsuredTimezone.current) return;
+    hasEnsuredTimezone.current = true;
+
+    const ensureTimezone = async () => {
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (!timeZone) return;
+
+      try {
+        const response = await fetch("/api/users/me");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data?.data?.user?.timezone) return;
+
+        await fetch("/api/users/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ timezone: timeZone }),
+        });
+      } catch (error) {
+        console.error("Failed to ensure timezone:", error);
+      }
+    };
+
+    ensureTimezone();
+  }, []);
 
   useEffect(() => {
     fetch("/api/users/me/managed-playlists")

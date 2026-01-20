@@ -1,14 +1,15 @@
 import { AuditAction } from "@/generated/prisma/client";
-import prisma from './prisma'
+import prisma from "./prisma";
+import { randomUUID } from "crypto";
 
 interface AuditLogData {
-  action: AuditAction
-  entityType: string
-  entityId: string
-  userId?: string
-  oldValues?: Record<string, any>
-  newValues?: Record<string, any>
-  metadata?: Record<string, any>
+  action: AuditAction;
+  entityType: string;
+  entityId: string;
+  userId?: string;
+  oldValues?: Record<string, any>;
+  newValues?: Record<string, any>;
+  metadata?: Record<string, any>;
 }
 
 export class AuditLogger {
@@ -23,92 +24,162 @@ export class AuditLogger {
           oldValues: data.oldValues || null,
           newValues: data.newValues || null,
           metadata: data.metadata || null,
-        }
-      })
+        },
+      });
     } catch (error) {
       // Don't let audit logging break the main operation
-      console.error('Audit logging failed:', error)
+      console.error("Audit logging failed:", error);
     }
   }
 
   // Convenience methods for common operations
   static async logSubscriptionCreated(
-    managedPlaylistId: string, 
-    sourcePlaylistId: string, 
+    managedPlaylistId: string,
+    sourcePlaylistId: string,
     userId?: string
   ) {
     await this.log({
-      action: 'SUBSCRIBED',
-      entityType: 'ManagedPlaylistSourceSubscription',
+      action: "SUBSCRIBED",
+      entityType: "ManagedPlaylistSourceSubscription",
       entityId: `${managedPlaylistId}-${sourcePlaylistId}`,
       userId,
-      newValues: { managedPlaylistId, sourcePlaylistId }
-    })
+      newValues: { managedPlaylistId, sourcePlaylistId },
+    });
   }
 
   static async logSubscriptionDeleted(
-    managedPlaylistId: string, 
-    sourcePlaylistId: string, 
+    managedPlaylistId: string,
+    sourcePlaylistId: string,
     userId?: string
   ) {
     await this.log({
-      action: 'UNSUBSCRIBED',
-      entityType: 'ManagedPlaylistSourceSubscription',
+      action: "UNSUBSCRIBED",
+      entityType: "ManagedPlaylistSourceSubscription",
       entityId: `${managedPlaylistId}-${sourcePlaylistId}`,
       userId,
-      oldValues: { managedPlaylistId, sourcePlaylistId }
-    })
+      oldValues: { managedPlaylistId, sourcePlaylistId },
+    });
   }
 
   static async logPlaylistCreated(playlist: any, userId?: string) {
     await this.log({
-      action: 'CREATED',
-      entityType: 'ManagedPlaylist',
+      action: "CREATED",
+      entityType: "ManagedPlaylist",
       entityId: playlist.id,
       userId,
-      newValues: playlist
-    })
+      newValues: playlist,
+    });
   }
 
   static async logPlaylistUpdated(
-    playlistId: string, 
-    oldValues: any, 
-    newValues: any, 
+    playlistId: string,
+    oldValues: any,
+    newValues: any,
     userId?: string
   ) {
     await this.log({
-      action: 'UPDATED',
-      entityType: 'ManagedPlaylist',
+      action: "UPDATED",
+      entityType: "ManagedPlaylist",
       entityId: playlistId,
       userId,
       oldValues,
-      newValues
-    })
+      newValues,
+    });
   }
 
   static async logPlaylistDeleted(playlist: any, userId?: string) {
     await this.log({
-      action: 'DELETED',
-      entityType: 'ManagedPlaylist',
+      action: "DELETED",
+      entityType: "ManagedPlaylist",
       entityId: playlist.id,
       userId,
-      oldValues: playlist
-    })
+      oldValues: playlist,
+    });
   }
 
   // Query audit logs
   static async getEntityHistory(entityType: string, entityId: string) {
     return prisma.auditLog.findMany({
       where: { entityType, entityId },
-      orderBy: { timestamp: 'desc' }
-    })
+      orderBy: { timestamp: "desc" },
+    });
   }
 
   static async getUserActivity(userId: string, limit = 50) {
     return prisma.auditLog.findMany({
       where: { userId },
-      orderBy: { timestamp: 'desc' },
-      take: limit
-    })
+      orderBy: { timestamp: "desc" },
+      take: limit,
+    });
+  }
+
+  static async logBulkSyncStarted(
+    context: {
+      forceSync?: boolean;
+      userId?: string;
+      playlistId?: string;
+      sourceId?: string;
+      runId?: string;
+    },
+    entityId: string
+  ) {
+    return this.log({
+      action: "SYNC_RUN_STARTED",
+      entityType: "CronSync",
+      entityId,
+      metadata: { ...context },
+    });
+  }
+
+  static async logBulkSyncFailed(
+    summary: {
+      status: "failed";
+      error: string;
+      duration: number;
+    },
+    entityId: string,
+    context?: {
+      forceSync?: boolean;
+      userId?: string;
+      playlistId?: string;
+      sourceId?: string;
+      runId?: string;
+    }
+  ) {
+    return this.log({
+      action: "SYNC_RUN_FAILED",
+      entityType: "CronSync",
+      entityId,
+      newValues: { ...summary },
+      ...(context && { metadata: context }),
+    });
+  }
+
+  static async logBulkSyncCompleted(
+    summary: {
+      processed: number;
+      successful: number;
+      failed: number;
+      skipped: number;
+      totalSongsAdded: number;
+      duration: number;
+    },
+    entityId: string,
+    context?: {
+      forceSync?: boolean;
+      userId?: string;
+      playlistId?: string;
+      sourceId?: string;
+      runId?: string;
+      reason?: string;
+    }
+  ) {
+    return this.log({
+      action: "SYNC_RUN_COMPLETED",
+      entityType: "CronSync",
+      entityId,
+      newValues: { ...summary },
+      ...(context && { metadata: context }),
+    });
   }
 }
