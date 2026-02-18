@@ -1,17 +1,36 @@
 "use client";
-import { Fragment, useState } from "react";
+import { useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { Disc } from "lucide-react";
 import Image from "next/image";
-
-function classNames(...classes: String[]) {
-  return classes.filter(Boolean).join(" ");
-}
+import { useUserStore } from "store/useUserStore";
+import { useAppStore } from "store/useAppStore";
 
 export default function Navbar() {
-  const { isLoaded, isSignedIn, user } = useUser();
+  const { isLoaded, isSignedIn } = useUser();
+
+  useEffect(() => {
+    if (!isLoaded || isSignedIn) return;
+
+    useUserStore.setState({
+      userPlaylists: [],
+      managedPlaylists: [],
+      user: null,
+      isLoading: false,
+      loadedAllPlaylists: false,
+      offset: 0,
+    });
+    useAppStore.setState({
+      browsePlaylists: [],
+      isLoading: false,
+      loadedAllPlaylists: false,
+      offset: 0,
+    });
+
+    useUserStore.persist.clearStorage();
+    useAppStore.persist.clearStorage();
+  }, [isLoaded, isSignedIn]);
 
   return (
     <>

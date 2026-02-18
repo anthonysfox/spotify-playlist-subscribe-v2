@@ -3,9 +3,23 @@ import getClerkOAuthToken from "utils/clerk";
 import { OFFSET } from "utils/constants";
 
 export async function GET(request: Request) {
-  const { userId, token } = await getClerkOAuthToken();
+  let userId = "";
+  let token = "";
 
-  if (!userId) return new Response("Unauthorized", { status: 401 });
+  try {
+    const result = await getClerkOAuthToken();
+    userId = result.userId;
+    token = result.token;
+  } catch (error) {
+    console.error("Error getting Spotify token:", error);
+  }
+
+  if (!userId || !token) {
+    return NextResponse.json(
+      { error: "Spotify authorization required" },
+      { status: 401 }
+    );
+  }
 
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category") || "popular";

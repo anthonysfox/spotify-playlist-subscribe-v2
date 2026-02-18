@@ -34,11 +34,6 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({ user: createdUser }, { status: 200 });
     } else if (eventType === "user.updated" && id) {
-      const client = await clerkClient();
-      const clerkUser = await client.users.getUser(id);
-      const spotifyAccount = clerkUser.externalAccounts;
-      console.log(spotifyAccount);
-
       const updatedUser = await prisma.user.update({
         where: {
           clerkUserId: id,
@@ -48,7 +43,7 @@ export async function POST(req: NextRequest) {
         },
       });
       return NextResponse.json({ user: updatedUser }, { status: 200 });
-    } else if (evt.type === "user.deleted") {
+    } else if (evt.type === "user.deleted" && id) {
       await prisma.user.delete({
         where: {
           clerkUserId: id,

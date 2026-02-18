@@ -4,11 +4,11 @@ import prisma from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   const { userId } = await auth();
-  console.log(userId);
+
   if (!userId) {
     return NextResponse.json(
       { error: "Authentication required" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, data: { user } },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("[GET /api/users/me] Error:", error);
@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest) {
   if (!userId) {
     return NextResponse.json(
       { error: "Authentication required" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -48,7 +48,7 @@ export async function PATCH(request: NextRequest) {
   if (!timezone) {
     return NextResponse.json(
       { error: "Timezone is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -61,13 +61,13 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, data: { user: updatedUser } },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("[PATCH /api/users/me] Error:", error);
     return NextResponse.json(
       { error: "Failed to update user timezone" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

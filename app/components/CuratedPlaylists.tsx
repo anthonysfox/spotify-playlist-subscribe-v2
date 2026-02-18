@@ -46,6 +46,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   const [searchText, setSearchText] = useState<string>("");
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,6 +64,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     setOffset(0);
     setCurrentPage(1);
     setLoadedAll(false);
+    setError(null);
     if (listRef.current) {
       listRef.current.scrollTop = 0;
     }
@@ -237,7 +239,16 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       const res = await fetch(
         `/api/spotify/curated-playlists?category=${apiCategory}&offset=${currentOffset}`
       );
-      if (!res.ok) throw new Error("Failed to fetch playlists");
+      if (!res.ok) {
+        let message = "Unable to load curated playlists.";
+        try {
+          const payload = await res.json();
+          if (payload?.error) message = payload.error;
+        } catch {}
+        setError(message);
+        setLoadedAll(true);
+        return;
+      }
 
       const data: ISpotifyPlaylist[] = await res.json();
       const originalDataLength = data.length;
@@ -264,6 +275,8 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       }
     } catch (error) {
       console.error("Error fetching curated playlists:", error);
+      setError("Unable to load curated playlists.");
+      setLoadedAll(true);
     } finally {
       setLoading(false);
     }
@@ -380,30 +393,40 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
             setSelectedPlaylist={setSelectedPlaylist}
             setShowSubscribeModal={setShowSubscribeModal}
           />
-          
+
           {/* Loading indicator */}
           {loading && playlists.length > 0 && (
             <div className="flex justify-center py-6">
               <div className="w-6 h-6 border-2 border-[#CC5500] border-t-transparent rounded-full animate-spin"></div>
             </div>
           )}
-          
+
           {/* Intersection Observer Sentinel */}
           {!loadedAll && (
-            <div ref={sentinelRef} className="h-10 flex items-center justify-center">
+            <div
+              ref={sentinelRef}
+              className="h-10 flex items-center justify-center"
+            >
               {/* This invisible element triggers loading more content */}
             </div>
           )}
-          
+
           {/* End of results indicator */}
           {loadedAll && playlists.length > 0 && (
             <div className="text-center py-6">
               <p className="text-gray-500 text-sm">No more playlists to load</p>
             </div>
           )}
-          
+
+          {/* Error state */}
+          {error && (
+            <div className="text-center py-6">
+              <p className="text-red-500 text-sm">{error}</p>
+            </div>
+          )}
+
           {/* No results */}
-          {!loading && !playlists.length && (
+          {!loading && !playlists.length && !error && (
             <div className="text-center py-12">
               <p className="text-gray-500">No playlists found</p>
             </div>
