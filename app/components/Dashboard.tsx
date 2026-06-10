@@ -21,7 +21,7 @@ const playlistEndpoint = "/api/spotify/playlists";
 const Dashboard = ({ userData }: { userData: any }) => {
   const setUser = useUserStore((state) => state.setUser);
   const setManagedPlaylists = useUserStore(
-    (state) => state.setManagedPlaylists
+    (state) => state.setManagedPlaylists,
   );
   const [token, setToken] = useState<string>("");
   const [previewTracks, setPreviewTracks] = useState<any>([]);
@@ -45,10 +45,6 @@ const Dashboard = ({ userData }: { userData: any }) => {
         const response = await fetch("/api/spotify/token");
         if (response.ok) {
           const data = await response.json();
-          console.log(
-            "PlaylistSearch: Token fetched successfully:",
-            !!data.token
-          );
           setToken(data.token);
         } else {
           console.error("PlaylistSearch: Failed to fetch token");
@@ -71,32 +67,32 @@ const Dashboard = ({ userData }: { userData: any }) => {
     setUser(transformedUser);
   }, [userData, setUser]);
 
-  useEffect(() => {
-    if (hasEnsuredTimezone.current) return;
-    hasEnsuredTimezone.current = true;
+  // useEffect(() => {
+  //   if (hasEnsuredTimezone.current) return;
+  //   hasEnsuredTimezone.current = true;
 
-    const ensureTimezone = async () => {
-      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      if (!timeZone) return;
+  //   const ensureTimezone = async () => {
+  //     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  //     if (!timeZone) return;
 
-      try {
-        const response = await fetch("/api/users/me");
-        if (!response.ok) return;
-        const data = await response.json();
-        if (data?.data?.user?.timezone) return;
+  //     try {
+  //       const response = await fetch("/api/users/me");
+  //       if (!response.ok) return;
+  //       const data = await response.json();
+  //       if (data?.data?.user?.timezone) return;
 
-        await fetch("/api/users/me", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ timezone: timeZone }),
-        });
-      } catch (error) {
-        console.error("Failed to ensure timezone:", error);
-      }
-    };
+  //       await fetch("/api/users/me", {
+  //         method: "PATCH",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ timezone: timeZone }),
+  //       });
+  //     } catch (error) {
+  //       console.error("Failed to ensure timezone:", error);
+  //     }
+  //   };
 
-    ensureTimezone();
-  }, []);
+  //   ensureTimezone();
+  // }, []);
 
   useEffect(() => {
     fetch("/api/users/me/managed-playlists")
@@ -140,9 +136,9 @@ const Dashboard = ({ userData }: { userData: any }) => {
       const playlistPromises = topFiveArtists.map((artist) =>
         fetch(
           `/api/spotify/search?searchText=${encodeURIComponent(
-            artist
-          )}&offset=${topArtistsState.offset}`
-        ).then((res) => res.json())
+            artist,
+          )}&offset=${topArtistsState.offset}`,
+        ).then((res) => res.json()),
       );
 
       const playlistResults = await Promise.all(playlistPromises);

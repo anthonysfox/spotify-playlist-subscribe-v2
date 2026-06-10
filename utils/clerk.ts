@@ -11,25 +11,31 @@ export default async function getClerkOAuthToken(userId?: string | null) {
       resolvedUserId = userId;
     } else {
       const authData = await auth();
-      resolvedUserId = authData.userId;
+      resolvedUserId = authData?.userId;
+    }
+
+    if (!resolvedUserId && !userId) {
+      console.warn(
+        "getClerkOAuthToken: No session found. If running in a background job, ensure userId is passed explicitly.",
+      );
     }
 
     // Step 2: Validate user ID exists
     if (!resolvedUserId) {
       throw new Error(
-        "Unauthorized: No user ID provided or found in auth context"
+        "Unauthorized: No user ID provided or found in auth context",
       );
     }
 
     const client = await clerkClient();
     const clerkResponse = await client.users.getUserOauthAccessToken(
       resolvedUserId,
-      provider
+      provider,
     );
 
     if (!clerkResponse?.data?.length) {
       throw new Error(
-        `No ${provider} OAuth token found for user ${resolvedUserId}`
+        `No ${provider} OAuth token found for user ${resolvedUserId}`,
       );
     }
 
@@ -47,8 +53,9 @@ export default async function getClerkOAuthToken(userId?: string | null) {
     });
 
     if (!spotifyUserResponse.ok) {
+      const errorBody = await spotifyUserResponse.text();
       throw new Error(
-        `Failed to fetch Spotify user info: ${spotifyUserResponse.statusText}`
+        `Failed to fetch Spotify user info: ${spotifyUserResponse.statusText} (${spotifyUserResponse.status}). Details: ${errorBody}`,
       );
     }
 
@@ -59,7 +66,7 @@ export default async function getClerkOAuthToken(userId?: string | null) {
   } catch (error) {
     console.error(
       `Error fetching ${provider} OAuth token for user ${resolvedUserId}:`,
-      error
+      error,
     );
 
     return { userId: "", token: "", spotifyUserId: "" };

@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         playlistId: specificPlaylistId,
         sourceId: specificSourceId,
       },
-      entityId
+      entityId,
     );
 
     // 3. Build query conditions
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       const batch = playlistsToSync.slice(i, i + BATCH_SIZE);
 
       const batchResults = await Promise.allSettled(
-        batch.map((playlist) => syncSinglePlaylist(playlist))
+        batch.map((playlist) => syncSinglePlaylist(playlist)),
       );
 
       batchResults.forEach((result, index) => {
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
         } else {
           console.error(
             `❌ Failed to sync playlist ${playlist.id}:`,
-            result.reason
+            result.reason,
           );
           results.push({
             playlistId: playlist.id,
@@ -182,7 +182,7 @@ export async function GET(request: NextRequest) {
         error: errorMessage,
         duration: Date.now() - startTime,
       },
-      entityId
+      entityId,
     );
 
     return NextResponse.json(
@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
         message: errorMessage,
         duration: Date.now() - startTime,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -209,6 +209,7 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
       userId,
       subscriptions,
       spotifyPlaylistId,
+      syncMode,
     } = managedPlaylist;
 
     console.log(`🎵 Syncing: ${name} (${id})`);
@@ -233,6 +234,13 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
 
     // Get current tracks in managed playlist
     const managedPlaylistTrackIDs = await getTracks(spotifyPlaylistId, token);
+    if (syncMode === "REPLACE" && managedPlaylistTrackIDs?.size) {
+      await removePlaylistTracks(
+        spotifyPlaylistId,
+        managedPlaylistTrackIDs,
+        token,
+      );
+    }
 
     let totalTracksAdded = 0;
 
@@ -244,7 +252,7 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
         // Get tracks from source playlist
         const sourcePlaylistTrackIDs = await getTracks(
           sourcePlaylist.spotifyPlaylistId,
-          token
+          token,
         );
 
         if (!sourcePlaylistTrackIDs?.size) {
@@ -273,7 +281,7 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
           });
 
           console.log(
-            `  ➕ Added ${tracksToAdd.length} tracks from ${sourcePlaylist.name}`
+            `  ➕ Added ${tracksToAdd.length} tracks from ${sourcePlaylist.name}`,
           );
         }
 
@@ -285,7 +293,7 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
       } catch (subscriptionError: any) {
         console.error(
           `❌ Failed to sync from source ${subscription.sourcePlaylist.name}:`,
-          subscriptionError.message
+          subscriptionError.message,
         );
         // Continue with other sources even if one fails
       }
@@ -301,7 +309,7 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
         if (playlistResponse.ok) {
           const playlistData = await playlistResponse.json();
@@ -351,10 +359,54 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
   }
 }
 
+const removePlaylistTracks = async (
+  playlistId: string,
+  trackIds: Set<string>,
+  token: string,
+) => {
+  try {
+    const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/playlists/${playlistId}/items`;
+    const uris = Array.from(trackIds, (id) => {
+      return {
+        uri: `spotify:track:${id}`,
+      };
+    });
+    const body = {
+      items: [...uris],
+    };
+    const spotifyResponse = await fetch(spotifyUrl, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!spotifyResponse.ok) {
+      if (spotifyResponse.status === 404) {
+        console.error(`❌ Playlist ${playlistId} not found`);
+        return null;
+      }
+      throw new Error(
+        `Spotify API error: ${spotifyResponse.status} ${spotifyResponse.statusText}`,
+      );
+    }
+
+    await spotifyResponse.json();
+  } catch (error: any) {
+    console.error(
+      `❌ Failed to get tracks from playlist ${playlistId}:`,
+      error.message,
+    );
+    throw error;
+  }
+};
+
 // Improved getTracks with better error handling
 const getTracks = async (
   spotifyPlaylistId: string,
-  token: string
+  token: string,
 ): Promise<Set<string> | null> => {
   try {
     const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/playlists/${spotifyPlaylistId}/tracks?fields=items(track(id)),next&limit=50`;
@@ -376,7 +428,7 @@ const getTracks = async (
           return null;
         }
         throw new Error(
-          `Spotify API error: ${spotifyResponse.status} ${spotifyResponse.statusText}`
+          `Spotify API error: ${spotifyResponse.status} ${spotifyResponse.statusText}`,
         );
       }
 
@@ -398,7 +450,7 @@ const getTracks = async (
   } catch (error: any) {
     console.error(
       `❌ Failed to get tracks from playlist ${spotifyPlaylistId}:`,
-      error.message
+      error.message,
     );
     throw error;
   }
@@ -408,7 +460,7 @@ const getTracks = async (
 const addTracksToPlaylist = async (
   managedPlaylistId: string,
   tracks: string[],
-  token: string
+  token: string,
 ): Promise<boolean> => {
   try {
     const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/playlists/${managedPlaylistId}/tracks`;
@@ -432,8 +484,8 @@ const addTracksToPlaylist = async (
         const errorData = await spotifyResponse.json();
         throw new Error(
           `Failed to add tracks: ${spotifyResponse.status} ${JSON.stringify(
-            errorData
-          )}`
+            errorData,
+          )}`,
         );
       }
 
@@ -447,7 +499,7 @@ const addTracksToPlaylist = async (
   } catch (error: any) {
     console.error(
       `❌ Failed to add tracks to playlist ${managedPlaylistId}:`,
-      error.message
+      error.message,
     );
     throw error;
   }

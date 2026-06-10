@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
     const eventType = evt.type;
 
     if (eventType === "user.created" && id) {
-      const client = await clerkClient();
-      const clerkUser = await client.users.getUser(id);
-
+      // const client = await clerkClient();
+      // const clerkUser = await client.users.getUser(id);
+      
       const createdUser = await prisma.user.create({
         data: {
           clerkUserId: id,

@@ -107,6 +107,20 @@ export const HomePage = () => {
           </div>
         </div>
 
+        {/* New User Notice */}
+        <div className="bg-blue-50/80 backdrop-blur-sm border border-blue-200 rounded-xl p-3 sm:p-4 text-center">
+          <p className="text-sm text-blue-800">
+            New user? Email{" "}
+            <a
+              href="mailto:anthonysfox1@gmail.com"
+              className="font-semibold underline hover:text-blue-600"
+            >
+              anthonysfox1@gmail.com
+            </a>{" "}
+            to request access.
+          </p>
+        </div>
+
         {/* CTA Button */}
         <div className="space-y-2 sm:space-y-3 pt-1 sm:pt-2 px-2">
           <SignInButton>
