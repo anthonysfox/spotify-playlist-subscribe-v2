@@ -1,6 +1,7 @@
 {
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.10.0",
   "scripts": {
     "dev": "prisma generate && next dev",
     "build": "prisma generate && prisma migrate deploy && next build",
@@ -37,6 +38,7 @@
     "react-tooltip": "^5.29.1",
     "svix": "^1.76.1",
     "vercel": "^34.1.1",
+    "zod": "^4.4.3",
     "zustand": "^5.0.6"
   },
   "devDependencies": {
