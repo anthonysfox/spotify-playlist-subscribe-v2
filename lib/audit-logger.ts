@@ -21,9 +21,12 @@ export class AuditLogger {
           entityType: data.entityType,
           entityId: data.entityId,
           userId: data.userId,
-          oldValues: data.oldValues || null,
-          newValues: data.newValues || null,
-          metadata: data.metadata || null,
+          // Prisma distinguishes SQL NULL from JSON null on Json columns, so a
+          // bare `null` isn't accepted here. Leaving these undefined omits them
+          // from the INSERT, which stores SQL NULL — the intended behaviour.
+          oldValues: data.oldValues,
+          newValues: data.newValues,
+          metadata: data.metadata,
         },
       });
     } catch (error) {

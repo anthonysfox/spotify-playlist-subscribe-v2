@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { ISpotifyPlaylist } from "utils/types";
+import type { SelectablePlaylist } from "../Dashboard";
 import { Bell, Music, ExternalLink } from "lucide-react";
 import { PlaylistSkeleton } from "../Skeletons/PlaylistSkeleton";
 import { TrackModal } from "../Modals/TrackModal";
@@ -23,7 +24,7 @@ export const PlaylistList = ({
   loading: boolean;
   loadedAllData: boolean;
   setSelectedPlaylist: React.Dispatch<
-    React.SetStateAction<ISpotifyPlaylist | null>
+    React.SetStateAction<SelectablePlaylist | null>
   >;
   previewTracks: any;
   setPreviewTracks: React.Dispatch<React.SetStateAction<any>>;
@@ -33,10 +34,6 @@ export const PlaylistList = ({
 }) => {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
-  const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
-  const [previewTimeouts, setPreviewTimeouts] = useState<{
-    [key: string]: NodeJS.Timeout;
-  }>({});
   const [trackModalOpen, setTrackModalOpen] = useState(false);
   const [selectedPlaylistForModal, setSelectedPlaylistForModal] =
     useState<ISpotifyPlaylist | null>(null);
@@ -45,35 +42,6 @@ export const PlaylistList = ({
   const unsubscribeFromSource = useUserStore(
     (state) => state.unsubscribeFromSource
   );
-
-  // Check if preview functionality is supported
-  const isPreviewSupported = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    
-    const userAgent = navigator.userAgent;
-    
-    // Detect Safari properly - Safari has "Safari" but not "Chrome" in user agent
-    // Also check for "Version/" which is specific to Safari
-    const isSafari = /Safari/.test(userAgent) && /Version\//.test(userAgent) && !/Chrome/.test(userAgent);
-    const isFirefox = /Firefox/.test(userAgent);
-    const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent);
-    
-    console.log('Detection debug:', {
-      userAgent,
-      hasSafari: /Safari/.test(userAgent),
-      hasVersion: /Version\//.test(userAgent),
-      hasChrome: /Chrome/.test(userAgent),
-      isSafari,
-      isFirefox,
-      isMobile
-    });
-    
-    const supported = (isFirefox || (!isMobile && !isSafari));
-    console.log('Final supported result:', supported);
-    
-    // Only support Firefox (any) and non-Safari desktop browsers
-    return supported;
-  }, []);
 
   const subscribedPlaylists = useMemo(() => {
     return new Set(
@@ -102,15 +70,6 @@ export const PlaylistList = ({
     };
   }, []);
 
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(previewTimeouts).forEach((timeout) =>
-        clearTimeout(timeout)
-      );
-    };
-  }, [previewTimeouts]);
-
   const handleViewTracks = async (playlist: ISpotifyPlaylist) => {
     setSelectedPlaylistForModal(playlist);
     setPreviewTracks([]); // Clear previous tracks while loading
@@ -132,61 +91,10 @@ export const PlaylistList = ({
     }
   };
 
-  const handleTrackPreview = async (track: any) => {
-    const trackId = track.id;
-
-    // If this track is already playing, stop it
-    if (currentlyPlaying === trackId) {
-      await stopPlayback();
-      setCurrentlyPlaying(null);
-      return;
-    }
-
-    // Stop any currently playing track
-    if (currentlyPlaying) {
-      await stopPlayback();
-    }
-
-    try {
-      setCurrentlyPlaying(trackId);
-      await playTrackPreview(trackId, transferPlayback);
-
-      // Set a timeout to clear the playing state after 30 seconds
-      const timeout = setTimeout(() => {
-        setCurrentlyPlaying(null);
-      }, 30000);
-
-      setPreviewTimeouts((prev) => ({
-        ...prev,
-        [trackId]: timeout,
-      }));
-    } catch (error) {
-      console.error("Error playing track preview:", error);
-      setCurrentlyPlaying(null);
-    }
-  };
-
-  const stopTrackPreview = async (trackId: string) => {
-    await stopPlayback();
-    setCurrentlyPlaying(null);
-
-    // Clear the timeout
-    if (previewTimeouts[trackId]) {
-      clearTimeout(previewTimeouts[trackId]);
-      setPreviewTimeouts((prev) => {
-        const newTimeouts = { ...prev };
-        delete newTimeouts[trackId];
-        return newTimeouts;
-      });
-    }
-  };
-
   const handleTrackModalClose = () => {
     setTrackModalOpen(false);
     setSelectedPlaylistForModal(null);
     setPreviewTracks([]);
-    setCurrentlyPlaying(null);
-    if (currentlyPlaying) stopTrackPreview(currentlyPlaying);
   };
 
   const getManagedPlaylistsForSource = (sourceSpotifyPlaylistId: string) => {
@@ -258,21 +166,10 @@ export const PlaylistList = ({
                           </>
                         ) : (
                           <>
-                            {isPreviewSupported ? (
-                              <>
-                                <Music size={16} className="text-[#CC5500]" />
-                                <p className="text-[#CC5500] text-sm font-medium">
-                                  View tracks
-                                </p>
-                              </>
-                            ) : (
-                              <>
-                                <ExternalLink size={16} className="text-[#CC5500]" />
-                                <p className="text-[#CC5500] text-sm font-medium">
-                                  View tracks
-                                </p>
-                              </>
-                            )}
+                            <Music size={16} className="text-[#CC5500]" />
+                            <p className="text-[#CC5500] text-sm font-medium">
+                              View tracks
+                            </p>
                           </>
                         )}
                       </div>
@@ -380,9 +277,6 @@ export const PlaylistList = ({
         onClose={handleTrackModalClose}
         playlist={selectedPlaylistForModal}
         tracks={previewTracks}
-        currentlyPlaying={currentlyPlaying}
-        onTrackPreview={handleTrackPreview}
-        isPreviewSupported={isPreviewSupported}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 import { Bell, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ISpotifyPlaylist, IUserPlaylistsState } from "utils/types";
+import type { SelectablePlaylist } from "../Dashboard";
 import { useUserStore } from "../../../store/useUserStore";
 import { OFFSET } from "utils/constants";
 import toast from "react-hot-toast";
@@ -47,8 +48,12 @@ export const SubscribeModal = ({
   setSubscribeModalFormData,
 }: {
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
+  // Shares Dashboard's selectedPlaylist state, which can also hold a managed
+  // playlist. This modal only ever reads a Spotify playlist (Dashboard narrows
+  // with isSpotifyPlaylist before rendering it), but the setter is the shared
+  // one, so it has to accept the union.
   setSelectedPlaylist: React.Dispatch<
-    React.SetStateAction<ISpotifyPlaylist | null>
+    React.SetStateAction<SelectablePlaylist | null>
   >;
   setSubscribeModalFormData: React.Dispatch<
     React.SetStateAction<SubscribeReqBody | null>
@@ -313,8 +318,7 @@ export const SubscribeModal = ({
                         <strong>Custom schedule:</strong>{" "}
                         {JSON.parse(existingManagedPlaylist.customDays).join(
                           ", "
-                        )}{" "}
-                        at {existingManagedPlaylist.customTime}
+                        )}
                       </p>
                     )}
                 </div>

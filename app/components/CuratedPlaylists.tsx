@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ISpotifyPlaylist } from "utils/types";
+import type { SelectablePlaylist } from "./Dashboard";
 import { SimplePlaylistList } from "./Playlist/SimpleList";
 import { SearchBar } from "./Navigation/SearchBar";
 import {
@@ -15,8 +16,11 @@ import { FilterModal } from "./Modals/FilterModal";
 import { categorySubOptions, frontendCategories } from "constants/categories";
 
 interface CuratedPlaylistsProps {
+  // Shares Dashboard's selectedPlaylist state, which also holds managed
+  // playlists. This component only ever writes Spotify playlists into it, so
+  // accepting the wider setter costs nothing and keeps the types truthful.
   setSelectedPlaylist: React.Dispatch<
-    React.SetStateAction<ISpotifyPlaylist | null>
+    React.SetStateAction<SelectablePlaylist | null>
   >;
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
   setExpandedPlaylist: React.Dispatch<React.SetStateAction<string | null>>;

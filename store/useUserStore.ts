@@ -1,8 +1,13 @@
-import {
+// The Prisma client is generated to ./generated/prisma (see schema.prisma), not
+// to @prisma/client — which is where these types were being imported from, and
+// that package has no models in it. Every one of these types silently resolved
+// to nothing, which is why the components had no idea a playlist has a
+// syncInterval, a provider, or an externalPlaylistId.
+import type {
   ManagedPlaylist,
   ManagedPlaylistSourceSubscription,
   SourcePlaylist,
-} from "@prisma/client";
+} from "@/generated/prisma/client";
 import { ISpotifyPlaylist } from "utils/types";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
@@ -44,7 +49,7 @@ export type UserStoreActions = {
   ) => Promise<void>;
 };
 
-interface ManagedPlaylistWithSubscriptions extends ManagedPlaylist {
+export interface ManagedPlaylistWithSubscriptions extends ManagedPlaylist {
   subscriptions: (ManagedPlaylistSourceSubscription & {
     sourcePlaylist: SourcePlaylist;
   })[];

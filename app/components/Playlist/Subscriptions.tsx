@@ -5,16 +5,20 @@ import { PlaylistSettingsModal } from "../Modals/SettingsModal";
 import { useUserStore } from "store/useUserStore";
 import { SubscriptionSkeleton } from "../Skeletons/SubscriptionSkeleton";
 import toast from "react-hot-toast";
-import type { ManagedPlaylist } from "@/generated/prisma/client";
+import type { SelectablePlaylist } from "../Dashboard";
 
 interface ISubscriptionsProps {
+  // The same piece of state holds a Spotify playlist during the subscribe flow
+  // and a managed playlist when opening settings — this component writes the
+  // latter into it (see setSelectedPlaylist(managedPlaylist) below). The type is
+  // the union it genuinely holds, rather than one half of it.
   setSelectedPlaylist: React.Dispatch<
-    React.SetStateAction<ISpotifyPlaylist | null>
+    React.SetStateAction<SelectablePlaylist | null>
   >;
   setShowPlaylistSettingsModal: React.Dispatch<React.SetStateAction<boolean>>;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
   showPlaylistSettingsModal: boolean;
-  selectedPlaylist: ManagedPlaylist | null;
+  selectedPlaylist: SelectablePlaylist | null;
 }
 
 export const Subscriptions = ({

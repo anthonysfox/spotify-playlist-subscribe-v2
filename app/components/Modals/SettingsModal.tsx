@@ -56,20 +56,26 @@ export const PlaylistSettingsModal = ({
   setSelectedPlaylist,
   setShowSubscribeModal,
   selectedPlaylist,
-  fromSubscribeModal,
+  fromSubscribeModal = false,
   mode = "edit",
   setSubscribeModalFormData,
   subscribeModalFormData,
 }: {
   setShowPlaylistSettingsModal: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedPlaylist: React.Dispatch<React.SetStateAction<any>>;
-  setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
-  setSubscribeModalFormData: React.Dispatch<
+  selectedPlaylist: any;
+
+  // This modal is opened from two places: the subscribe flow (which supplies
+  // all of these), and the Subscriptions tab, which opens it standalone and
+  // supplies none of them. They are genuinely optional — declaring them as
+  // required was why `setSubscribeModalFormData(null)` blew up with a TypeError
+  // when the modal was closed from the Subscriptions tab.
+  setShowSubscribeModal?: React.Dispatch<React.SetStateAction<boolean>>;
+  setSubscribeModalFormData?: React.Dispatch<
     React.SetStateAction<SubscribeReqBody | null>
   >;
-  selectedPlaylist: any;
-  fromSubscribeModal: boolean;
-  mode: string;
+  fromSubscribeModal?: boolean;
+  mode?: string;
   subscribeModalFormData?: SubscribeReqBody | null;
 }) => {
   const [updatedData, setUpdatedData] = useState({
@@ -132,19 +138,21 @@ export const PlaylistSettingsModal = ({
   };
 
   const handleCancelOrClose = () => {
+    // Opened standalone from the Subscriptions tab, the subscribe-flow setters
+    // simply aren't passed — so they're called only when they exist. Calling
+    // them unconditionally is what crashed closing the modal from that tab.
     if (!fromSubscribeModal) {
       setSelectedPlaylist(null);
-      setSubscribeModalFormData(null);
+      setSubscribeModalFormData?.(null);
     }
 
     setShowPlaylistSettingsModal(false);
 
     if (fromSubscribeModal) {
-      setShowSubscribeModal(true);
-      setSubscribeModalFormData((prevData) => ({
-        ...prevData,
-        ...updatedData,
-      }));
+      setShowSubscribeModal?.(true);
+      setSubscribeModalFormData?.((prevData) =>
+        prevData ? { ...prevData, ...updatedData } : prevData,
+      );
     }
   };
 

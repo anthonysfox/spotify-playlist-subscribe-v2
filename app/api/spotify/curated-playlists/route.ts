@@ -337,7 +337,8 @@ export async function GET(request: Request) {
       .filter((response) => response.status === "fulfilled")
       .flatMap(
         (response) =>
-          response.value.playlists?.items.filter((isThere) => isThere) || []
+          response.value.playlists?.items.filter((isThere: unknown) => isThere) ||
+          []
       );
 
     // Remove duplicates based on playlist ID

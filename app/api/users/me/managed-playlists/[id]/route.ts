@@ -35,7 +35,6 @@ export async function PUT(
       trackAgeLimit,
       vibePrompt,
       customDays,
-      customTime,
     } = body;
 
     const managedPlaylist = await prisma.managedPlaylist.findFirst({
@@ -70,14 +69,17 @@ export async function PUT(
       updateData.vibePrompt = vibePrompt?.trim() ? vibePrompt.trim() : null;
     if (customDays !== undefined)
       updateData.customDays = JSON.stringify(customDays);
-    if (customTime !== undefined) updateData.customTime = customTime;
+
+    // `customTime` used to be handled here, but the column was dropped by the
+    // remove_custom_time migration. Assigning it to updateData would make Prisma
+    // throw on an unknown field — it only ever survived because no caller sends
+    // it. Removed rather than left as a trap.
 
     // Calc next sync time if frequency or custom schedule changed
     if (syncInterval) {
       updateData.nextSyncTime = calculateNextSyncTime(syncInterval, {
         timeZone: managedPlaylist.user?.timezone,
         customDays,
-        customTime,
       });
     }
 

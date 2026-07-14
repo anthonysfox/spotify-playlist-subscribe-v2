@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { ISpotifyPlaylist } from "../../../utils/types";
+import type { SelectablePlaylist } from "../Dashboard";
 import { Bell, Plus, Music, ExternalLink } from "lucide-react";
 import { useUserStore } from "../../../store/useUserStore";
 import { TrackModal } from "../Modals/TrackModal";
@@ -11,7 +12,7 @@ export const SimplePlaylistList = ({
 }: {
   playlists: ISpotifyPlaylist[];
   setSelectedPlaylist: React.Dispatch<
-    React.SetStateAction<ISpotifyPlaylist | null>
+    React.SetStateAction<SelectablePlaylist | null>
   >;
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {

@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // Type errors now fail the build. They were suppressed, which is how a dead
+  // preview feature calling undefined functions, a crash on closing the settings
+  // modal, and two unread sync settings all survived unnoticed.
   allowedDevOrigins: [
     "localhost:3000",
     "local-origin.dev",

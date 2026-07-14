@@ -12,6 +12,30 @@ import { NavTabs } from "./Navigation/NavTabs";
 import { SubscribeModal, SubscribeReqBody } from "./Modals/SubscribeModal";
 import { PlaylistSettingsModal } from "./Modals/SettingsModal";
 import { Bell } from "lucide-react";
+import type { ManagedPlaylistWithSubscriptions } from "store/useUserStore";
+
+/**
+ * What `selectedPlaylist` can actually hold.
+ *
+ * One piece of state serves two flows: a Spotify playlist while subscribing, and
+ * a managed playlist when opening its settings from the Subscriptions tab. It
+ * was typed as only the former, so the latter assignment was a lie the compiler
+ * couldn't see.
+ */
+export type SelectablePlaylist =
+  | ISpotifyPlaylist
+  | ManagedPlaylistWithSubscriptions;
+
+/**
+ * Narrow the union to a Spotify playlist. Only Spotify's shape carries an
+ * `owner`, so it's a reliable discriminator — and this keeps the subscribe flow
+ * honest instead of casting and hoping.
+ */
+export function isSpotifyPlaylist(
+  playlist: SelectablePlaylist | null,
+): playlist is ISpotifyPlaylist {
+  return !!playlist && "owner" in playlist;
+}
 import { useUserStore } from "store/useUserStore";
 import { Subscriptions } from "./Playlist/Subscriptions";
 import toast from "react-hot-toast";
@@ -26,7 +50,7 @@ const Dashboard = ({ userData }: { userData: any }) => {
   const [token, setToken] = useState<string>("");
   const [previewTracks, setPreviewTracks] = useState<any>([]);
   const [selectedPlaylist, setSelectedPlaylist] =
-    useState<ISpotifyPlaylist | null>(null);
+    useState<SelectablePlaylist | null>(null);
   const [activeTab, setActiveTab] = useState("discover");
   const [expandedPlaylist, setExpandedPlaylist] = useState<string | null>("");
   const [showSubscribeModal, setShowSubscribeModal] = useState(false);
@@ -235,7 +259,7 @@ const Dashboard = ({ userData }: { userData: any }) => {
             listRef={listRef}
             isActive={activeTab === "discover"}
           />
-          {showSubscribeModal && (
+          {showSubscribeModal && isSpotifyPlaylist(selectedPlaylist) && (
             <SubscribeModal
               selectedPlaylist={selectedPlaylist}
               setSelectedPlaylist={setSelectedPlaylist}
