@@ -102,6 +102,46 @@ class SpotifyClient implements MusicClient {
     };
   }
 
+  async searchPlaylists(
+    query: string,
+    limit = 20,
+  ): Promise<PlaylistSummary[]> {
+    const response = await this.request(
+      `/search?q=${encodeURIComponent(query)}&type=playlist&limit=${limit}`,
+    );
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+
+    return (data.playlists?.items ?? [])
+      // Spotify returns nulls in this array for playlists it won't serve us.
+      .filter(Boolean)
+      .map((playlist: any) => ({
+        id: playlist.id,
+        name: playlist.name,
+        imageUrl: playlist.images?.[0]?.url ?? null,
+        trackCount: playlist.tracks?.total ?? 0,
+      }));
+  }
+
+  async getUserPlaylists(limit = 20, offset = 0): Promise<PlaylistSummary[]> {
+    const response = await this.request(
+      `/me/playlists?limit=${limit}&offset=${offset}`,
+    );
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+
+    return (data.items ?? []).filter(Boolean).map((playlist: any) => ({
+      id: playlist.id,
+      name: playlist.name,
+      imageUrl: playlist.images?.[0]?.url ?? null,
+      trackCount: playlist.tracks?.total ?? 0,
+    }));
+  }
+
   async createPlaylist(
     name: string,
     description?: string,

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import getClerkOAuthToken from "utils/clerk";
+import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
 import { calculateNextSyncTime } from "utils/sync-schedule";
+import { getProvider, type MusicProvider } from "@/lib/music";
 
 export async function POST(request: Request) {
-  const { userId, token, spotifyUserId } = await getClerkOAuthToken();
+  const { userId } = await auth();
 
   if (!userId)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,6 +22,9 @@ export async function POST(request: Request) {
     managedPlaylist, // Expecting { id: string, name: string, imageUrl?: string, trackCount: number }
     sourcePlaylist, // Expecting { id: string, name: string, imageUrl?: string, trackCount: number },
     newPlaylistName,
+    // Which service both playlists live on. Defaults to Spotify so every
+    // existing caller keeps working unchanged.
+    provider = "SPOTIFY" as MusicProvider,
     syncFrequency = "WEEKLY",
     syncQuantityPerSource = 5,
     runImmediateSync = true,
@@ -30,6 +34,30 @@ export async function POST(request: Request) {
     vibePrompt,
     customDays,
   } = body;
+
+  // Creating a playlist is the only thing here that touches a music service, and
+  // it now goes through the provider abstraction rather than Spotify's API
+  // directly — which is what lets an Apple Music playlist be created at all.
+  const client = await getProvider(provider).forUser(userId);
+
+  if (!client) {
+    return NextResponse.json(
+      { error: `${provider} is not connected for this user` },
+      { status: 400 },
+    );
+  }
+
+  // REPLACE needs to empty the playlist on each sync, and Apple Music's API
+  // cannot remove tracks. Refuse it up front rather than creating a playlist that
+  // the sync engine would then permanently skip.
+  if (syncMode === "REPLACE" && !client.capabilities.removeTracks) {
+    return NextResponse.json(
+      {
+        error: `${provider} cannot remove tracks from a playlist, so "replace" mode isn't available. Use "add new songs" instead.`,
+      },
+      { status: 400 },
+    );
+  }
 
   if (
     (!newPlaylistName && !managedPlaylist) ||
@@ -52,7 +80,7 @@ export async function POST(request: Request) {
   }
 
   let managedPlaylistToUse = newPlaylistName
-    ? await createSpotifyPlaylist(newPlaylistName, spotifyUserId, token)
+    ? await client.createPlaylist(newPlaylistName, randomFoxDescription())
     : { ...managedPlaylist };
 
   const cleanedManagedSpotifyPlaylistId =
@@ -82,15 +110,13 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      // Create user if not exists (fallback for webhook timing issues)
-      const {
-        userId: clerkUserId,
-        token,
-        spotifyUserId,
-      } = await getClerkOAuthToken();
+      // Create user if not exists (fallback for webhook timing issues).
+      // This used to call getClerkOAuthToken() purely to re-derive a userId we
+      // already have from auth() — which also made it implicitly require a
+      // Spotify grant to create a user at all.
       const clerkClient = (await import("@clerk/nextjs/server")).clerkClient;
-      const client = await clerkClient();
-      const clerkUser = await client.users.getUser(clerkUserId);
+      const clerk = await clerkClient();
+      const clerkUser = await clerk.users.getUser(userId);
 
       await prisma.user.create({
         data: {
@@ -114,6 +140,7 @@ export async function POST(request: Request) {
         const existingManagedPlaylist = await prisma.managedPlaylist.findFirst({
           where: {
             externalPlaylistId: cleanedManagedSpotifyPlaylistId,
+            provider,
             userId,
           },
         });
@@ -145,6 +172,7 @@ export async function POST(request: Request) {
             data: {
               userId: userId, // Link to the current user
               externalPlaylistId: cleanedManagedSpotifyPlaylistId,
+              provider,
               name: managedPlaylistToUse.name,
               imageUrl: managedPlaylistToUse.imageUrl || null,
               // Default sync settings (syncIntervalMinutes, syncQuantityPerSource) are applied by Prisma
@@ -171,6 +199,7 @@ export async function POST(request: Request) {
         let existingSourcePlaylist = await prisma.sourcePlaylist.findFirst({
           where: {
             externalPlaylistId: cleanedSourceSpotifyPlaylistId,
+            provider,
           },
         });
 
@@ -191,6 +220,7 @@ export async function POST(request: Request) {
           existingSourcePlaylist = await prisma.sourcePlaylist.create({
             data: {
               externalPlaylistId: cleanedSourceSpotifyPlaylistId,
+              provider,
               name: sourcePlaylist.name,
               imageUrl: sourcePlaylist.imageUrl || null,
               lastMetadataRefreshAt: now,
@@ -307,13 +337,15 @@ export async function POST(request: Request) {
   }
 }
 
-async function createSpotifyPlaylist(
-  playlistName: string,
-  spotifyUserId: string,
-  token: string
-) {
-  const spotifyCreatePlaylistAPI: string = `https://api.spotify.com/v1/users/${spotifyUserId}/playlists`;
 
+/**
+ * The playlist description PlaylistFox stamps on playlists it creates.
+ *
+ * This used to live inside a Spotify-specific createSpotifyPlaylist() helper. The
+ * playlist creation itself now goes through MusicClient, so only the copy is
+ * left here — and it applies to Apple Music playlists just as well.
+ */
+function randomFoxDescription(): string {
   const descriptions = [
     "🦊 Auto-updated by PlaylistFox from your favorite playlists",
     "🦊 Fresh tracks delivered by PlaylistFox",
@@ -321,8 +353,6 @@ async function createSpotifyPlaylist(
     "🦊 PlaylistFox keeps this playlist fresh for you",
     "🦊 Curated and updated by PlaylistFox",
     "🦊 Your soundtrack, supercharged by PlaylistFox",
-
-    // New batch:
     "🦊 PlaylistFox is hunting down your next favorite song",
     "🦊 Automatically foxed up with fresh music",
     "🦊 Your music, cleverly curated by PlaylistFox",
@@ -331,38 +361,5 @@ async function createSpotifyPlaylist(
     "🦊 PlaylistFox prowls for your perfect tracks",
   ];
 
-  const randomDescription =
-    descriptions[Math.floor(Math.random() * descriptions.length)];
-
-  const spotifyPlaylistCreateResp = await fetch(spotifyCreatePlaylistAPI, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      name: playlistName,
-      public: false,
-      description: randomDescription,
-    }),
-  });
-
-  if (!spotifyPlaylistCreateResp.ok) {
-    throw new Error(
-      `Failed to create spotify playlist: ${spotifyPlaylistCreateResp.statusText}`
-    );
-  }
-
-  const {
-    id,
-    name,
-    tracks: { count },
-    images,
-  } = await spotifyPlaylistCreateResp.json();
-
-  return {
-    id,
-    name,
-    trackCount: count,
-    imageUrl: images?.[0]?.url || "",
-  };
+  return descriptions[Math.floor(Math.random() * descriptions.length)];
 }

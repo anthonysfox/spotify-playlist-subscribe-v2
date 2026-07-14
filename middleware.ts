@@ -8,6 +8,7 @@ const isProtectedRoute = createRouteMatcher([
   // check auth themselves too, but this rejects anonymous callers at the edge
   // rather than letting them reach the signing code.
   "/api/apple-music(.*)",
+  "/api/music(.*)",
   "/profile(.*)",
   "/dashboard(.*)"
 ]);

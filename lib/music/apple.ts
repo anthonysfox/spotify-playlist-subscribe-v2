@@ -255,6 +255,55 @@ class AppleMusicClient implements MusicClient {
     };
   }
 
+  /** Fill in Apple's {w}/{h} artwork template so the URL resolves to an image. */
+  private artworkUrl(attributes: any): string | null {
+    const url = attributes?.artwork?.url;
+
+    return url ? url.replace("{w}", "640").replace("{h}", "640") : null;
+  }
+
+  async searchPlaylists(
+    query: string,
+    limit = 20,
+  ): Promise<PlaylistSummary[]> {
+    const storefront = await this.getStorefront();
+
+    const response = await this.request(
+      `/v1/catalog/${storefront}/search?term=${encodeURIComponent(query)}&types=playlists&limit=${limit}`,
+    );
+
+    if (!response.ok) return [];
+
+    const body = await response.json();
+
+    return (body.results?.playlists?.data ?? []).map((playlist: any) => ({
+      id: playlist.id,
+      name: playlist.attributes?.name ?? "",
+      imageUrl: this.artworkUrl(playlist.attributes),
+      // Apple doesn't report a track count on playlist search results.
+      trackCount: 0,
+    }));
+  }
+
+  async getUserPlaylists(limit = 20, offset = 0): Promise<PlaylistSummary[]> {
+    // The user's *library* playlists — these are the ones we can write to, and
+    // therefore the only valid destinations. Catalog playlists are read-only.
+    const response = await this.request(
+      `/v1/me/library/playlists?limit=${limit}&offset=${offset}`,
+    );
+
+    if (!response.ok) return [];
+
+    const body = await response.json();
+
+    return (body.data ?? []).map((playlist: any) => ({
+      id: playlist.id,
+      name: playlist.attributes?.name ?? "",
+      imageUrl: this.artworkUrl(playlist.attributes),
+      trackCount: 0,
+    }));
+  }
+
   async createPlaylist(
     name: string,
     description?: string,

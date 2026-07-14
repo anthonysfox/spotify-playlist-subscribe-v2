@@ -54,6 +54,17 @@ export interface MusicClient {
   /** Name, artwork and size. Null if the playlist is gone or not visible to us. */
   getPlaylist(playlistId: string): Promise<PlaylistSummary | null>;
 
+  /** Search the service for playlists to subscribe to. */
+  searchPlaylists(query: string, limit?: number): Promise<PlaylistSummary[]>;
+
+  /**
+   * The user's own playlists — the candidates for a *destination* playlist.
+   *
+   * On Apple these are library playlists (p.…); on Spotify they're the playlists
+   * the user owns or follows.
+   */
+  getUserPlaylists(limit?: number, offset?: number): Promise<PlaylistSummary[]>;
+
   createPlaylist(name: string, description?: string): Promise<PlaylistSummary>;
 
   addTracks(playlistId: string, trackIds: string[]): Promise<void>;
