@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
         // Fetch latest metadata from Spotify
         const spotifyResponse = await fetch(
-          `${process.env.BASE_SPOTIFY_URL}/playlists/${managedPlaylist.spotifyPlaylistId}?fields=name,images,tracks.total`,
+          `${process.env.BASE_SPOTIFY_URL}/playlists/${managedPlaylist.externalPlaylistId}?fields=name,images,tracks.total`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

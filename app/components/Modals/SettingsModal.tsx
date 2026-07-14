@@ -81,6 +81,7 @@ export const PlaylistSettingsModal = ({
     syncMode: selectedPlaylist?.syncMode || "APPEND",
     explicitContentFilter: selectedPlaylist?.explicitContentFilter || false,
     trackAgeLimit: selectedPlaylist?.trackAgeLimit || 0,
+    vibePrompt: selectedPlaylist?.vibePrompt || "",
     customDays: selectedPlaylist?.customDays
       ? typeof selectedPlaylist.customDays === "string"
         ? JSON.parse(selectedPlaylist.customDays)
@@ -101,6 +102,7 @@ export const PlaylistSettingsModal = ({
       syncMode: selectedPlaylist?.syncMode || "APPEND",
       explicitContentFilter: selectedPlaylist?.explicitContentFilter || false,
       trackAgeLimit: selectedPlaylist?.trackAgeLimit || 0,
+      vibePrompt: selectedPlaylist?.vibePrompt || "",
       customDays: selectedPlaylist?.customDays
         ? typeof selectedPlaylist.customDays === "string"
           ? JSON.parse(selectedPlaylist.customDays)
@@ -471,6 +473,44 @@ export const PlaylistSettingsModal = ({
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* VIBE */}
+          <div>
+            <h3 className="font-medium text-gray-700 mb-3">
+              Vibe{" "}
+              <span className="text-xs font-normal text-gray-400">
+                (optional)
+              </span>
+            </h3>
+
+            <label
+              htmlFor="vibePrompt"
+              className="block text-gray-700 mb-2 text-sm"
+            >
+              Describe what belongs on this playlist
+            </label>
+
+            <textarea
+              id="vibePrompt"
+              rows={3}
+              maxLength={300}
+              value={updatedData.vibePrompt}
+              onChange={(e) =>
+                setUpdatedData((prev) => ({
+                  ...prev,
+                  vibePrompt: e.target.value,
+                }))
+              }
+              placeholder="e.g. upbeat indie and synth-pop, nothing slow or sad"
+              className="w-full p-3 bg-white rounded-sm border border-gray-300 shadow-xs focus:outline-hidden focus:ring-2 focus:ring-[#CC5500] focus:border-[#CC5500] text-gray-700 resize-none"
+            />
+
+            <p className="text-gray-500 text-xs mt-2">
+              {updatedData.vibePrompt?.trim()
+                ? "PlaylistFox will only add songs from your sources that match this."
+                : "Leave blank to add whatever comes first from each source, as before."}
+            </p>
           </div>
         </div>
 

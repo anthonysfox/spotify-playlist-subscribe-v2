@@ -18,8 +18,17 @@ enum SubscriptionFrequency {
 }
 
 enum SyncMode {
-  APPEND 
+  APPEND
   REPLACE
+}
+
+// Which streaming service a playlist lives on.
+//
+// Everything in the sync engine is keyed off this rather than assuming Spotify,
+// so adding Apple Music means writing one adapter, not touching the engine.
+enum MusicProvider {
+  SPOTIFY
+  APPLE_MUSIC
 }
 
 enum AuditAction {
@@ -63,10 +72,15 @@ model ManagedPlaylist {
   userId String
   user   User   @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
 
-  // The unique ID of this destination playlist on Spotify.
-  spotifyPlaylistId String @db.VarChar(255)
+  // Which service this playlist lives on.
+  provider MusicProvider @default(SPOTIFY)
 
-  // The name of the managed playlist (could be synced from Spotify or user-defined).
+  // This playlist's ID *on that service*. Still stored in the original
+  // `spotifyPlaylistId` column (via @map) so nothing has to migrate — but the
+  // name no longer lies once the row might be an Apple Music playlist.
+  externalPlaylistId String @map("spotifyPlaylistId") @db.VarChar(255)
+
+  // The name of the managed playlist (could be synced from the provider or user-defined).
   name String @db.VarChar(255)
 
   imageUrl String? @db.VarChar(512)
@@ -78,10 +92,15 @@ model ManagedPlaylist {
   // How many of the most recent songs to pull FROM EACH subscribed source during a sync run for this playlist.
   syncQuantityPerSource Int @default(5)
 
-  // Advanced settings 
+  // Advanced settings
   syncMode SyncMode @default(APPEND)
   explicitContentFilter Boolean @default(false)
   trackAgeLimit Int @default(0)
+
+  // Optional natural-language description of what belongs on this playlist, e.g.
+  // "upbeat indie, nothing sad". When set, the sync engine asks a model to pick
+  // which candidate tracks actually fit instead of taking whatever comes first.
+  vibePrompt String? @db.Text
 
   customDays String?
 
@@ -106,9 +125,11 @@ model ManagedPlaylist {
   // Links to the source playlists this managed playlist subscribes from
   subscriptions ManagedPlaylistSourceSubscription[]
 
-  @@unique([spotifyPlaylistId, deletedAt])
+  // A playlist ID is only unique *within* a provider, so the provider is part of
+  // the key — a Spotify and an Apple playlist could otherwise collide.
+  @@unique([provider, externalPlaylistId, deletedAt])
   @@index([userId])
-  @@index([spotifyPlaylistId])
+  @@index([externalPlaylistId])
   @@index([nextSyncTime]) // Index for efficient sync scheduling
   @@index([lastSyncCompletedAt]) // Index for quick access to last sync info
   @@index([deletedAt]) // Index for soft delete filtering
@@ -116,13 +137,17 @@ model ManagedPlaylist {
   @@map("managed_playlists") // Maps the model name to the table name
 }
 
-// Represents an external Spotify playlist that can be a source, with minimal metadata
+// Represents an external playlist that can be a source, with minimal metadata
 model SourcePlaylist {
   // Unique internal identifier for this source playlist record.
   id String @id @default(cuid())
 
-  // The unique ID of the external Spotify playlist (the source).
-  spotifyPlaylistId String @db.VarChar(255)
+  // Which service this source playlist lives on.
+  provider MusicProvider @default(SPOTIFY)
+
+  // The playlist's ID on that service. Kept in the original `spotifyPlaylistId`
+  // column via @map so no data has to move.
+  externalPlaylistId String @map("spotifyPlaylistId") @db.VarChar(255)
 
   // The name of the source playlist (fetched once and stored for display).
   name String @db.VarChar(255)
@@ -152,8 +177,8 @@ model SourcePlaylist {
   // Links from managed playlists that subscribe to this source
   managedSubscriptions ManagedPlaylistSourceSubscription[]
 
-  @@unique([spotifyPlaylistId, deletedAt])
-  @@index([spotifyPlaylistId]) // Index for quick lookups by Spotify ID
+  @@unique([provider, externalPlaylistId, deletedAt])
+  @@index([externalPlaylistId]) // Index for quick lookups by provider playlist ID
   @@index([deletedAt]) // Index for soft delete filtering
   @@index([deletedBy]) // Index for tracking who deleted it
   @@map("source_playlists") // Maps the model name to the table name
@@ -178,6 +203,16 @@ model ManagedPlaylistSourceSubscription {
   // The last time this specific managed playlist pulled songs from this specific source playlist.
   // Crucial for getting delta updates (songs added to the source SINCE this time).
   lastSyncedFromSourceAt DateTime?
+
+  // Song identities already served from this source into this managed playlist.
+  //
+  // Only used in REPLACE mode. REPLACE wipes the playlist on every sync, which
+  // destroys the only record of what had already been served — so without this,
+  // the engine re-picked the same first N songs from the source forever and
+  // "replace" replaced the playlist with an identical playlist.
+  //
+  // Cleared automatically once the source has been rotated through completely.
+  recentlyServed String[] @default([])
 
   // Unique constraint to prevent duplicate links
   @@unique([managedPlaylistId, sourcePlaylistId])

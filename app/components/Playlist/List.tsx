@@ -79,7 +79,7 @@ export const PlaylistList = ({
     return new Set(
       managedPlaylists.flatMap((mp) => {
         return mp.subscriptions.map(
-          (sub) => sub.sourcePlaylist.spotifyPlaylistId
+          (sub) => sub.sourcePlaylist.externalPlaylistId
         );
       })
     );
@@ -192,7 +192,7 @@ export const PlaylistList = ({
   const getManagedPlaylistsForSource = (sourceSpotifyPlaylistId: string) => {
     return managedPlaylists.filter((mp) => {
       return mp.subscriptions.some((sub) => {
-        return sub.sourcePlaylist.spotifyPlaylistId === sourceSpotifyPlaylistId;
+        return sub.sourcePlaylist.externalPlaylistId === sourceSpotifyPlaylistId;
       });
     });
   };
@@ -287,7 +287,7 @@ export const PlaylistList = ({
                                 const sourcePlaylistId =
                                   managedPlaylist.subscriptions.find(
                                     (sub) =>
-                                      sub.sourcePlaylist.spotifyPlaylistId ===
+                                      sub.sourcePlaylist.externalPlaylistId ===
                                       playlist.id
                                   )?.sourcePlaylist.id;
                                 if (sourcePlaylistId) {

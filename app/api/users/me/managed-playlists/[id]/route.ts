@@ -33,6 +33,7 @@ export async function PUT(
       syncMode,
       explicitContentFilter,
       trackAgeLimit,
+      vibePrompt,
       customDays,
       customTime,
     } = body;
@@ -63,6 +64,10 @@ export async function PUT(
     if (explicitContentFilter !== undefined)
       updateData.explicitContentFilter = explicitContentFilter;
     if (trackAgeLimit !== undefined) updateData.trackAgeLimit = trackAgeLimit;
+    // An empty box means "no vibe", which has to be stored as null rather than
+    // "" — otherwise the sync engine would treat it as a vibe and call the model.
+    if (vibePrompt !== undefined)
+      updateData.vibePrompt = vibePrompt?.trim() ? vibePrompt.trim() : null;
     if (customDays !== undefined)
       updateData.customDays = JSON.stringify(customDays);
     if (customTime !== undefined) updateData.customTime = customTime;

@@ -1,15 +1,34 @@
-import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
+import type { Prisma } from "@/generated/prisma/client";
+import { getProvider } from "@/lib/music";
 import { NextRequest, NextResponse } from "next/server";
 import { AuditLogger } from "@/lib/audit-logger";
 import { calculateNextSyncTime } from "utils/sync-schedule";
+import {
+  rotateUnseen,
+  songIdentity,
+  withinAgeLimit,
+  withoutExplicit,
+  type PlaylistTrack,
+} from "@/lib/track-filters";
+import { selectByVibe } from "@/lib/curator";
 import { randomUUID } from "crypto";
+
+// How many served-song identities a REPLACE subscription remembers. This only
+// needs to cover one full rotation of a source playlist — it self-clears at that
+// point — so this is purely a backstop against an enormous source.
+const MAX_ROTATION_MEMORY = 1000;
+
+/** Why a playlist was skipped. Skips are normal; they are not errors. */
+type SkipReason = "NO_SUBSCRIPTIONS" | "PROVIDER_NOT_CONNECTED";
 
 interface SyncResult {
   playlistId: string;
   playlistName: string;
   status: "success" | "failed" | "skipped";
   songsAdded: number;
+  /** Set when status is "skipped". */
+  reason?: SkipReason;
   error?: string;
   duration: number;
 }
@@ -150,14 +169,31 @@ export async function GET(request: NextRequest) {
     }
 
     // 6. Generate summary
+    //
+    // `needsReconnect` is called out separately from `failed` on purpose. These
+    // playlists are not broken — their owner's connection to the music service
+    // lapsed and only the user can restore it (Apple Music tokens expire after
+    // ~6 months with no server-side renewal). Burying that in a generic failure
+    // count is how a user ends up silently un-synced for months.
+    const needsReconnect = results.filter(
+      (r) => r.reason === "PROVIDER_NOT_CONNECTED",
+    );
+
     const summary = {
       processed: results.length,
       successful: results.filter((r) => r.status === "success").length,
       failed: results.filter((r) => r.status === "failed").length,
       skipped: results.filter((r) => r.status === "skipped").length,
+      needsReconnect: needsReconnect.length,
       totalSongsAdded: results.reduce((sum, r) => sum + r.songsAdded, 0),
       duration: Date.now() - startTime,
     };
+
+    if (needsReconnect.length > 0) {
+      console.warn(
+        `🔌 ${needsReconnect.length} playlist(s) skipped: owner must reconnect their music service`,
+      );
+    }
 
     console.log(`✅ Sync job completed:`, summary);
 
@@ -197,8 +233,25 @@ export async function GET(request: NextRequest) {
   }
 }
 
+/**
+ * Exactly the shape the sync query returns.
+ *
+ * This used to be `any`, which is precisely why `explicitContentFilter` and
+ * `trackAgeLimit` could sit unread in this function for months without anything
+ * complaining. Naming the type means the compiler now checks that every setting
+ * a playlist has is one this function has actually accounted for.
+ */
+type PlaylistToSync = Prisma.ManagedPlaylistGetPayload<{
+  include: {
+    user: { select: { timezone: true } };
+    subscriptions: { include: { sourcePlaylist: true } };
+  };
+}>;
+
 // Individual playlist sync with improved error handling
-async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
+async function syncSinglePlaylist(
+  managedPlaylist: PlaylistToSync,
+): Promise<SyncResult> {
   const syncStartTime = Date.now();
 
   try {
@@ -208,8 +261,12 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
       syncQuantityPerSource,
       userId,
       subscriptions,
-      spotifyPlaylistId,
+      provider,
+      externalPlaylistId,
       syncMode,
+      explicitContentFilter,
+      trackAgeLimit,
+      vibePrompt,
     } = managedPlaylist;
 
     console.log(`🎵 Syncing: ${name} (${id})`);
@@ -222,25 +279,57 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
         playlistName: name,
         status: "skipped",
         songsAdded: 0,
+        reason: "NO_SUBSCRIPTIONS",
         duration: Date.now() - syncStartTime,
       };
     }
 
-    // Get user's Spotify token
-    const { token } = await getClerkOAuthToken(userId);
-    if (!token) {
-      throw new Error(`No valid Spotify token for user ${userId}`);
+    // Resolve a client for whichever service this playlist lives on. Everything
+    // below this line is provider-agnostic — it works in terms of tracks, not
+    // Spotify.
+    const client = await getProvider(provider).forUser(userId);
+
+    // A missing client means the user's connection to this service is gone —
+    // never granted, revoked, or (on Apple Music) simply aged out: Music User
+    // Tokens expire after ~6 months and cannot be renewed server-side.
+    //
+    // That is an expected state, not a system failure, so it must not be thrown.
+    // Throwing here would log an expired user as a *failed* sync on every run
+    // forever — indistinguishable from a real outage, and drowning genuine
+    // errors in noise. Skip them, and say why, so the reconnect can be surfaced.
+    if (!client) {
+      console.log(
+        `⚠️ Skipping ${name} — ${userId} has no valid ${provider} connection (needs reconnect)`,
+      );
+
+      return {
+        playlistId: id,
+        playlistName: name,
+        status: "skipped",
+        songsAdded: 0,
+        reason: "PROVIDER_NOT_CONNECTED",
+        duration: Date.now() - syncStartTime,
+      };
     }
 
     // Get current tracks in managed playlist
-    const managedPlaylistTrackIDs = await getTracks(spotifyPlaylistId, token);
-    if (syncMode === "REPLACE" && managedPlaylistTrackIDs?.size) {
-      await removePlaylistTracks(
-        spotifyPlaylistId,
-        managedPlaylistTrackIDs,
-        token,
+    const managedTracks = await client.getPlaylistTracks(externalPlaylistId);
+
+    if (syncMode === "REPLACE" && managedTracks.length) {
+      await client.removeTracks(
+        externalPlaylistId,
+        managedTracks.map((track) => track.id),
       );
     }
+
+    // Everything already on the playlist, keyed by song identity rather than by
+    // track ID. Spotify gives a remaster, a radio edit and the album cut three
+    // different IDs for what a listener hears as one song — matching on ID alone
+    // is why the same track kept reappearing.
+    // After a REPLACE the playlist is empty, so nothing counts as already there.
+    const existingSongs = new Set(
+      syncMode === "REPLACE" ? [] : managedTracks.map(songIdentity),
+    );
 
     let totalTracksAdded = 0;
 
@@ -249,46 +338,114 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
       try {
         const { sourcePlaylist } = subscription;
 
-        // Get tracks from source playlist
-        const sourcePlaylistTrackIDs = await getTracks(
-          sourcePlaylist.spotifyPlaylistId,
-          token,
+        // Get tracks from source playlist.
+        //
+        // Sources are read with the *managed* playlist's client, which is only
+        // correct while both live on the same service. Cross-provider sources
+        // (a Spotify playlist feeding an Apple Music playlist) would need track
+        // matching by ISRC, so they are deliberately not supported yet.
+        if (sourcePlaylist.provider !== provider) {
+          console.warn(
+            `⚠️ Skipping ${sourcePlaylist.name}: source is on ${sourcePlaylist.provider}, playlist is on ${provider}`,
+          );
+          continue;
+        }
+
+        const sourceTracks = await client.getPlaylistTracks(
+          sourcePlaylist.externalPlaylistId,
         );
 
-        if (!sourcePlaylistTrackIDs?.size) {
+        if (!sourceTracks.length) {
           console.log(`⚠️ No tracks found in source: ${sourcePlaylist.name}`);
           continue;
         }
 
-        // Find new tracks to add
-        const tracksToAdd: string[] = [];
-        for (const trackId of sourcePlaylistTrackIDs) {
-          if (managedPlaylistTrackIDs?.has(trackId)) continue;
-          if (tracksToAdd.length >= syncQuantityPerSource) break;
+        // Drop anything we already have (in any of its release guises).
+        let candidates = sourceTracks.filter(
+          (track) => !existingSongs.has(songIdentity(track)),
+        );
 
-          tracksToAdd.push(`spotify:track:${trackId}`);
+        // Honour the two settings the UI has always offered but the sync engine
+        // never actually read.
+        if (explicitContentFilter) candidates = withoutExplicit(candidates);
+        candidates = withinAgeLimit(candidates, trackAgeLimit ?? 0);
+
+        // Collapse duplicates *within* the source playlist itself.
+        const seenInSource = new Set<string>();
+        candidates = candidates.filter((track) => {
+          const identity = songIdentity(track);
+          if (seenInSource.has(identity)) return false;
+
+          seenInSource.add(identity);
+          return true;
+        });
+
+        // REPLACE mode rotates through the source instead of restarting from the
+        // top every time.
+        //
+        // In APPEND mode the playlist itself records what has already been
+        // served. REPLACE deletes the playlist's contents on every run, so that
+        // record is gone — which is why it kept re-adding the same first N songs
+        // and "replacing" the playlist with an identical one. This subscription's
+        // own memory is what makes each run genuinely fresh.
+        const alreadyServed = new Set<string>(subscription.recentlyServed ?? []);
+
+        if (syncMode === "REPLACE") {
+          const { pool, exhausted } = rotateUnseen(
+            candidates,
+            alreadyServed,
+            syncQuantityPerSource,
+          );
+
+          // Source fully rotated through — wipe the memory and start a new cycle.
+          if (exhausted) alreadyServed.clear();
+
+          candidates = pool;
         }
 
-        // Add tracks to managed playlist
-        if (tracksToAdd.length > 0) {
-          await addTracksToPlaylist(spotifyPlaylistId, tracksToAdd, token);
-          totalTracksAdded += tracksToAdd.length;
+        // With a vibe set, a model picks what genuinely fits. Without one, keep
+        // the engine's original behaviour: whatever comes first in the playlist.
+        const chosen = vibePrompt
+          ? await selectByVibe(vibePrompt, candidates, syncQuantityPerSource)
+          : candidates.slice(0, syncQuantityPerSource);
 
-          // Update our local cache of managed playlist tracks
-          tracksToAdd.forEach((uri) => {
-            const trackId = uri.replace("spotify:track:", "");
-            managedPlaylistTrackIDs?.add(trackId);
+        // Add tracks to managed playlist
+        if (chosen.length > 0) {
+          await client.addTracks(
+            externalPlaylistId,
+            chosen.map((track) => track.id),
+          );
+          totalTracksAdded += chosen.length;
+
+          // Remember what we just added, so a later source in this same run
+          // can't hand us the same song again.
+          chosen.forEach((track) => {
+            existingSongs.add(songIdentity(track));
+            alreadyServed.add(songIdentity(track));
           });
 
           console.log(
-            `  ➕ Added ${tracksToAdd.length} tracks from ${sourcePlaylist.name}`,
+            `  ➕ Added ${chosen.length} tracks from ${sourcePlaylist.name}` +
+              (vibePrompt ? " (vibe-matched)" : ""),
           );
         }
 
         // Update subscription sync timestamp
         await prisma.managedPlaylistSourceSubscription.update({
           where: { id: subscription.id },
-          data: { lastSyncedFromSourceAt: new Date() },
+          data: {
+            lastSyncedFromSourceAt: new Date(),
+            // Only REPLACE needs this memory, and it self-clears once the source
+            // has been rotated through. The cap is a backstop against a source
+            // that grows without bound.
+            ...(syncMode === "REPLACE"
+              ? {
+                  recentlyServed: Array.from(alreadyServed).slice(
+                    -MAX_ROTATION_MEMORY,
+                  ),
+                }
+              : {}),
+          },
         });
       } catch (subscriptionError: any) {
         console.error(
@@ -299,23 +456,12 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
       }
     }
 
-    // Refresh playlist metadata from Spotify if tracks were added
+    // Refresh playlist metadata from the provider if tracks were added
     let updatedImageUrl = managedPlaylist.imageUrl;
     if (totalTracksAdded > 0) {
       try {
-        const playlistResponse = await fetch(
-          `${process.env.BASE_SPOTIFY_URL}/playlists/${spotifyPlaylistId}?fields=images,tracks.total`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-        if (playlistResponse.ok) {
-          const playlistData = await playlistResponse.json();
-          updatedImageUrl =
-            playlistData.images?.[0]?.url || managedPlaylist.imageUrl;
-        }
+        const refreshed = await client.getPlaylist(externalPlaylistId);
+        updatedImageUrl = refreshed?.imageUrl || managedPlaylist.imageUrl;
       } catch (error) {
         console.warn("Failed to refresh playlist metadata:", error);
       }
@@ -331,7 +477,12 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
       data: {
         lastSyncCompletedAt: new Date(),
         nextSyncTime,
-        trackCount: (managedPlaylist.trackCount || 0) + totalTracksAdded,
+        // REPLACE wiped the playlist first, so its new size is exactly what we
+        // just added — adding to the old count would inflate it forever.
+        trackCount:
+          syncMode === "REPLACE"
+            ? totalTracksAdded
+            : (managedPlaylist.trackCount || 0) + totalTracksAdded,
         imageUrl: updatedImageUrl,
         lastMetadataRefreshAt: new Date(),
       },
@@ -358,149 +509,3 @@ async function syncSinglePlaylist(managedPlaylist: any): Promise<SyncResult> {
     };
   }
 }
-
-const removePlaylistTracks = async (
-  playlistId: string,
-  trackIds: Set<string>,
-  token: string,
-) => {
-  try {
-    const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/playlists/${playlistId}/items`;
-    const uris = Array.from(trackIds, (id) => {
-      return {
-        uri: `spotify:track:${id}`,
-      };
-    });
-    const body = {
-      items: [...uris],
-    };
-    const spotifyResponse = await fetch(spotifyUrl, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!spotifyResponse.ok) {
-      if (spotifyResponse.status === 404) {
-        console.error(`❌ Playlist ${playlistId} not found`);
-        return null;
-      }
-      throw new Error(
-        `Spotify API error: ${spotifyResponse.status} ${spotifyResponse.statusText}`,
-      );
-    }
-
-    await spotifyResponse.json();
-  } catch (error: any) {
-    console.error(
-      `❌ Failed to get tracks from playlist ${playlistId}:`,
-      error.message,
-    );
-    throw error;
-  }
-};
-
-// Improved getTracks with better error handling
-const getTracks = async (
-  spotifyPlaylistId: string,
-  token: string,
-): Promise<Set<string> | null> => {
-  try {
-    const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/playlists/${spotifyPlaylistId}/tracks?fields=items(track(id)),next&limit=50`;
-    let allTrackIds = new Set<string>();
-    let nextUrl: string | null = spotifyUrl;
-
-    // Handle pagination to get all tracks
-    while (nextUrl) {
-      const spotifyResponse = await fetch(nextUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!spotifyResponse.ok) {
-        if (spotifyResponse.status === 404) {
-          console.error(`❌ Playlist ${spotifyPlaylistId} not found`);
-          return null;
-        }
-        throw new Error(
-          `Spotify API error: ${spotifyResponse.status} ${spotifyResponse.statusText}`,
-        );
-      }
-
-      const data = await spotifyResponse.json();
-
-      // Add track IDs to set
-      if (data.items) {
-        data.items.forEach((item: any) => {
-          if (item?.track?.id) {
-            allTrackIds.add(item.track.id);
-          }
-        });
-      }
-
-      nextUrl = data.next; // Get next page URL or null
-    }
-
-    return allTrackIds;
-  } catch (error: any) {
-    console.error(
-      `❌ Failed to get tracks from playlist ${spotifyPlaylistId}:`,
-      error.message,
-    );
-    throw error;
-  }
-};
-
-// Improved addTracksToPlaylist with better error handling
-const addTracksToPlaylist = async (
-  managedPlaylistId: string,
-  tracks: string[],
-  token: string,
-): Promise<boolean> => {
-  try {
-    const spotifyUrl = `${process.env.BASE_SPOTIFY_URL}/playlists/${managedPlaylistId}/tracks`;
-
-    // Spotify allows max 100 tracks per request
-    const BATCH_SIZE = 100;
-
-    for (let i = 0; i < tracks.length; i += BATCH_SIZE) {
-      const batch = tracks.slice(i, i + BATCH_SIZE);
-
-      const spotifyResponse = await fetch(spotifyUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        method: "POST",
-        body: JSON.stringify({ uris: batch }),
-      });
-
-      if (!spotifyResponse.ok) {
-        const errorData = await spotifyResponse.json();
-        throw new Error(
-          `Failed to add tracks: ${spotifyResponse.status} ${JSON.stringify(
-            errorData,
-          )}`,
-        );
-      }
-
-      // Small delay between batches to be respectful to API
-      if (i + BATCH_SIZE < tracks.length) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-      }
-    }
-
-    return true;
-  } catch (error: any) {
-    console.error(
-      `❌ Failed to add tracks to playlist ${managedPlaylistId}:`,
-      error.message,
-    );
-    throw error;
-  }
-};

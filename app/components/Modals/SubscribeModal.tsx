@@ -34,6 +34,7 @@ export interface SubscribeReqBody {
   syncMode?: string;
   explicitContentFilter?: boolean;
   trackAgeLimit?: number;
+  vibePrompt?: string;
   customDays?: string[];
 }
 
@@ -87,7 +88,7 @@ export const SubscribeModal = ({
   // Find existing managed playlist for selected user playlist
   const existingManagedPlaylist = selectedUserPlaylist
     ? managedPlaylists.find(
-        (mp) => mp.spotifyPlaylistId === selectedUserPlaylist.id
+        (mp) => mp.externalPlaylistId === selectedUserPlaylist.id
       )
     : null;
 
@@ -241,7 +242,7 @@ export const SubscribeModal = ({
                 <option value="">Select a playlist...</option>
                 {userPlaylists.map((playlist) => {
                   const isManaged = managedPlaylists.find(
-                    (mp) => mp.spotifyPlaylistId === playlist.id
+                    (mp) => mp.externalPlaylistId === playlist.id
                   );
                   return (
                     <option key={playlist.id} value={playlist.id}>

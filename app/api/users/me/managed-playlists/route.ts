@@ -46,11 +46,11 @@ export async function GET(request: Request) {
         now.getTime() - managedPlaylist.lastMetadataRefreshAt.getTime() >
         staleThresholds.managedPlaylist
       ) {
-        playlistsToUpdate.set(managedPlaylist.spotifyPlaylistId, {
+        playlistsToUpdate.set(managedPlaylist.externalPlaylistId, {
           type: "managed",
           id: managedPlaylist.id,
           playlist: managedPlaylist,
-          spotifyId: managedPlaylist.spotifyPlaylistId,
+          spotifyId: managedPlaylist.externalPlaylistId,
         });
       }
 
@@ -59,16 +59,16 @@ export async function GET(request: Request) {
         const source = subsription.sourcePlaylist;
 
         if (
-          !seenSourcePlaylists.has(source.spotifyPlaylistId) &&
+          !seenSourcePlaylists.has(source.externalPlaylistId) &&
           now.getTime() - source.lastMetadataRefreshAt.getTime() >
             staleThresholds.sourcePlaylist
         ) {
-          seenSourcePlaylists.add(source.spotifyPlaylistId);
-          playlistsToUpdate.set(source.spotifyPlaylistId, {
+          seenSourcePlaylists.add(source.externalPlaylistId);
+          playlistsToUpdate.set(source.externalPlaylistId, {
             type: "source",
             id: source.id,
             playlist: source,
-            spotifyId: source.spotifyPlaylistId,
+            spotifyId: source.externalPlaylistId,
           });
         }
       });

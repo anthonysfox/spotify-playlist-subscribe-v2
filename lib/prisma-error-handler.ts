@@ -20,6 +20,10 @@ export function handlePrismaError(error: any) {
             code: 'EMAIL_EXISTS'
           }
         }
+        // NOTE: this is the *database column* name, not the Prisma field name.
+        // The field is `externalPlaylistId`, but it is @map'd onto the original
+        // `spotifyPlaylistId` column so no data had to migrate — and Prisma
+        // reports the column here. Renaming this string would break the check.
         if (target?.includes('spotifyPlaylistId')) {
           return {
             success: false,

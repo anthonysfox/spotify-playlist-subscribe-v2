@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     syncMode = "APPEND",
     explicitContentFilter = false,
     trackAgeLimit = 0,
+    vibePrompt,
     customDays,
   } = body;
 
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
 
         const existingManagedPlaylist = await prisma.managedPlaylist.findFirst({
           where: {
-            spotifyPlaylistId: cleanedManagedSpotifyPlaylistId,
+            externalPlaylistId: cleanedManagedSpotifyPlaylistId,
             userId,
           },
         });
@@ -143,7 +144,7 @@ export async function POST(request: Request) {
           finalManagedPlaylist = await prisma.managedPlaylist.create({
             data: {
               userId: userId, // Link to the current user
-              spotifyPlaylistId: cleanedManagedSpotifyPlaylistId,
+              externalPlaylistId: cleanedManagedSpotifyPlaylistId,
               name: managedPlaylistToUse.name,
               imageUrl: managedPlaylistToUse.imageUrl || null,
               // Default sync settings (syncIntervalMinutes, syncQuantityPerSource) are applied by Prisma
@@ -155,6 +156,9 @@ export async function POST(request: Request) {
               syncMode: syncMode as any,
               explicitContentFilter,
               trackAgeLimit,
+              // Empty string is not a vibe — store null so the sync engine skips
+              // the model entirely for playlists that never set one.
+              vibePrompt: vibePrompt?.trim() ? vibePrompt.trim() : null,
               customDays: customDays ? JSON.stringify(customDays) : null,
               lastMetadataRefreshAt: now,
               trackCount: managedPlaylistToUse.trackCount || 0,
@@ -166,7 +170,7 @@ export async function POST(request: Request) {
         // First try to find an existing non-deleted source playlist
         let existingSourcePlaylist = await prisma.sourcePlaylist.findFirst({
           where: {
-            spotifyPlaylistId: cleanedSourceSpotifyPlaylistId,
+            externalPlaylistId: cleanedSourceSpotifyPlaylistId,
           },
         });
 
@@ -186,7 +190,7 @@ export async function POST(request: Request) {
           // Create new source playlist
           existingSourcePlaylist = await prisma.sourcePlaylist.create({
             data: {
-              spotifyPlaylistId: cleanedSourceSpotifyPlaylistId,
+              externalPlaylistId: cleanedSourceSpotifyPlaylistId,
               name: sourcePlaylist.name,
               imageUrl: sourcePlaylist.imageUrl || null,
               lastMetadataRefreshAt: now,
