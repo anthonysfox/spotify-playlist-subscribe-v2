@@ -62,8 +62,8 @@ export async function getDeveloperToken(): Promise<string> {
     );
   }
 
-  // Env vars can't hold real newlines, so the .p8 is stored with \n escapes.
-  const key = await importPKCS8(privateKey.replace(/\\n/g, "\n"), "ES256");
+  // Env vars can't hold real newlines, so the .p8 may be stored with \n escapes.
+  const key = await importPKCS8(privateKey.replace(/\\n/g, "\n").trim(), "ES256");
 
   const token = await new SignJWT({})
     .setProtectedHeader({ alg: "ES256", kid: keyId })
