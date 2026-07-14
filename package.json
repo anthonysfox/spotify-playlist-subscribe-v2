@@ -3,7 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "prisma generate && next dev",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
