@@ -13,6 +13,9 @@ export interface PlaylistSummary {
   name: string;
   imageUrl: string | null;
   trackCount: number;
+  /** Who made it — Spotify's owner display name, Apple's curatorName. */
+  owner: string | null;
+  provider: MusicProvider;
 }
 
 /**

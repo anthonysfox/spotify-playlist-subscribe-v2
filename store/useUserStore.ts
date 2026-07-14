@@ -8,13 +8,15 @@ import type {
   ManagedPlaylistSourceSubscription,
   SourcePlaylist,
 } from "@/generated/prisma/client";
-import { ISpotifyPlaylist } from "utils/types";
+// The user's playlists are provider-agnostic now — they may be Spotify or
+// Apple Music, and PlaylistSummary is the shape both adapters return.
+import type { PlaylistSummary } from "@/lib/music/types";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import toast from "react-hot-toast";
 
 export type UserStoreState = {
-  userPlaylists: ISpotifyPlaylist[];
+  userPlaylists: PlaylistSummary[];
   managedPlaylists: ManagedPlaylistWithSubscriptions[];
   user: Record<string, any> | null;
   isLoading: boolean;
@@ -26,8 +28,8 @@ export type UserStoreActions = {
   setOffset: (offset: number) => void;
   setLoading: (loading: boolean) => void;
   setUser: (user: any) => void;
-  setUserPlaylists: (playlists: ISpotifyPlaylist[]) => void;
-  addPlaylist: (playlist: ISpotifyPlaylist) => void;
+  setUserPlaylists: (playlists: PlaylistSummary[]) => void;
+  addPlaylist: (playlist: PlaylistSummary) => void;
   removePlaylist: (id: string) => void;
   refreshPlaylists: () => Promise<void>;
   setLoadedAllPlaylists: (loaded: boolean) => void;

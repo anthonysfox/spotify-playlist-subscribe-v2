@@ -1,3 +1,4 @@
+import type { PlaylistSummary } from "@/lib/music/types";
 import React, { useState, useRef, useEffect } from "react";
 import { X, Play, Pause, ExternalLink } from "lucide-react";
 import { formatTime } from "utils";
@@ -6,11 +7,7 @@ import { getTrackPreviewUrl } from "utils/itunesApi";
 interface TrackModalProps {
   isOpen: boolean;
   onClose: () => void;
-  playlist: {
-    name: string;
-    owner: { display_name: string };
-    images: Array<{ url: string }>;
-  } | null;
+  playlist: PlaylistSummary | null;
   tracks: Array<{ track: any }>;
 }
 
@@ -170,7 +167,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
 
           <div className="flex items-center gap-4">
             <img
-              src={playlist.images?.[0]?.url}
+              src={playlist.imageUrl ?? undefined}
               alt={playlist.name}
               className="w-20 h-20 rounded-xl shadow-lg"
             />
@@ -179,7 +176,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
               <p className="text-orange-100">
                 By{" "}
                 <span className="font-medium">
-                  {playlist.owner.display_name}
+                  {playlist.owner ?? "Unknown"}
                 </span>
               </p>
               <p className="text-orange-200 text-sm mt-1">

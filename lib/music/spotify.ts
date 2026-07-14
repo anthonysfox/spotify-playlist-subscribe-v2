@@ -99,6 +99,8 @@ class SpotifyClient implements MusicClient {
       name: data.name,
       imageUrl: data.images?.[0]?.url ?? null,
       trackCount: data.tracks?.total ?? 0,
+      owner: data.owner?.display_name ?? null,
+      provider: this.provider,
     };
   }
 
@@ -122,24 +124,37 @@ class SpotifyClient implements MusicClient {
         name: playlist.name,
         imageUrl: playlist.images?.[0]?.url ?? null,
         trackCount: playlist.tracks?.total ?? 0,
+        owner: playlist.owner?.display_name ?? null,
+        provider: this.provider,
       }));
   }
 
   async getUserPlaylists(limit = 20, offset = 0): Promise<PlaylistSummary[]> {
-    const response = await this.request(
-      `/me/playlists?limit=${limit}&offset=${offset}`,
-    );
+    // /me/playlists returns playlists the user *follows* as well as ones they
+    // own, and you can't add tracks to someone else's playlist. Only owned ones
+    // are valid destinations, so filter here — this is the only layer that knows
+    // the Spotify user ID to compare against.
+    const [meResponse, response] = await Promise.all([
+      this.request("/me"),
+      this.request(`/me/playlists?limit=${limit}&offset=${offset}`),
+    ]);
 
-    if (!response.ok) return [];
+    if (!response.ok || !meResponse.ok) return [];
 
+    const { id: spotifyUserId } = await meResponse.json();
     const data = await response.json();
 
-    return (data.items ?? []).filter(Boolean).map((playlist: any) => ({
-      id: playlist.id,
-      name: playlist.name,
-      imageUrl: playlist.images?.[0]?.url ?? null,
-      trackCount: playlist.tracks?.total ?? 0,
-    }));
+    return (data.items ?? [])
+      .filter(Boolean)
+      .filter((playlist: any) => playlist.owner?.id === spotifyUserId)
+      .map((playlist: any) => ({
+        id: playlist.id,
+        name: playlist.name,
+        imageUrl: playlist.images?.[0]?.url ?? null,
+        trackCount: playlist.tracks?.total ?? 0,
+        owner: playlist.owner?.display_name ?? null,
+        provider: this.provider,
+      }));
   }
 
   async createPlaylist(
@@ -172,6 +187,8 @@ class SpotifyClient implements MusicClient {
       name: data.name,
       imageUrl: data.images?.[0]?.url ?? null,
       trackCount: data.tracks?.total ?? 0,
+      owner: data.owner?.display_name ?? null,
+      provider: this.provider,
     };
   }
 

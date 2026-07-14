@@ -30,6 +30,10 @@ const syncModeOptions = [
     value: "REPLACE",
     label: "Replace all songs",
     description: "Clear playlist and add fresh songs",
+    // Replacing means emptying the playlist first, and Apple Music's API has no
+    // endpoint for removing tracks at all. The server refuses this too, but a
+    // choice the user can't have shouldn't be offered in the first place.
+    requiresTrackRemoval: true,
   },
 ];
 
@@ -172,7 +176,7 @@ export const PlaylistSettingsModal = ({
       ...updatedData,
     };
 
-    const res = await fetch("/api/spotify/playlists/subscribe", {
+    const res = await fetch("/api/music/subscribe", {
       method: "POST",
       body: JSON.stringify({
         ...body,
@@ -384,7 +388,13 @@ export const PlaylistSettingsModal = ({
                   Sync mode
                 </label>
                 <div className="space-y-2">
-                  {syncModeOptions.map((option) => (
+                  {syncModeOptions
+                    .filter(
+                      (option) =>
+                        !option.requiresTrackRemoval ||
+                        selectedPlaylist?.provider !== "APPLE_MUSIC",
+                    )
+                    .map((option) => (
                     <label
                       key={option.value}
                       className="flex items-start space-x-3 cursor-pointer"

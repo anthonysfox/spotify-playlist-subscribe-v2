@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { ISpotifyPlaylist } from "../../../utils/types";
+import type { PlaylistSummary } from "@/lib/music/types";
 import type { SelectablePlaylist } from "../Dashboard";
 import { Bell, Plus, Music, ExternalLink } from "lucide-react";
 import { useUserStore } from "../../../store/useUserStore";
@@ -10,7 +10,7 @@ export const SimplePlaylistList = ({
   setSelectedPlaylist,
   setShowSubscribeModal,
 }: {
-  playlists: ISpotifyPlaylist[];
+  playlists: PlaylistSummary[];
   setSelectedPlaylist: React.Dispatch<
     React.SetStateAction<SelectablePlaylist | null>
   >;
@@ -19,7 +19,7 @@ export const SimplePlaylistList = ({
   const managedPlaylists = useUserStore((state) => state.managedPlaylists);
   const [trackModalOpen, setTrackModalOpen] = useState(false);
   const [selectedPlaylistForModal, setSelectedPlaylistForModal] =
-    useState<ISpotifyPlaylist | null>(null);
+    useState<PlaylistSummary | null>(null);
   const [previewTracks, setPreviewTracks] = useState<any[]>([]);
   const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -56,16 +56,19 @@ export const SimplePlaylistList = ({
     (state) => state.unsubscribeFromSource
   );
 
-  const handleSubscribe = (playlist: ISpotifyPlaylist) => {
+  const handleSubscribe = (playlist: PlaylistSummary) => {
     setSelectedPlaylist(playlist);
     setShowSubscribeModal(true);
   };
 
-  const handleViewTracks = async (playlist: ISpotifyPlaylist) => {
+  const handleViewTracks = async (playlist: PlaylistSummary) => {
     // On mobile, open Spotify app directly
     if (isMobile) {
-      const spotifyUrl = `https://open.spotify.com/playlist/${playlist.id}`;
-      window.open(spotifyUrl, '_blank');
+      const externalUrl =
+      playlist.provider === "SPOTIFY"
+        ? `https://open.spotify.com/playlist/${playlist.id}`
+        : `https://music.apple.com/playlist/${playlist.id}`;
+      window.open(externalUrl, '_blank');
       return;
     }
 
@@ -76,7 +79,7 @@ export const SimplePlaylistList = ({
 
     try {
       const res = await fetch(
-        `/api/spotify/playlists/${playlist.id}?tracks=true`
+        `/api/music/playlist-tracks?provider=${playlist.provider}&id=${playlist.id}`
       );
       if (!res.ok) throw new Error("Failed to fetch playlist tracks");
       const { tracks } = await res.json();
@@ -107,7 +110,7 @@ export const SimplePlaylistList = ({
             >
               {/* Small image */}
               <img
-                src={playlist.images?.[0]?.url}
+                src={playlist.imageUrl ?? undefined}
                 alt={playlist.name}
                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover flex-shrink-0"
               />
@@ -121,7 +124,7 @@ export const SimplePlaylistList = ({
                   {playlist.name}
                 </h3>
                 <p className="text-xs text-gray-500 truncate">
-                  {playlist.owner.display_name}
+                  {playlist.owner ?? "Unknown"}
                 </p>
                 <div className="flex items-center gap-1 mt-1">
                   {loadingTracks === playlist.id ? (

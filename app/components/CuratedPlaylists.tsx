@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ISpotifyPlaylist } from "utils/types";
+import type { PlaylistSummary, MusicProvider } from "@/lib/music/types";
 import type { SelectablePlaylist } from "./Dashboard";
 import { SimplePlaylistList } from "./Playlist/SimpleList";
 import { SearchBar } from "./Navigation/SearchBar";
@@ -29,6 +29,7 @@ interface CuratedPlaylistsProps {
   setPreviewTracks: React.Dispatch<React.SetStateAction<any>>;
   listRef: React.RefObject<HTMLDivElement>;
   isActive: boolean;
+  provider: MusicProvider;
 }
 
 export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
@@ -40,10 +41,11 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   setPreviewTracks,
   listRef,
   isActive,
+  provider,
 }) => {
   const [activeCategory, setActiveCategory] = useState("popular");
   const [activeSubOption, setActiveSubOption] = useState("trending"); // Default sub-option
-  const [playlists, setPlaylists] = useState<ISpotifyPlaylist[]>([]);
+  const [playlists, setPlaylists] = useState<PlaylistSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [offset, setOffset] = useState(0);
   const [loadedAll, setLoadedAll] = useState(false);
@@ -185,13 +187,13 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
         : offset;
 
       const res = await fetch(
-        `/api/spotify/search?searchText=${encodeURIComponent(
+        `/api/music/search?provider=${provider}&q=${encodeURIComponent(
           searchQuery
-        )}&offset=${currentOffset}`
+        )}&limit=${itemsPerPage}`
       );
       if (!res.ok) throw new Error("Failed to fetch search results");
 
-      const data: ISpotifyPlaylist[] = await res.json();
+      const { playlists: data } = (await res.json()) as { playlists: PlaylistSummary[] };
       const originalDataLength = data.length;
 
       if (usePagination) {
@@ -241,7 +243,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       const apiCategory = subOption;
 
       const res = await fetch(
-        `/api/spotify/curated-playlists?category=${apiCategory}&offset=${currentOffset}`
+        `/api/music/curated?provider=${provider}&category=${apiCategory}`
       );
       if (!res.ok) {
         let message = "Unable to load curated playlists.";
@@ -254,7 +256,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
         return;
       }
 
-      const data: ISpotifyPlaylist[] = await res.json();
+      const { playlists: data } = (await res.json()) as { playlists: PlaylistSummary[] };
       const originalDataLength = data.length;
 
       if (usePagination) {

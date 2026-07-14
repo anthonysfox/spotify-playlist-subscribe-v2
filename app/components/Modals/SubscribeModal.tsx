@@ -1,12 +1,13 @@
 import { Bell, X } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ISpotifyPlaylist, IUserPlaylistsState } from "utils/types";
+import type { PlaylistSummary, MusicProvider } from "@/lib/music/types";
 import type { SelectablePlaylist } from "../Dashboard";
 import { useUserStore } from "../../../store/useUserStore";
 import { OFFSET } from "utils/constants";
 import toast from "react-hot-toast";
 
-const userPlaylistsEndpoint = "/api/spotify/user/playlists";
+// Provider-generic: the user's own playlists on whichever service they picked.
+const userPlaylistsEndpoint = "/api/music/user-playlists";
 
 const frequencyOptions = [
   { value: "DAILY", label: "Daily" },
@@ -15,6 +16,8 @@ const frequencyOptions = [
 ];
 
 export interface SubscribeReqBody {
+  /** Which service both playlists live on. Defaults to Spotify server-side. */
+  provider?: MusicProvider;
   sourcePlaylist: {
     id: string;
     name: string;
@@ -49,9 +52,9 @@ export const SubscribeModal = ({
 }: {
   setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
   // Shares Dashboard's selectedPlaylist state, which can also hold a managed
-  // playlist. This modal only ever reads a Spotify playlist (Dashboard narrows
-  // with isSpotifyPlaylist before rendering it), but the setter is the shared
-  // one, so it has to accept the union.
+  // playlist. This modal only ever reads a browsable one (Dashboard narrows with
+  // isPlaylistSummary before rendering it), but the setter is the shared one, so
+  // it has to accept the union.
   setSelectedPlaylist: React.Dispatch<
     React.SetStateAction<SelectablePlaylist | null>
   >;
@@ -59,14 +62,20 @@ export const SubscribeModal = ({
     React.SetStateAction<SubscribeReqBody | null>
   >;
   subscribeModalFormData: SubscribeReqBody | null;
-  selectedPlaylist: ISpotifyPlaylist | null;
+  selectedPlaylist: PlaylistSummary | null;
   setShowPlaylistSettingsModal?: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
+  // A subscription can't span services — the sync engine skips cross-provider
+  // sources, since matching tracks across catalogues would need ISRC lookup. So
+  // the destination is always on whichever service the source came from, and the
+  // source playlist already tells us which that is.
+  const provider: MusicProvider = selectedPlaylist?.provider ?? "SPOTIFY";
+
   const [selectedFrequency, setSelectedFrequency] = useState(
     subscribeModalFormData?.syncFrequency || "WEEKLY"
   );
   const [selectedUserPlaylist, setSelectedUserPlaylist] =
-    useState<ISpotifyPlaylist | null>(null);
+    useState<PlaylistSummary | null>(null);
   const [newPlaylistName, setNewPlaylistName] = useState<string>(
     subscribeModalFormData?.newPlaylistName || ""
   );
@@ -102,19 +111,18 @@ export const SubscribeModal = ({
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${userPlaylistsEndpoint}?offset=${offset}`);
-      const data: ISpotifyPlaylist[] = await res.json();
-
-      // Handle both server-side and client-side user data structures
-      const spotifyExternalId =
-        userData?.externalAccounts?.[0]?.externalId ||
-        userData?.externalAccounts?.[0]?.providerUserId ||
-        userData?.externalAccounts?.[0]?.id;
-
-      const filteredPlaylists = data.filter(
-        (playlist) => playlist.owner.id === spotifyExternalId
+      const res = await fetch(
+        `${userPlaylistsEndpoint}?provider=${provider}&offset=${offset}`,
       );
-      setUserPlaylists(filteredPlaylists);
+
+      const { playlists: data } = (await res.json()) as {
+        playlists: PlaylistSummary[];
+      };
+
+      // No client-side owner filter any more: /api/music/user-playlists already
+      // returns only playlists the user can actually write to. Doing it here was
+      // only possible for Spotify anyway, since it needed a Spotify user ID.
+      setUserPlaylists(data);
       setLoadedAllPlaylists(data.length < OFFSET);
       setOffset(offset + OFFSET);
     } catch (err) {
@@ -122,7 +130,7 @@ export const SubscribeModal = ({
     } finally {
       setIsLoading(false);
     }
-  }, [isLoading, offset, loadedAllPlaylists, userData]);
+  }, [isLoading, offset, loadedAllPlaylists, provider]);
 
   // Fetch user playlists with pagination
   useEffect(() => {
@@ -147,12 +155,15 @@ export const SubscribeModal = ({
     const body: SubscribeReqBody = {
       // Start with any existing advanced settings from subscribeModalFormData
       ...subscribeModalFormData,
+      // Which service both playlists live on. The server needs this to pick the
+      // right client, and to store it on the playlist records.
+      provider,
       // Override with current form state (this takes precedence)
       sourcePlaylist: {
         id: selectedPlaylist?.id || "",
         name: selectedPlaylist?.name || "",
-        imageUrl: selectedPlaylist?.images?.[0]?.url || "",
-        trackCount: selectedPlaylist?.tracks.total || 0,
+        imageUrl: selectedPlaylist?.imageUrl || "",
+        trackCount: selectedPlaylist?.trackCount || 0,
       },
       syncFrequency: selectedFrequency,
       runImmediateSync,
@@ -164,12 +175,12 @@ export const SubscribeModal = ({
       body.managedPlaylist = {
         id: selectedUserPlaylist?.id || "",
         name: selectedUserPlaylist?.name || "",
-        imageUrl: selectedUserPlaylist?.images?.[0]?.url || "",
-        trackCount: selectedUserPlaylist?.tracks?.total || 0,
+        imageUrl: selectedUserPlaylist?.imageUrl || "",
+        trackCount: selectedUserPlaylist?.trackCount || 0,
       };
     }
 
-    const res = await fetch("/api/spotify/playlists/subscribe", {
+    const res = await fetch("/api/music/subscribe", {
       method: "POST",
       body: JSON.stringify({
         ...body,
@@ -251,7 +262,12 @@ export const SubscribeModal = ({
                   );
                   return (
                     <option key={playlist.id} value={playlist.id}>
-                      {playlist.name} ({playlist.tracks.total} tracks)
+                      {playlist.name}
+                      {/* Apple doesn't report a track count for library
+                          playlists, so only show one when we have it. */}
+                      {playlist.trackCount > 0
+                        ? ` (${playlist.trackCount} tracks)`
+                        : ""}
                       {isManaged ? " • Already managed" : ""}
                     </option>
                   );
@@ -407,8 +423,8 @@ export const SubscribeModal = ({
                   sourcePlaylist: {
                     id: selectedPlaylist?.id || "",
                     name: selectedPlaylist?.name || "",
-                    imageUrl: selectedPlaylist?.images?.[0]?.url || "",
-                    trackCount: selectedPlaylist?.tracks.total || 0,
+                    imageUrl: selectedPlaylist?.imageUrl || "",
+                    trackCount: selectedPlaylist?.trackCount || 0,
                   },
                   syncFrequency: selectedFrequency,
                   runImmediateSync,
@@ -420,8 +436,8 @@ export const SubscribeModal = ({
                   body.managedPlaylist = {
                     id: selectedUserPlaylist?.id || "",
                     name: selectedUserPlaylist?.name || "",
-                    imageUrl: selectedUserPlaylist?.images?.[0]?.url || "",
-                    trackCount: selectedUserPlaylist?.tracks?.total || 0,
+                    imageUrl: selectedUserPlaylist?.imageUrl || "",
+                    trackCount: selectedUserPlaylist?.trackCount || 0,
                   };
                 }
                 // Create a temporary playlist object with default settings for the modal

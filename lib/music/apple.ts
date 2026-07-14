@@ -239,19 +239,15 @@ class AppleMusicClient implements MusicClient {
 
     if (!playlist) return null;
 
-    const artwork = playlist.attributes?.artwork?.url;
-
     return {
       id: playlist.id,
       name: playlist.attributes?.name ?? "",
-      // Apple returns artwork as a template with {w}/{h} placeholders that must
-      // be filled in before the URL resolves to an actual image.
-      imageUrl: artwork
-        ? artwork.replace("{w}", "640").replace("{h}", "640")
-        : null,
+      imageUrl: this.artworkUrl(playlist.attributes),
       // Apple doesn't report a track count on the playlist resource, so this is
       // only trustworthy after a sync recounts it.
       trackCount: playlist.attributes?.trackCount ?? 0,
+      owner: playlist.attributes?.curatorName ?? null,
+      provider: this.provider,
     };
   }
 
@@ -282,6 +278,8 @@ class AppleMusicClient implements MusicClient {
       imageUrl: this.artworkUrl(playlist.attributes),
       // Apple doesn't report a track count on playlist search results.
       trackCount: 0,
+      owner: playlist.attributes?.curatorName ?? null,
+      provider: this.provider,
     }));
   }
 
@@ -301,6 +299,8 @@ class AppleMusicClient implements MusicClient {
       name: playlist.attributes?.name ?? "",
       imageUrl: this.artworkUrl(playlist.attributes),
       trackCount: 0,
+      owner: null,
+      provider: this.provider,
     }));
   }
 
@@ -328,6 +328,8 @@ class AppleMusicClient implements MusicClient {
       name: playlist.attributes?.name ?? name,
       imageUrl: null,
       trackCount: 0,
+      owner: null,
+      provider: this.provider,
     };
   }
 

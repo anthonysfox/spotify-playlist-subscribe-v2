@@ -1,18 +1,17 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import {
-  ISpotifyPlaylist,
-  IState,
-  ITopArtistState,
-  IUserPlaylistsState,
-} from "utils/types";
+import { ITopArtistState } from "utils/types";
 import { CuratedPlaylists } from "./CuratedPlaylists";
 import { OFFSET } from "utils/constants";
 import { NavTabs } from "./Navigation/NavTabs";
 import { SubscribeModal, SubscribeReqBody } from "./Modals/SubscribeModal";
 import { PlaylistSettingsModal } from "./Modals/SettingsModal";
-import { Bell } from "lucide-react";
 import type { ManagedPlaylistWithSubscriptions } from "store/useUserStore";
+import type { PlaylistSummary } from "@/lib/music/types";
+import {
+  useMusicConnections,
+  PROVIDER_LABELS,
+} from "../hooks/useMusicConnections";
 
 /**
  * What `selectedPlaylist` can actually hold.
@@ -23,18 +22,21 @@ import type { ManagedPlaylistWithSubscriptions } from "store/useUserStore";
  * couldn't see.
  */
 export type SelectablePlaylist =
-  | ISpotifyPlaylist
+  | PlaylistSummary
   | ManagedPlaylistWithSubscriptions;
 
 /**
- * Narrow the union to a Spotify playlist. Only Spotify's shape carries an
- * `owner`, so it's a reliable discriminator — and this keeps the subscribe flow
- * honest instead of casting and hoping.
+ * Narrow the union to a browsable playlist (a search/curated result), as opposed
+ * to one of the user's own managed playlists.
+ *
+ * `externalPlaylistId` only exists on the managed (database) shape, so it's a
+ * reliable discriminator — and this keeps the subscribe flow honest rather than
+ * casting and hoping.
  */
-export function isSpotifyPlaylist(
+export function isPlaylistSummary(
   playlist: SelectablePlaylist | null,
-): playlist is ISpotifyPlaylist {
-  return !!playlist && "owner" in playlist;
+): playlist is PlaylistSummary {
+  return !!playlist && !("externalPlaylistId" in playlist);
 }
 import { useUserStore } from "store/useUserStore";
 import { Subscriptions } from "./Playlist/Subscriptions";
@@ -49,6 +51,10 @@ const Dashboard = ({ userData }: { userData: any }) => {
   );
   const [token, setToken] = useState<string>("");
   const [previewTracks, setPreviewTracks] = useState<any>([]);
+  // Which services this user actually has, and which one discover is browsing.
+  const { connected, hasNone, activeProvider, setActiveProvider } =
+    useMusicConnections();
+
   const [selectedPlaylist, setSelectedPlaylist] =
     useState<SelectablePlaylist | null>(null);
   const [activeTab, setActiveTab] = useState("discover");
@@ -249,17 +255,68 @@ const Dashboard = ({ userData }: { userData: any }) => {
 
       {activeTab === "discover" ? (
         <div className="flex flex-col grow min-h-0">
-          <CuratedPlaylists
-            setSelectedPlaylist={setSelectedPlaylist}
-            setShowSubscribeModal={setShowSubscribeModal}
-            setExpandedPlaylist={setExpandedPlaylist}
-            expandedPlaylist={expandedPlaylist}
-            previewTracks={previewTracks}
-            setPreviewTracks={setPreviewTracks}
-            listRef={listRef}
-            isActive={activeTab === "discover"}
-          />
-          {showSubscribeModal && isSpotifyPlaylist(selectedPlaylist) && (
+          {/*
+            Someone can now sign up with Apple and never connect Spotify, so the
+            discover tab can no longer assume a service exists. Show what they
+            actually have — and if that's nothing, say so instead of rendering an
+            empty grid that looks broken.
+          */}
+          {hasNone ? (
+            <div className="flex flex-col items-center justify-center grow text-center p-8">
+              <h2 className="text-lg font-medium text-gray-800 mb-1">
+                No music service connected
+              </h2>
+              <p className="text-gray-600 mb-4">
+                Connect Spotify or Apple Music to start subscribing to playlists.
+              </p>
+              <a
+                href="/profile"
+                className="px-4 py-2 bg-[#CC5500] text-white rounded hover:bg-[#B04A00] transition-colors"
+              >
+                Connect a service
+              </a>
+            </div>
+          ) : (
+            <>
+              {connected.length > 1 && activeProvider && (
+                <div className="flex gap-1 px-4 pt-3">
+                  {connected.map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setActiveProvider(option)}
+                      className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                        activeProvider === option
+                          ? "bg-[#CC5500] text-white"
+                          : "text-gray-600 border border-gray-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      {PROVIDER_LABELS[option]}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {activeProvider && (
+                <CuratedPlaylists
+                  // Remount on provider change so cached results from the other
+                  // service can't leak into the list.
+                  key={activeProvider}
+                  provider={activeProvider}
+                  setSelectedPlaylist={setSelectedPlaylist}
+                  setShowSubscribeModal={setShowSubscribeModal}
+                  setExpandedPlaylist={setExpandedPlaylist}
+                  expandedPlaylist={expandedPlaylist}
+                  previewTracks={previewTracks}
+                  setPreviewTracks={setPreviewTracks}
+                  listRef={listRef}
+                  isActive={activeTab === "discover"}
+                />
+              )}
+            </>
+          )}
+
+          {showSubscribeModal && isPlaylistSummary(selectedPlaylist) && (
             <SubscribeModal
               selectedPlaylist={selectedPlaylist}
               setSelectedPlaylist={setSelectedPlaylist}
