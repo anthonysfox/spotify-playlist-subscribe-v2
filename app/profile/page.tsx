@@ -1,6 +1,4 @@
-import { redirect } from "next/navigation";
 import { Metadata } from "next";
-import { useUser } from "@clerk/clerk-react";
 
 export const metadata: Metadata = {
   title: "Spotify Playlist Subscribe - Profile",
