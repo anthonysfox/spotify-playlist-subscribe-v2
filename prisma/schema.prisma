@@ -48,6 +48,15 @@ model User {
   spotifyRefreshToken String?        @map("spotify_refresh_token")
   spotifyAccessToken  String?        @map("spotify_access_token")
   spotifyTokenExpiresAt DateTime?    @map("spotify_token_expires_at")
+
+  // Apple Music's per-user token, minted client-side by MusicKit.
+  //
+  // Unlike Spotify's refresh token, this CANNOT be renewed server-side: it just
+  // expires (~6 months) and only the user, in a front end, can mint a new one.
+  // The issued-at date is stored so the app can quietly re-mint it on any normal
+  // visit well before it lapses, rather than discovering it's dead mid-sync.
+  appleMusicUserToken       String?   @map("apple_music_user_token")
+  appleMusicTokenIssuedAt   DateTime? @map("apple_music_token_issued_at")
   email            String
   name             String?
   imageUrl         String?

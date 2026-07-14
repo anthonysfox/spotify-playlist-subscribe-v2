@@ -20,7 +20,10 @@ import { randomUUID } from "crypto";
 const MAX_ROTATION_MEMORY = 1000;
 
 /** Why a playlist was skipped. Skips are normal; they are not errors. */
-type SkipReason = "NO_SUBSCRIPTIONS" | "PROVIDER_NOT_CONNECTED";
+type SkipReason =
+  | "NO_SUBSCRIPTIONS"
+  | "PROVIDER_NOT_CONNECTED"
+  | "REPLACE_UNSUPPORTED";
 
 interface SyncResult {
   playlistId: string;
@@ -308,6 +311,26 @@ async function syncSinglePlaylist(
         status: "skipped",
         songsAdded: 0,
         reason: "PROVIDER_NOT_CONNECTED",
+        duration: Date.now() - syncStartTime,
+      };
+    }
+
+    // REPLACE needs to empty the playlist first, and not every service can do
+    // that — Apple Music's API has no track-removal endpoint at all. Rather than
+    // silently degrading REPLACE into APPEND (which would grow the playlist
+    // forever, the exact opposite of what the user asked for), skip it and say
+    // so, so the setting can be corrected.
+    if (syncMode === "REPLACE" && !client.capabilities.removeTracks) {
+      console.warn(
+        `⚠️ Skipping ${name} — ${provider} cannot remove tracks, so REPLACE mode is unsupported`,
+      );
+
+      return {
+        playlistId: id,
+        playlistName: name,
+        status: "skipped",
+        songsAdded: 0,
+        reason: "REPLACE_UNSUPPORTED",
         duration: Date.now() - syncStartTime,
       };
     }

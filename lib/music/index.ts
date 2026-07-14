@@ -1,5 +1,6 @@
 import type { MusicProvider, MusicProviderAdapter } from "./types";
 import { spotifyProvider } from "./spotify";
+import { appleMusicProvider } from "./apple";
 
 export type {
   MusicClient,
@@ -7,27 +8,25 @@ export type {
   MusicProviderAdapter,
   PlaylistSummary,
   PlaylistTrack,
+  ProviderCapabilities,
 } from "./types";
 
 /**
  * Every music service the app can talk to.
  *
- * Adding Apple Music is an entry in this record plus one `lib/music/apple.ts`
- * implementing `MusicProviderAdapter`. Nothing in the sync engine changes: it
- * resolves a client from here and works in terms of `PlaylistTrack`, so the
- * dedupe, filters, REPLACE rotation and vibe curation all come along for free.
+ * The sync engine never names a provider: it resolves a client from here and
+ * works in terms of `PlaylistTrack`, so dedupe, the explicit/age filters, the
+ * REPLACE rotation and the AI vibe curation all apply to both services without
+ * knowing which one they're looking at.
  *
- * The two things an Apple adapter has to solve that Spotify's doesn't:
- *   - auth is a developer token (JWT, signed with the MusicKit private key)
- *     *plus* a per-user Music User Token obtained client-side via MusicKit JS.
- *   - Music User Tokens expire and cannot be refreshed server-side the way a
- *     Spotify refresh token can, so a background sync must handle an expired
- *     token by asking the user to reconnect rather than by retrying.
- * Both live behind `forUser()`, which is exactly why auth is bound there.
+ * The two services are NOT feature-equivalent, and the interface says so rather
+ * than papering over it — see `MusicClient.capabilities`. Apple Music's REST API
+ * cannot remove tracks from a playlist at all, so SyncMode.REPLACE is impossible
+ * there and the engine skips it instead of appending forever.
  */
 const PROVIDERS: Record<MusicProvider, MusicProviderAdapter | undefined> = {
   SPOTIFY: spotifyProvider,
-  APPLE_MUSIC: undefined,
+  APPLE_MUSIC: appleMusicProvider,
 };
 
 /**

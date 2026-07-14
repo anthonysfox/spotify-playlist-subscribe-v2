@@ -30,8 +30,23 @@ export interface PlaylistSummary {
  * while Apple wants a developer token *and* a per-user Music User Token. Binding
  * auth at construction keeps that difference from leaking into the engine.
  */
+/**
+ * What a given service can actually do.
+ *
+ * Providers are not feature-equivalent, and pretending otherwise means silently
+ * broken syncs. Apple Music's REST API has no endpoint for removing tracks from
+ * a playlist at all — removal only exists in native MusicKit, and only for
+ * playlists your own app created. So REPLACE mode is genuinely impossible there,
+ * and the engine needs to know that rather than discover it via a 4xx.
+ */
+export interface ProviderCapabilities {
+  /** Can tracks be removed from a playlist? Required for SyncMode.REPLACE. */
+  readonly removeTracks: boolean;
+}
+
 export interface MusicClient {
   readonly provider: MusicProvider;
+  readonly capabilities: ProviderCapabilities;
 
   /** Every track on a playlist, with the metadata the engine needs to judge it. */
   getPlaylistTracks(playlistId: string): Promise<PlaylistTrack[]>;

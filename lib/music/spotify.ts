@@ -17,6 +17,9 @@ const trackUri = (trackId: string) => `spotify:track:${trackId}`;
 class SpotifyClient implements MusicClient {
   readonly provider = "SPOTIFY" as const;
 
+  // Spotify supports removing playlist items, so REPLACE mode works.
+  readonly capabilities = { removeTracks: true } as const;
+
   constructor(private readonly token: string) {}
 
   private async request(path: string, init?: RequestInit): Promise<Response> {
