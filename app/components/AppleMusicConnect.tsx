@@ -129,12 +129,28 @@ export const AppleMusicConnect = () => {
       const music = await getMusicKit(status.developerToken);
 
       // Opens Apple's sign-in prompt and returns the Music User Token.
-      await storeUserToken(await music.authorize());
+      const userToken = await music.authorize();
+
+      // MusicKit can resolve without a token if the user backs out of the sheet.
+      if (!userToken) throw new Error("AUTHORIZATION_CANCELLED");
+
+      await storeUserToken(userToken);
       await loadStatus();
 
       toast.success("Apple Music connected");
     } catch (error: any) {
-      toast.error(error?.message || "Could not connect Apple Music");
+      // Apple Music tokens are only issued to active subscribers. A non-subscriber
+      // gets shown a "Try now / Not right now" upsell instead, and declining it
+      // surfaces here as a bare "unauthorized" — which tells the user nothing about
+      // what actually went wrong or how to fix it.
+      const raw = String(error?.message ?? error ?? "");
+      const cancelled = /cancel|unauthorized|denied/i.test(raw);
+
+      toast.error(
+        cancelled
+          ? "Apple Music needs an active subscription to connect."
+          : raw || "Could not connect Apple Music",
+      );
     } finally {
       setBusy(false);
     }
@@ -183,7 +199,11 @@ export const AppleMusicConnect = () => {
           <p className="text-sm text-gray-500">
             {status?.connected
               ? "Connected — PlaylistFox can sync your Apple Music playlists."
-              : "Connect to sync playlists in Apple Music."}
+              : // Say it up front. Apple only issues a user token to an active
+                // subscriber, and a non-subscriber otherwise discovers this via a
+                // "Try now / Not right now" upsell followed by a bare
+                // "unauthorized" — with no hint that a subscription is the issue.
+                "Connect to sync playlists in Apple Music. Requires an active Apple Music subscription."}
           </p>
         </div>
 
