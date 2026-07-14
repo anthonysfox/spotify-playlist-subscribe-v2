@@ -4,7 +4,16 @@ import prisma from "@/lib/prisma";
 import { getDeveloperToken } from "@/lib/music/apple";
 
 /**
- * Hand the browser a developer token so MusicKit JS can authorise the user.
+ * A Music User Token lasts about six months and cannot be renewed server-side.
+ * Re-minting it well before then — on any ordinary visit, while the user is
+ * already here — is what stops a background sync from silently rotting. Five
+ * months leaves a month of slack.
+ */
+const REFRESH_AFTER_DAYS = 150;
+
+/**
+ * Hand the browser a developer token so MusicKit JS can authorise the user, plus
+ * enough state for it to decide whether it needs to act.
  *
  * The .p8 private key stays on the server; only this short-lived signed JWT is
  * ever exposed. Auth-gated so it isn't a free token faucet.
@@ -17,7 +26,29 @@ export async function GET() {
   }
 
   try {
-    return NextResponse.json({ developerToken: await getDeveloperToken() });
+    const developerToken = await getDeveloperToken();
+
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId: userId },
+      select: { appleMusicUserToken: true, appleMusicTokenIssuedAt: true },
+    });
+
+    const connected = Boolean(user?.appleMusicUserToken);
+    const issuedAt = user?.appleMusicTokenIssuedAt ?? null;
+
+    const ageInDays = issuedAt
+      ? (Date.now() - issuedAt.getTime()) / 86_400_000
+      : null;
+
+    return NextResponse.json({
+      developerToken,
+      connected,
+      issuedAt,
+      // The client silently re-authorises when this is true, so the token is
+      // replaced long before a sync ever finds it dead.
+      needsRefresh:
+        connected && (ageInDays === null || ageInDays > REFRESH_AFTER_DAYS),
+    });
   } catch (error: any) {
     // Almost always means the APPLE_MUSIC_* env vars aren't set.
     console.error("Failed to mint Apple Music developer token:", error.message);

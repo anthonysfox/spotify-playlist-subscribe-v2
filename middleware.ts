@@ -4,6 +4,10 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 const isProtectedRoute = createRouteMatcher([
   "/api/spotify(.*)",
   "/api/users(.*)",
+  // Mints an Apple Music developer token and stores user tokens. The handlers
+  // check auth themselves too, but this rejects anonymous callers at the edge
+  // rather than letting them reach the signing code.
+  "/api/apple-music(.*)",
   "/profile(.*)",
   "/dashboard(.*)"
 ]);
