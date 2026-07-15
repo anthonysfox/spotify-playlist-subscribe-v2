@@ -1,9 +1,8 @@
 import { Bell, X } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { PlaylistSummary, MusicProvider } from "@/lib/music/types";
 import type { SelectablePlaylist } from "../Dashboard";
 import { useUserStore } from "../../../store/useUserStore";
-import { OFFSET } from "utils/constants";
 import toast from "react-hot-toast";
 
 // Provider-generic: the user's own playlists on whichever service they picked.
@@ -82,22 +81,17 @@ export const SubscribeModal = ({
   const [runImmediateSync, setRunImmediateSync] = useState<boolean>(
     subscribeModalFormData?.runImmediateSync ?? true
   );
-  console.log(subscribeModalFormData);
 
   const selectRef = useRef<HTMLSelectElement>(null);
-  const userPlaylists = useUserStore((state) => state.userPlaylists);
-  const isLoading = useUserStore((state) => state.isLoading);
   const userData = useUserStore((state) => state.user);
-  const offset = useUserStore((state) => state.offset);
-  const loadedAllPlaylists = useUserStore((state) => state.loadedAllPlaylists);
   const managedPlaylists = useUserStore((state) => state.managedPlaylists);
-  const setIsLoading = useUserStore((state) => state.setLoading);
-  const setOffset = useUserStore((state) => state.setOffset);
-  const setUserPlaylists = useUserStore((state) => state.setUserPlaylists);
-  const setLoadedAllPlaylists = useUserStore(
-    (state) => state.setLoadedAllPlaylists
-  );
   const addManagedPlaylist = useUserStore((state) => state.addManagedPlaylist);
+
+  // The destination-playlist list is local, not global. It used to live in
+  // useUserStore, which is why switching provider showed stale options: the
+  // store held whichever provider loaded first and never refetched. It's a
+  // transient, provider-scoped concern, so it belongs to this modal.
+  const [userPlaylists, setUserPlaylists] = useState<PlaylistSummary[]>([]);
 
   // Find existing managed playlist for selected user playlist
   const existingManagedPlaylist = selectedUserPlaylist
@@ -106,39 +100,44 @@ export const SubscribeModal = ({
       )
     : null;
 
-  const fetchUserPlaylists = useCallback(async () => {
-    if (isLoading || loadedAllPlaylists) return;
-    setIsLoading(true);
-
-    try {
-      const res = await fetch(
-        `${userPlaylistsEndpoint}?provider=${provider}&offset=${offset}`,
-      );
-
-      const { playlists: data } = (await res.json()) as {
-        playlists: PlaylistSummary[];
-      };
-
-      // No client-side owner filter any more: /api/music/user-playlists already
-      // returns only playlists the user can actually write to. Doing it here was
-      // only possible for Spotify anyway, since it needed a Spotify user ID.
-      setUserPlaylists(data);
-      setLoadedAllPlaylists(data.length < OFFSET);
-      setOffset(offset + OFFSET);
-    } catch (err) {
-      console.error("Failed user playlist fetch:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoading, offset, loadedAllPlaylists, provider]);
-
-  // Fetch user playlists with pagination
+  // Load the destination list for the current provider, reloading from scratch
+  // whenever the provider changes so the options always match what's selected.
+  // (There's no "load more" here — the picker shows the first page, same as
+  // before; a stale flag/offset were only ever set, never read.)
   useEffect(() => {
-    if (userData && userPlaylists.length === 0) {
-      fetchUserPlaylists();
-    }
-  }, [userData, userPlaylists, fetchUserPlaylists]);
+    if (!userData) return;
 
+    let cancelled = false;
+
+    setUserPlaylists([]);
+    setSelectedUserPlaylist(null);
+
+    (async () => {
+      try {
+        const res = await fetch(
+          `${userPlaylistsEndpoint}?provider=${provider}`,
+        );
+
+        const { playlists } = (await res.json()) as {
+          playlists: PlaylistSummary[];
+        };
+
+        // A slow response for the previous provider must not overwrite the
+        // current one — a fast provider switch could otherwise land results out
+        // of order.
+        if (!cancelled) setUserPlaylists(playlists);
+      } catch (err) {
+        console.error("Failed user playlist fetch:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [provider, userData]);
+
+  // When re-entering the subscribe flow with a previously chosen destination,
+  // reselect it once the list for this provider has loaded.
   useEffect(() => {
     if (subscribeModalFormData) {
       if (subscribeModalFormData?.managedPlaylist?.id) {
