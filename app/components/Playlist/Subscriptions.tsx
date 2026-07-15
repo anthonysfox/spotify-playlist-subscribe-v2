@@ -3,9 +3,11 @@ import React, { useEffect, useState } from "react";
 import { ISpotifyPlaylist } from "utils/types";
 import { PlaylistSettingsModal } from "../Modals/SettingsModal";
 import { useUserStore } from "store/useUserStore";
+import type { ManagedPlaylistWithSubscriptions } from "store/useUserStore";
 import { SubscriptionSkeleton } from "../Skeletons/SubscriptionSkeleton";
 import toast from "react-hot-toast";
 import type { SelectablePlaylist } from "../Dashboard";
+import { PROVIDER_LABELS } from "store/useMusicStore";
 
 interface ISubscriptionsProps {
   // The same piece of state holds a Spotify playlist during the subscribe flow
@@ -98,7 +100,10 @@ export const Subscriptions = ({
               </div>
               <div className="grid gap-6">
                 {managedPlaylists.map(
-                  (managedPlaylist: any, groupIndex: number) => (
+                  (
+                    managedPlaylist: ManagedPlaylistWithSubscriptions,
+                    groupIndex: number,
+                  ) => (
                     <div
                       key={groupIndex}
                       className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
@@ -113,7 +118,10 @@ export const Subscriptions = ({
                         <div className="flex items-center mb-4">
                           <div className="relative">
                             <img
-                              src={managedPlaylist.imageUrl}
+                              // A managed playlist can genuinely have no artwork
+                              // (a brand new Apple Music playlist has none until
+                              // it has tracks). The `any` on this map hid that.
+                              src={managedPlaylist.imageUrl ?? undefined}
                               alt={managedPlaylist.name}
                               className="w-16 h-16 object-cover rounded-xl shadow-md"
                             />
@@ -126,6 +134,24 @@ export const Subscriptions = ({
                               <h3 className="font-bold text-gray-900 text-lg mb-1">
                                 {managedPlaylist.name}
                               </h3>
+
+                              {/*
+                                With both services connected, a Spotify playlist
+                                and an Apple Music one are otherwise
+                                indistinguishable in this list — and they behave
+                                differently (no REPLACE mode on Apple), so the
+                                difference matters.
+                              */}
+                              <span
+                                className={`shrink-0 px-2 py-0.5 text-[10px] font-medium rounded-full border mb-1 ${
+                                  managedPlaylist.provider === "APPLE_MUSIC"
+                                    ? "bg-pink-50 text-pink-700 border-pink-200"
+                                    : "bg-green-50 text-green-700 border-green-200"
+                                }`}
+                              >
+                                {PROVIDER_LABELS[managedPlaylist.provider]}
+                              </span>
+
                               <Settings
                                 size={16}
                                 className="text-gray-400 group-hover:text-gray-600 transition-colors opacity-60 group-hover:opacity-100"

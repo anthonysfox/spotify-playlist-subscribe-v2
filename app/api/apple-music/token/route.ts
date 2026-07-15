@@ -86,9 +86,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await prisma.user.update({
+    // Upsert, not update. User rows are normally created by the Clerk webhook,
+    // but that can lag a first sign-in — and in local development it never
+    // arrives at all, because webhooks can't reach localhost. `update` throws on
+    // a missing row, which surfaced as "Failed to save Apple Music token" with no
+    // hint that the real problem was a user who didn't exist yet.
+    //
+    // The subscribe route already carries the same fallback for the same reason.
+    const clerkClient = (await import("@clerk/nextjs/server")).clerkClient;
+    const clerk = await clerkClient();
+    const clerkUser = await clerk.users.getUser(userId);
+
+    await prisma.user.upsert({
       where: { clerkUserId: userId },
-      data: {
+      update: {
+        appleMusicUserToken: musicUserToken,
+        appleMusicTokenIssuedAt: new Date(),
+      },
+      create: {
+        clerkUserId: userId,
+        email: clerkUser.emailAddresses?.[0]?.emailAddress || "",
+        name:
+          `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
+          "User",
+        imageUrl: clerkUser.imageUrl,
         appleMusicUserToken: musicUserToken,
         appleMusicTokenIssuedAt: new Date(),
       },
@@ -99,7 +120,7 @@ export async function POST(request: NextRequest) {
     console.error("Failed to store Apple Music user token:", error.message);
 
     return NextResponse.json(
-      { error: "Failed to store Apple Music token" },
+      { error: "Failed to store Apple Music token", details: error.message },
       { status: 500 },
     );
   }
@@ -113,7 +134,9 @@ export async function DELETE() {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  await prisma.user.update({
+  // updateMany rather than update: disconnecting a user who has no row is a
+  // no-op, not an error worth throwing over.
+  await prisma.user.updateMany({
     where: { clerkUserId: userId },
     data: { appleMusicUserToken: null, appleMusicTokenIssuedAt: null },
   });

@@ -92,7 +92,16 @@ export const AppleMusicConnect = () => {
       body: JSON.stringify({ musicUserToken }),
     });
 
-    if (!response.ok) throw new Error("Failed to save Apple Music token");
+    if (!response.ok) {
+      // Pass the server's reason through. A bare "Failed to save Apple Music
+      // token" says nothing, and the actual cause (a user row that didn't exist
+      // yet) was invisible from the browser.
+      const body = await response.json().catch(() => null);
+
+      throw new Error(
+        body?.details || body?.error || "Failed to save Apple Music token",
+      );
+    }
   }, []);
 
   /**

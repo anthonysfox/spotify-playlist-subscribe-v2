@@ -73,8 +73,11 @@ const previewCache = new Map<string, string | null>();
 export async function getTrackPreviewUrl(
   trackName: string,
   artistName: string,
-  albumName: string,
-  durationMs: number
+  // Optional now: our provider-agnostic PlaylistTrack carries neither. They only
+  // sharpen the iTunes match (album narrows the search, duration disambiguates),
+  // so name + artist alone still resolves a preview — just a little less precisely.
+  albumName: string = "",
+  durationMs: number = 0
 ): Promise<string | null> {
   const cacheKey = `${trackName}-${artistName}-${albumName}-${durationMs}`.toLowerCase();
 

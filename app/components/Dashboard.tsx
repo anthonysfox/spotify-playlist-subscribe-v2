@@ -8,10 +8,7 @@ import { SubscribeModal, SubscribeReqBody } from "./Modals/SubscribeModal";
 import { PlaylistSettingsModal } from "./Modals/SettingsModal";
 import type { ManagedPlaylistWithSubscriptions } from "store/useUserStore";
 import type { PlaylistSummary } from "@/lib/music/types";
-import {
-  useMusicConnections,
-  PROVIDER_LABELS,
-} from "../hooks/useMusicConnections";
+import { useMusicStore, connectedProviders } from "store/useMusicStore";
 
 /**
  * What `selectedPlaylist` can actually hold.
@@ -51,9 +48,18 @@ const Dashboard = ({ userData }: { userData: any }) => {
   );
   const [token, setToken] = useState<string>("");
   const [previewTracks, setPreviewTracks] = useState<any>([]);
-  // Which services this user actually has, and which one discover is browsing.
-  const { connected, hasNone, activeProvider, setActiveProvider } =
-    useMusicConnections();
+  // Active service is app-wide state now (the header switcher writes it too), so
+  // discover reads it from the shared store rather than owning a private copy.
+  const connections = useMusicStore((s) => s.connections);
+  const activeProvider = useMusicStore((s) => s.activeProvider);
+  const loadConnections = useMusicStore((s) => s.loadConnections);
+
+  useEffect(() => {
+    loadConnections();
+  }, [loadConnections]);
+
+  const connected = connectedProviders(connections);
+  const hasNone = connections !== null && connected.length === 0;
 
   const [selectedPlaylist, setSelectedPlaylist] =
     useState<SelectablePlaylist | null>(null);
@@ -278,25 +284,8 @@ const Dashboard = ({ userData }: { userData: any }) => {
             </div>
           ) : (
             <>
-              {connected.length > 1 && activeProvider && (
-                <div className="flex gap-1 px-4 pt-3">
-                  {connected.map((option) => (
-                    <button
-                      key={option}
-                      type="button"
-                      onClick={() => setActiveProvider(option)}
-                      className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
-                        activeProvider === option
-                          ? "bg-[#CC5500] text-white"
-                          : "text-gray-600 border border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {PROVIDER_LABELS[option]}
-                    </button>
-                  ))}
-                </div>
-              )}
-
+              {/* The service switcher lives in the header now (ProviderSwitcher),
+                  so it's one global control instead of a per-tab one. */}
               {activeProvider && (
                 <CuratedPlaylists
                   // Remount on provider change so cached results from the other

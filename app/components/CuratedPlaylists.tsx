@@ -64,6 +64,14 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   const sentinelRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
+  // Synchronous in-flight guard. `loading` is React state, so several fetches
+  // fired in the same tick — the two mount effects, the intersection observer,
+  // and the scrollbar filler all kick off at once — each read loading as false
+  // before any setState flushed, and all four went through. A ref updates
+  // immediately, so the first call wins and the rest bail. This is what caused
+  // the burst of duplicate requests on entering the tab.
+  const inFlightRef = useRef(false);
+
   // Clear container and reset scroll when filters change
   const clearContainerAndResetScroll = () => {
     setPlaylists([]);
@@ -175,7 +183,8 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     reset = false,
     page = 1
   ) => {
-    if (loading) return;
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
 
     setLoading(true);
 
@@ -217,6 +226,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     } catch (error) {
       console.error("Error fetching search results:", error);
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   };
@@ -227,7 +237,8 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     reset = false,
     page = 1
   ) => {
-    if (loading) return;
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
 
     setLoading(true);
 
@@ -284,34 +295,27 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       setError("Unable to load curated playlists.");
       setLoadedAll(true);
     } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   };
 
+  // One effect owns the category load. There used to be two — one keyed on the
+  // category, one on `isActive` — and both fired on mount, doing the same thing.
+  // Merged and gated on isActive so it loads once when the tab is shown and again
+  // whenever the category changes, not twice on entry.
   useEffect(() => {
-    if (!isSearchMode) {
-      clearContainerAndResetScroll();
-      if (usePagination) {
-        fetchCuratedPlaylists(activeCategory, activeSubOption, true, 1);
-      } else {
-        fetchCuratedPlaylists(activeCategory, activeSubOption, true);
-      }
-    }
-  }, [activeCategory, activeSubOption, usePagination, isSearchMode]);
+    if (!isActive || isSearchMode) return;
 
-  // Reset playlists when tab becomes active to prevent duplicates
-  useEffect(() => {
-    if (isActive) {
-      clearContainerAndResetScroll();
-      if (!isSearchMode) {
-        if (usePagination) {
-          fetchCuratedPlaylists(activeCategory, activeSubOption, true, 1);
-        } else {
-          fetchCuratedPlaylists(activeCategory, activeSubOption, true);
-        }
-      }
-    }
-  }, [isActive]);
+    clearContainerAndResetScroll();
+    fetchCuratedPlaylists(
+      activeCategory,
+      activeSubOption,
+      true,
+      usePagination ? 1 : undefined,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, activeCategory, activeSubOption, usePagination, isSearchMode]);
 
   const handleCategoryChange = (category: string) => {
     if (isSearchMode) return; // Don't change category in search mode

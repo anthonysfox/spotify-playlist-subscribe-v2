@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useUserStore } from "store/useUserStore";
 import { useAppStore } from "store/useAppStore";
+import { ProviderSwitcher } from "./ProviderSwitcher";
 
 export default function Navbar() {
   const { isLoaded, isSignedIn } = useUser();
@@ -50,7 +51,10 @@ export default function Navbar() {
               </h1>
             </Link>
           </div>
-          <div className="flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+          <div className="flex items-center gap-4 pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+            <SignedIn>
+              <ProviderSwitcher />
+            </SignedIn>
             <SignedOut>
               <SignInButton />
             </SignedOut>

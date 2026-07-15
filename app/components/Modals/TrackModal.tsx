@@ -1,14 +1,18 @@
-import type { PlaylistSummary } from "@/lib/music/types";
+import type { PlaylistSummary, PlaylistTrack } from "@/lib/music/types";
 import React, { useState, useRef, useEffect } from "react";
-import { X, Play, Pause, ExternalLink } from "lucide-react";
-import { formatTime } from "utils";
+import { X, Play, Pause } from "lucide-react";
 import { getTrackPreviewUrl } from "utils/itunesApi";
 
 interface TrackModalProps {
   isOpen: boolean;
   onClose: () => void;
   playlist: PlaylistSummary | null;
-  tracks: Array<{ track: any }>;
+  // Provider-agnostic tracks, the same shape the sync engine works in. This used
+  // to be Spotify's nested `{ track: { album, duration_ms, artists: [{name}] } }`
+  // shape, which no longer matches what the API returns — a track's artists are
+  // now plain strings, and there's no album/duration.
+  tracks: PlaylistTrack[];
+  loading?: boolean;
 }
 
 export const TrackModal: React.FC<TrackModalProps> = ({
@@ -16,6 +20,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
   onClose,
   playlist,
   tracks,
+  loading = false,
 }) => {
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);
   const [hoveredTrack, setHoveredTrack] = useState<string | null>(null);
@@ -24,58 +29,47 @@ export const TrackModal: React.FC<TrackModalProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Cleanup when modal closes
   useEffect(() => {
-    if (!isOpen) {
-      stopCurrentPreview();
-    }
+    if (!isOpen) stopCurrentPreview();
   }, [isOpen]);
 
   useEffect(() => {
     if (previewURL && audioRef.current) {
       const audio = audioRef.current;
-      
-      // Reset audio element completely for mobile compatibility
+
       audio.pause();
       audio.currentTime = 0;
       audio.src = previewURL;
       audio.load();
-      
-      // Add event listeners for better mobile support
+
       const handleCanPlay = () => {
         audio.play().catch((error) => {
           console.error("Error playing audio:", error);
-          // If autoplay fails, user needs to manually trigger
         });
       };
-      
+
       const handleError = () => {
         console.error("Audio loading error");
         setCurrentlyPlaying(null);
         setPreviewURL("");
       };
-      
-      audio.addEventListener('canplaythrough', handleCanPlay);
-      audio.addEventListener('error', handleError);
-      
-      // Auto-stop after 30 seconds
+
+      audio.addEventListener("canplaythrough", handleCanPlay);
+      audio.addEventListener("error", handleError);
+
       previewTimeoutRef.current = setTimeout(() => {
         stopCurrentPreview();
       }, 30000);
-      
-      // Cleanup event listeners
+
       return () => {
-        audio.removeEventListener('canplaythrough', handleCanPlay);
-        audio.removeEventListener('error', handleError);
+        audio.removeEventListener("canplaythrough", handleCanPlay);
+        audio.removeEventListener("error", handleError);
       };
     }
   }, [previewURL]);
 
-  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      stopCurrentPreview();
-    };
+    return () => stopCurrentPreview();
   }, []);
 
   const stopCurrentPreview = () => {
@@ -83,8 +77,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
       const audio = audioRef.current;
       audio.pause();
       audio.currentTime = 0;
-      // Remove src to fully reset the audio element on mobile
-      audio.removeAttribute('src');
+      audio.removeAttribute("src");
       audio.load();
     }
     if (previewTimeoutRef.current) {
@@ -96,7 +89,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
     setPreviewURL("");
   };
 
-  const playPreview = (track: any) => {
+  const playPreview = (track: PlaylistTrack) => {
     if (currentlyPlaying === track.id) {
       stopCurrentPreview();
     } else {
@@ -115,31 +108,30 @@ export const TrackModal: React.FC<TrackModalProps> = ({
     }
   };
 
-  const getTrackPreview = async (track: any) => {
-    const trackId = track.id;
-    setLoadingPreview(trackId);
+  const getTrackPreview = async (track: PlaylistTrack) => {
+    setLoadingPreview(track.id);
     stopCurrentPreview();
-    
+
     try {
+      // Previews come from iTunes, matched on title + artist — which is all we
+      // have (and all we need), and works the same whether the track came from
+      // Spotify or Apple Music.
       const trackURL = await getTrackPreviewUrl(
         track.name,
-        track.artists?.map((artist: any) => artist.name).join(", ") || "",
-        track.album.name,
-        track.duration_ms
+        track.artists.join(", "),
       );
-      
+
       if (trackURL) {
-        setCurrentlyPlaying(trackId);
+        setCurrentlyPlaying(track.id);
         setPreviewURL(trackURL);
       } else {
-        console.log("No preview available for this track");
         setCurrentlyPlaying(null);
       }
     } catch (error) {
       console.error("Error getting track preview:", error);
       setCurrentlyPlaying(null);
     }
-    
+
     setLoadingPreview(null);
   };
 
@@ -147,9 +139,9 @@ export const TrackModal: React.FC<TrackModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <audio 
-        ref={audioRef} 
-        src={previewURL || undefined} 
+      <audio
+        ref={audioRef}
+        src={previewURL || undefined}
         className="hidden"
         preload="none"
         playsInline
@@ -166,11 +158,13 @@ export const TrackModal: React.FC<TrackModalProps> = ({
           </button>
 
           <div className="flex items-center gap-4">
-            <img
-              src={playlist.imageUrl ?? undefined}
-              alt={playlist.name}
-              className="w-20 h-20 rounded-xl shadow-lg"
-            />
+            {playlist.imageUrl && (
+              <img
+                src={playlist.imageUrl}
+                alt={playlist.name}
+                className="w-20 h-20 rounded-xl shadow-lg"
+              />
+            )}
             <div>
               <h2 className="text-2xl font-bold mb-1">{playlist.name}</h2>
               <p className="text-orange-100">
@@ -180,7 +174,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                 </span>
               </p>
               <p className="text-orange-200 text-sm mt-1">
-                {tracks.length} tracks
+                {loading ? "Loading tracks…" : `${tracks.length} tracks`}
               </p>
             </div>
           </div>
@@ -189,29 +183,31 @@ export const TrackModal: React.FC<TrackModalProps> = ({
         {/* Tracks List */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-6">
-            <div className="grid grid-cols-[auto_1fr_auto] gap-4 text-xs font-semibold text-gray-600 py-3 px-4 border-b border-gray-200 mb-4">
-              <span className="w-8">#</span>
-              <span>TITLE</span>
-              <span>DURATION</span>
-            </div>
-
-            <div className="space-y-2">
-              {tracks.map(({ track }, index) => (
-                <div
-                  key={track.id}
-                  className="grid grid-cols-[auto_1fr_auto] gap-4 items-center py-3 px-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group"
-                  onMouseEnter={() => setHoveredTrack(track.id)}
-                  onMouseLeave={() => setHoveredTrack(null)}
-                  onClick={async () => {
-                    if (currentlyPlaying === track.id && previewURL) {
-                      // If already playing this track, try to play it manually (helpful for mobile)
-                      await handleManualPlay();
-                    } else {
-                      playPreview(track);
-                    }
-                  }}
-                >
-                  <div className="flex items-center gap-3">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+                <div className="w-6 h-6 border-2 border-gray-300 border-t-[#CC5500] rounded-full animate-spin mb-3" />
+                Loading tracks…
+              </div>
+            ) : tracks.length === 0 ? (
+              <div className="text-center py-16 text-gray-500">
+                No tracks to show.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {tracks.map((track, index) => (
+                  <div
+                    key={`${track.id}-${index}`}
+                    className="grid grid-cols-[auto_1fr] gap-4 items-center py-3 px-4 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group"
+                    onMouseEnter={() => setHoveredTrack(track.id)}
+                    onMouseLeave={() => setHoveredTrack(null)}
+                    onClick={async () => {
+                      if (currentlyPlaying === track.id && previewURL) {
+                        await handleManualPlay();
+                      } else {
+                        playPreview(track);
+                      }
+                    }}
+                  >
                     <span className="w-6 text-gray-500 text-sm font-medium flex items-center justify-center">
                       {loadingPreview === track.id ? (
                         <div className="w-3 h-3 border-2 border-gray-300 border-t-[#CC5500] rounded-full animate-spin" />
@@ -223,36 +219,19 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                         index + 1
                       )}
                     </span>
-                  </div>
 
-                  <div className="min-w-0 flex items-center gap-4">
-                    {track.album?.images?.[0] && (
-                      <img
-                        src={track.album.images[0].url}
-                        alt={track.album.name}
-                        className="w-12 h-12 rounded-lg shadow-sm"
-                      />
-                    )}
                     <div className="min-w-0">
                       <p className="font-semibold text-gray-900 truncate group-hover:text-[#CC5500] transition-colors">
                         {track.name}
                       </p>
                       <p className="text-gray-500 text-sm truncate">
-                        {track.artists
-                          ?.map((artist: any) => artist.name)
-                          .join(", ") || "Unknown Artist"}
+                        {track.artists.join(", ") || "Unknown Artist"}
                       </p>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-sm font-medium">
-                      {formatTime(track.duration_ms)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import type { SelectablePlaylist } from "../Dashboard";
 import { Bell, Plus, Music, ExternalLink } from "lucide-react";
 import { useUserStore } from "../../../store/useUserStore";
 import { TrackModal } from "../Modals/TrackModal";
+import toast from "react-hot-toast";
 
 export const SimplePlaylistList = ({
   playlists,
@@ -72,9 +73,12 @@ export const SimplePlaylistList = ({
       return;
     }
 
-    // On desktop, show track modal with previews
+    // Open the modal immediately in a loading state, THEN fetch. It used to only
+    // open after the fetch resolved, so a slow or failed request looked exactly
+    // like the click doing nothing — which is what "can't open the modal" was.
     setSelectedPlaylistForModal(playlist);
     setPreviewTracks([]);
+    setTrackModalOpen(true);
     setLoadingTracks(playlist.id);
 
     try {
@@ -84,9 +88,9 @@ export const SimplePlaylistList = ({
       if (!res.ok) throw new Error("Failed to fetch playlist tracks");
       const { tracks } = await res.json();
       setPreviewTracks([...tracks]);
-      setTrackModalOpen(true);
     } catch (error) {
       console.error("Error fetching playlist tracks:", error);
+      toast.error("Couldn't load tracks for this playlist");
     } finally {
       setLoadingTracks(null);
     }
@@ -138,7 +142,9 @@ export const SimplePlaylistList = ({
                         <>
                           <ExternalLink size={12} className="text-[#CC5500]" />
                           <span className="text-xs text-[#CC5500]">
-                            Open in Spotify
+                            {playlist.provider === "APPLE_MUSIC"
+                              ? "Open in Apple Music"
+                              : "Open in Spotify"}
                           </span>
                         </>
                       ) : (
@@ -216,6 +222,7 @@ export const SimplePlaylistList = ({
         onClose={handleTrackModalClose}
         playlist={selectedPlaylistForModal}
         tracks={previewTracks}
+        loading={loadingTracks !== null}
       />
     </div>
   );
