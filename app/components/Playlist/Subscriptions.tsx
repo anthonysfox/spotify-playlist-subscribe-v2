@@ -30,7 +30,6 @@ export const Subscriptions = ({
   showPlaylistSettingsModal,
   selectedPlaylist,
 }: ISubscriptionsProps) => {
-  const userPlaylists = useUserStore((state) => state.userPlaylists);
   const managedPlaylists = useUserStore((state) => state.managedPlaylists);
   const setManagedPlaylists = useUserStore(
     (state) => state.setManagedPlaylists
