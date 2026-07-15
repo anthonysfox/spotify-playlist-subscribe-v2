@@ -68,7 +68,11 @@ export async function POST(request: Request) {
     !sourcePlaylist ||
     !sourcePlaylist.id ||
     !sourcePlaylist.name ||
-    !sourcePlaylist.trackCount
+    // `=== undefined`, not `!trackCount`: a count of 0 is valid and common —
+    // Apple Music's catalogue search doesn't report track counts at all, so an
+    // Apple source legitimately arrives with trackCount: 0. Rejecting falsy was
+    // blocking every Apple subscription.
+    sourcePlaylist.trackCount === undefined
   ) {
     return NextResponse.json(
       {
