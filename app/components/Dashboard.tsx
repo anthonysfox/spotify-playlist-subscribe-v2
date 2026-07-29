@@ -1,40 +1,18 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { ITopArtistState } from "utils/types";
 import { CuratedPlaylists } from "./CuratedPlaylists";
 import { OFFSET } from "utils/constants";
 import { NavTabs } from "./Navigation/NavTabs";
-import { SubscribeModal, SubscribeReqBody } from "./Modals/SubscribeModal";
+import { SubscribeModal } from "./Modals/SubscribeModal";
 import { PlaylistSettingsModal } from "./Modals/SettingsModal";
-import type { ManagedPlaylistWithSubscriptions } from "store/useUserStore";
-import type { PlaylistSummary } from "@/lib/music/types";
 import { useMusicStore, connectedProviders } from "store/useMusicStore";
+import { isPlaylistSummary } from "@/types";
+import type {
+  ITopArtistState,
+  SelectablePlaylist,
+  SubscribeReqBody,
+} from "@/types";
 
-/**
- * What `selectedPlaylist` can actually hold.
- *
- * One piece of state serves two flows: a Spotify playlist while subscribing, and
- * a managed playlist when opening its settings from the Subscriptions tab. It
- * was typed as only the former, so the latter assignment was a lie the compiler
- * couldn't see.
- */
-export type SelectablePlaylist =
-  | PlaylistSummary
-  | ManagedPlaylistWithSubscriptions;
-
-/**
- * Narrow the union to a browsable playlist (a search/curated result), as opposed
- * to one of the user's own managed playlists.
- *
- * `externalPlaylistId` only exists on the managed (database) shape, so it's a
- * reliable discriminator — and this keeps the subscribe flow honest rather than
- * casting and hoping.
- */
-export function isPlaylistSummary(
-  playlist: SelectablePlaylist | null,
-): playlist is PlaylistSummary {
-  return !!playlist && !("externalPlaylistId" in playlist);
-}
 import { useUserStore } from "store/useUserStore";
 import { Subscriptions } from "./Playlist/Subscriptions";
 import toast from "react-hot-toast";

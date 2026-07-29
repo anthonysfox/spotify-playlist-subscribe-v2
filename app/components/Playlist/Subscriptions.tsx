@@ -1,12 +1,12 @@
 import { Bell, Music, Clock, Hash, Calendar, Settings } from "lucide-react";
 import React, { useEffect, useState } from "react";
-import { ISpotifyPlaylist } from "utils/types";
+import type { ISpotifyPlaylist } from "@/types";
 import { PlaylistSettingsModal } from "../Modals/SettingsModal";
 import { useUserStore } from "store/useUserStore";
-import type { ManagedPlaylistWithSubscriptions } from "store/useUserStore";
+import type { ManagedPlaylistWithSubscriptions } from "@/types";
 import { SubscriptionSkeleton } from "../Skeletons/SubscriptionSkeleton";
 import toast from "react-hot-toast";
-import type { SelectablePlaylist } from "../Dashboard";
+import type { SelectablePlaylist } from "@/types";
 import { PROVIDER_LABELS } from "store/useMusicStore";
 
 interface ISubscriptionsProps {

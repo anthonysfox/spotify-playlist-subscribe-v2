@@ -1,4 +1,4 @@
-import { ISpotifyPlaylist } from "utils/types";
+import type { ISpotifyPlaylist } from "@/types";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 

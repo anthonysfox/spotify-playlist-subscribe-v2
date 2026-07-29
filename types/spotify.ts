@@ -1,19 +1,11 @@
-export interface IState {
-  offset: number;
-  loading: boolean;
-  loadedAll: boolean;
-}
-
-export interface IPlaylistState<T> extends IState {
-  playlists: T[];
-}
-
-export type IUserPlaylistsState = IPlaylistState<ISpotifyPlaylist>;
-
-export interface ITopArtistState extends IPlaylistState<ISpotifyPlaylist> {
-  artists: string[];
-}
-
+/**
+ * Raw response shapes from the Spotify Web API.
+ *
+ * These mirror what Spotify returns over the wire — snake_case fields and all —
+ * so they're deliberately kept separate from the app's own domain types (see
+ * `./playlist`). Only the shapes actually consumed by the client are modelled;
+ * the sub-interfaces stay unexported because nothing outside this file needs them.
+ */
 export interface ISpotifyPlaylist {
   id: string;
   name: string;
