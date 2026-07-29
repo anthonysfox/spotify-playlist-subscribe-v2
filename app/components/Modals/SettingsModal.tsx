@@ -1,9 +1,9 @@
 import { Settings, X } from "lucide-react";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
+import { useUser } from "@clerk/nextjs";
 import { useUserStore } from "store/useUserStore";
-import { ISpotifyPlaylist } from "utils/types";
-import { SubscribeReqBody } from "./SubscribeModal";
+import type { ISpotifyPlaylist, SubscribeReqBody } from "@/types";
 
 const frequencyOptions = [
   { value: "DAILY", label: "Daily" },
@@ -99,11 +99,88 @@ export const PlaylistSettingsModal = ({
       : ["monday"],
   });
   const [modalMode, setModalMode] = useState(mode);
+  const { user } = useUser();
   const addManagedPlaylist = useUserStore((state) => state.addManagedPlaylist);
 
   const updateManagedPlaylist = useUserStore(
     (state) => state.updateManagedPlaylist
   );
+
+  // --- Experimental: AI-generated cover art -------------------------------
+  // A data: URL for on-screen preview, plus the raw base64 we send back to
+  // upload it. Kept separate so the preview can render while the payload stays
+  // ready for the confirm step.
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverPayload, setCoverPayload] = useState<string | null>(null);
+  const [coverBusy, setCoverBusy] = useState<"idle" | "generating" | "applying">(
+    "idle"
+  );
+
+  // Cover upload only exists on Spotify, and only makes sense for a playlist
+  // that already exists on the service — so not during the subscribe flow, where
+  // the managed playlist hasn't been created yet.
+  //
+  // Cover art is an experimental, admin-only feature (it costs money per image),
+  // so it's shown only to the operator. The server enforces this too — hiding the
+  // button here is just so nobody else sees a control they can't use.
+  const isAdmin =
+    Boolean(user?.id) && user?.id === process.env.NEXT_PUBLIC_ADMIN_USER_ID;
+  const canGenerateCover =
+    isAdmin &&
+    !fromSubscribeModal &&
+    Boolean(selectedPlaylist?.id) &&
+    selectedPlaylist?.provider !== "APPLE_MUSIC";
+
+  const generateCover = async () => {
+    setCoverBusy("generating");
+    try {
+      const resp = await fetch(
+        `/api/music/playlists/${selectedPlaylist.id}/cover-art`,
+        { method: "POST" }
+      );
+      const data = await resp.json();
+      if (!resp.ok)
+        throw new Error(data?.error || "Couldn't generate cover art");
+
+      setCoverPreview(data.image);
+      setCoverPayload(data.jpegBase64);
+    } catch (error: any) {
+      toast.error(error.message || "Couldn't generate cover art");
+    } finally {
+      setCoverBusy("idle");
+    }
+  };
+
+  const applyCover = async () => {
+    if (!coverPayload) return;
+
+    setCoverBusy("applying");
+    try {
+      const resp = await fetch(
+        `/api/music/playlists/${selectedPlaylist.id}/cover-art`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jpegBase64: coverPayload }),
+        }
+      );
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(data?.error || "Couldn't apply cover art");
+
+      // Reflect it immediately in the open modal; Spotify's own CDN catches up
+      // within a minute or two.
+      setSelectedPlaylist((prev: any) =>
+        prev ? { ...prev, imageUrl: coverPreview } : prev
+      );
+      toast.success("Cover art updated — Spotify may take a moment to show it.");
+      setCoverPreview(null);
+      setCoverPayload(null);
+    } catch (error: any) {
+      toast.error(error.message || "Couldn't apply cover art");
+    } finally {
+      setCoverBusy("idle");
+    }
+  };
 
   const resetData = () =>
     setUpdatedData({
@@ -530,6 +607,77 @@ export const PlaylistSettingsModal = ({
                 : "Leave blank to add whatever comes first from each source, as before."}
             </p>
           </div>
+
+          {/* COVER ART (experimental) */}
+          {canGenerateCover && (
+            <div>
+              <h3 className="font-medium text-gray-700 mb-1 flex items-center gap-2">
+                Cover art
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-[#CC5500] bg-orange-50 border border-orange-200 rounded px-1.5 py-0.5">
+                  Experimental
+                </span>
+              </h3>
+              <p className="text-gray-500 text-xs mb-3">
+                Generate artwork from the vibe, genres and songs on this playlist,
+                then set it as the Spotify cover.
+              </p>
+
+              <div className="flex items-start gap-4">
+                <div className="w-24 h-24 flex-shrink-0 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                  {coverPreview ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={coverPreview}
+                      alt="Generated cover art preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : selectedPlaylist?.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={selectedPlaylist.imageUrl}
+                      alt="Current cover"
+                      className="w-full h-full object-cover opacity-60"
+                    />
+                  ) : (
+                    <span className="text-gray-400 text-xs text-center px-2">
+                      No cover yet
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={generateCover}
+                    disabled={coverBusy !== "idle"}
+                    className="px-3 py-2 text-sm rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {coverBusy === "generating"
+                      ? "Generating…"
+                      : coverPreview
+                        ? "Regenerate"
+                        : "Generate cover art"}
+                  </button>
+
+                  {coverPreview && (
+                    <button
+                      type="button"
+                      onClick={applyCover}
+                      disabled={coverBusy !== "idle"}
+                      className="px-3 py-2 text-sm rounded bg-[#CC5500] text-white hover:bg-[#B04A00] disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {coverBusy === "applying" ? "Applying…" : "Use this cover"}
+                    </button>
+                  )}
+
+                  <p className="text-gray-400 text-[11px] max-w-[180px] leading-snug">
+                    Generation can take up to a minute. Nothing changes on Spotify
+                    until you choose “Use this cover”.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-8 flex justify-end space-x-3">

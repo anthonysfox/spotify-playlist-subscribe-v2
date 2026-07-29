@@ -96,7 +96,10 @@ class AppleMusicClient implements MusicClient {
   // removal exists only in native MusicKit, and only for playlists the calling
   // app itself created. SyncMode.REPLACE is therefore impossible here, and the
   // sync engine skips those playlists rather than silently appending forever.
-  readonly capabilities = { removeTracks: false } as const;
+  readonly capabilities = {
+    removeTracks: false,
+    setCoverImage: false,
+  } as const;
 
   private storefront: string | null = null;
 
@@ -367,6 +370,16 @@ class AppleMusicClient implements MusicClient {
     throw new Error(
       "Apple Music's API cannot remove tracks from a playlist. " +
         "Check client.capabilities.removeTracks before calling this.",
+    );
+  }
+
+  async setPlaylistCover(): Promise<void> {
+    // Same contract as removeTracks: Apple's REST API has no endpoint to set
+    // playlist artwork, `capabilities.setCoverImage` says so, and callers check
+    // it first. Reaching here means that check was skipped.
+    throw new Error(
+      "Apple Music's API cannot set a playlist cover image. " +
+        "Check client.capabilities.setCoverImage before calling this.",
     );
   }
 }

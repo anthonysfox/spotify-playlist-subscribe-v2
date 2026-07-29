@@ -45,6 +45,13 @@ export interface PlaylistSummary {
 export interface ProviderCapabilities {
   /** Can tracks be removed from a playlist? Required for SyncMode.REPLACE. */
   readonly removeTracks: boolean;
+
+  /**
+   * Can a custom cover image be uploaded for a playlist? True on Spotify
+   * (`PUT /playlists/{id}/images`); false on Apple Music, whose REST API has no
+   * endpoint for it. Gates the experimental AI cover-art feature.
+   */
+  readonly setCoverImage: boolean;
 }
 
 export interface MusicClient {
@@ -73,6 +80,12 @@ export interface MusicClient {
   addTracks(playlistId: string, trackIds: string[]): Promise<void>;
 
   removeTracks(playlistId: string, trackIds: string[]): Promise<void>;
+
+  /**
+   * Replace a playlist's cover with the given image (raw base64 of a JPEG, no
+   * `data:` prefix). Only meaningful when `capabilities.setCoverImage` is true.
+   */
+  setPlaylistCover(playlistId: string, jpegBase64: string): Promise<void>;
 }
 
 /**
