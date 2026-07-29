@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import type { PlaylistSummary } from "@/lib/music/types";
-import type { SelectablePlaylist } from "../Dashboard";
+import type { SelectablePlaylist } from "@/types";
 import { Bell, Plus, Music, ExternalLink } from "lucide-react";
 import { useUserStore } from "../../../store/useUserStore";
 import { TrackModal } from "../Modals/TrackModal";

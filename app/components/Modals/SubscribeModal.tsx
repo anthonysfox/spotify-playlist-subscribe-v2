@@ -1,7 +1,7 @@
 import { Bell, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import type { PlaylistSummary, MusicProvider } from "@/lib/music/types";
-import type { SelectablePlaylist } from "../Dashboard";
+import type { SelectablePlaylist, SubscribeReqBody } from "@/types";
 import { useUserStore } from "../../../store/useUserStore";
 import toast from "react-hot-toast";
 
@@ -13,33 +13,6 @@ const frequencyOptions = [
   { value: "WEEKLY", label: "Weekly" },
   { value: "MONTHLY", label: "Monthly" },
 ];
-
-export interface SubscribeReqBody {
-  /** Which service both playlists live on. Defaults to Spotify server-side. */
-  provider?: MusicProvider;
-  sourcePlaylist: {
-    id: string;
-    name: string;
-    imageUrl: string | null;
-    trackCount: number;
-  };
-  managedPlaylist?: {
-    id: string;
-    name: string;
-    imageUrl: string | null;
-    trackCount: number;
-  };
-  newPlaylistName?: string;
-  syncFrequency: string;
-  runImmediateSync: boolean;
-  // Advanced settings properties
-  syncQuantityPerSource?: number;
-  syncMode?: string;
-  explicitContentFilter?: boolean;
-  trackAgeLimit?: number;
-  vibePrompt?: string;
-  customDays?: string[];
-}
 
 export const SubscribeModal = ({
   setShowSubscribeModal,

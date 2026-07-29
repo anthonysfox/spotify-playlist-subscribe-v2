@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { PlaylistSummary, MusicProvider } from "@/lib/music/types";
-import type { SelectablePlaylist } from "./Dashboard";
+import type { SelectablePlaylist } from "@/types";
 import { SimplePlaylistList } from "./Playlist/SimpleList";
 import { SearchBar } from "./Navigation/SearchBar";
 import {

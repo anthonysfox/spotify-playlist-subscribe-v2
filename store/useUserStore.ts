@@ -3,14 +3,11 @@
 // that package has no models in it. Every one of these types silently resolved
 // to nothing, which is why the components had no idea a playlist has a
 // syncInterval, a provider, or an externalPlaylistId.
-import type {
-  ManagedPlaylist,
-  ManagedPlaylistSourceSubscription,
-  SourcePlaylist,
-} from "@/generated/prisma/client";
+import type { ManagedPlaylist } from "@/generated/prisma/client";
 // The user's playlists are provider-agnostic now — they may be Spotify or
 // Apple Music, and PlaylistSummary is the shape both adapters return.
 import type { PlaylistSummary } from "@/lib/music/types";
+import type { ManagedPlaylistWithSubscriptions } from "@/types";
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import toast from "react-hot-toast";
@@ -50,12 +47,6 @@ export type UserStoreActions = {
     managedPlaylistId: string
   ) => Promise<void>;
 };
-
-export interface ManagedPlaylistWithSubscriptions extends ManagedPlaylist {
-  subscriptions: (ManagedPlaylistSourceSubscription & {
-    sourcePlaylist: SourcePlaylist;
-  })[];
-}
 
 export type UserStore = UserStoreState & UserStoreActions;
 

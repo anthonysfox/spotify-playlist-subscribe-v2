@@ -40,3 +40,5 @@ yarn-error.log*
 certificates
 
 generated
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo

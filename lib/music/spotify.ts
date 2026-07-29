@@ -17,8 +17,9 @@ const trackUri = (trackId: string) => `spotify:track:${trackId}`;
 class SpotifyClient implements MusicClient {
   readonly provider = "SPOTIFY" as const;
 
-  // Spotify supports removing playlist items, so REPLACE mode works.
-  readonly capabilities = { removeTracks: true } as const;
+  // Spotify supports removing playlist items, so REPLACE mode works, and it
+  // accepts a custom cover image upload (`PUT /playlists/{id}/images`).
+  readonly capabilities = { removeTracks: true, setCoverImage: true } as const;
 
   constructor(private readonly token: string) {}
 
@@ -241,6 +242,28 @@ class SpotifyClient implements MusicClient {
       if (i + TRACK_BATCH_SIZE < trackIds.length) {
         await new Promise((resolve) => setTimeout(resolve, BATCH_PAUSE_MS));
       }
+    }
+  }
+
+  async setPlaylistCover(
+    playlistId: string,
+    jpegBase64: string,
+  ): Promise<void> {
+    // Spotify wants the *raw* base64 of a JPEG as the request body (not JSON,
+    // not a data: URL), with an image/jpeg content type, and the payload must be
+    // ≤ 256 KB. This endpoint requires the `ugc-image-upload` scope on the token
+    // — without it Spotify returns 403.
+    const response = await this.request(`/playlists/${playlistId}/images`, {
+      method: "PUT",
+      headers: { "Content-Type": "image/jpeg" },
+      body: jpegBase64,
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      throw new Error(
+        `Failed to set playlist cover: ${response.status} ${details}`,
+      );
     }
   }
 }

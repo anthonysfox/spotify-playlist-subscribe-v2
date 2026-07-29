@@ -10,6 +10,8 @@
       "@/pages/*": ["pages/*"],
       "@/app/*": ["app/*"],
       "@/lib/*": ["lib/*"],
+      "@/types": ["types/index.ts"],
+      "@/types/*": ["types/*"],
       "@/styles/*": ["styles/*"],
       "@/generated/*": ["generated/*"],
       "utils/*": ["utils/*"],
