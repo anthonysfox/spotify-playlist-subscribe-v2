@@ -14,6 +14,7 @@ import {
 import { CategoryFilters } from "./Filters/CategoryFilters";
 import { FilterModal } from "./Modals/FilterModal";
 import { categorySubOptions, frontendCategories } from "constants/categories";
+import { SearchAssistant } from "./SearchAssistant";
 
 interface CuratedPlaylistsProps {
   // Shares Dashboard's selectedPlaylist state, which also holds managed
@@ -136,7 +137,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       {
         threshold: 0.1,
         rootMargin: "100px", // Load slightly before reaching the sentinel
-      }
+      },
     );
 
     observerRef.current.observe(sentinelRef.current);
@@ -181,7 +182,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   const fetchSearchPlaylists = async (
     searchQuery: string,
     reset = false,
-    page = 1
+    page = 1,
   ) => {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
@@ -192,17 +193,19 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       const currentOffset = usePagination
         ? (page - 1) * itemsPerPage
         : reset
-        ? 0
-        : offset;
+          ? 0
+          : offset;
 
       const res = await fetch(
         `/api/music/search?provider=${provider}&q=${encodeURIComponent(
-          searchQuery
-        )}&limit=${itemsPerPage}`
+          searchQuery,
+        )}&limit=${itemsPerPage}`,
       );
       if (!res.ok) throw new Error("Failed to fetch search results");
 
-      const { playlists: data } = (await res.json()) as { playlists: PlaylistSummary[] };
+      const { playlists: data } = (await res.json()) as {
+        playlists: PlaylistSummary[];
+      };
       const originalDataLength = data.length;
 
       if (usePagination) {
@@ -210,7 +213,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
         setCurrentPage(page);
         // For pagination, if we get fewer items than requested, we're likely at the end
         setTotalPages(
-          Math.max(1, Math.ceil(originalDataLength / itemsPerPage) + 1)
+          Math.max(1, Math.ceil(originalDataLength / itemsPerPage) + 1),
         );
       } else {
         if (reset) {
@@ -235,7 +238,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     category: string,
     subOption: string,
     reset = false,
-    page = 1
+    page = 1,
   ) => {
     if (inFlightRef.current) return;
     inFlightRef.current = true;
@@ -247,14 +250,14 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       const currentOffset = usePagination
         ? (page - 1) * itemsPerPage
         : reset
-        ? 0
-        : offset;
+          ? 0
+          : offset;
 
       // Use the sub-option as the category for the API call
       const apiCategory = subOption;
 
       const res = await fetch(
-        `/api/music/curated?provider=${provider}&category=${apiCategory}`
+        `/api/music/curated?provider=${provider}&category=${apiCategory}`,
       );
       if (!res.ok) {
         let message = "Unable to load curated playlists.";
@@ -267,7 +270,9 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
         return;
       }
 
-      const { playlists: data } = (await res.json()) as { playlists: PlaylistSummary[] };
+      const { playlists: data } = (await res.json()) as {
+        playlists: PlaylistSummary[];
+      };
       const originalDataLength = data.length;
 
       if (usePagination) {
@@ -276,7 +281,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
         setCurrentPage(page);
         // For pagination, if we get fewer items than requested, we're likely at the end
         setTotalPages(
-          Math.max(1, Math.ceil(originalDataLength / itemsPerPage) + 1)
+          Math.max(1, Math.ceil(originalDataLength / itemsPerPage) + 1),
         );
       } else {
         // Infinite scroll mode
@@ -339,7 +344,9 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     <div className="space-y-6 flex flex-col h-full">
       {/* Search Bar */}
       <div className="relative">
-        <SearchBar value={searchText} onChange={setSearchText} />
+        {/* <SearchBar value={searchText} onChange={setSearchText} /> */}
+        <SearchAssistant onSearch={setSearchText} />
+
         {searchText && (
           <button
             onClick={() => {
