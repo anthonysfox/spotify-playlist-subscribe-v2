@@ -1,10 +1,10 @@
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import z from "zod";
 import { getProvider, type MusicProvider } from "@/lib/music";
-import { timingSafeEqual } from "crypto";
 import { subscribe, SubscribeError, SubscribeParams } from "@/lib/subscribe";
 import prisma from "@/lib/prisma";
 import { triggerSync } from "@/lib/sync";
+import { hashToken } from "@/lib/mcp-tokens";
 
 const handler = createMcpHandler(
   (server) => {
@@ -398,21 +398,35 @@ const handler = createMcpHandler(
   { basePath: "/api", maxDuration: 60, verboseLogs: true },
 );
 
-function safeEqual(a?: string, b?: string) {
-  if (!a || !b) return false;
-
-  const ba = Buffer.from(a);
-  const bb = Buffer.from(b);
-  return ba.length === bb.length && timingSafeEqual(ba, bb);
-}
-
+/**
+ * Turn a bearer token into an identity by looking up its hash. Each token belongs
+ * to exactly one user, so this is what makes the server genuinely multi-user:
+ * whoever's token was presented is who every tool then acts as.
+ *
+ * We only ever store the SHA-256, so a direct lookup by hash both authenticates
+ * and resolves the user in one query. Revoked tokens (`revokedAt` set) don't match.
+ */
 async function verifyToken(token?: string) {
-  if (!safeEqual(token, process.env.MCP_DEV_TOKEN)) return undefined;
+  if (!token) return undefined;
+
+  const record = await prisma.mcpAccessToken.findFirst({
+    where: { tokenHash: hashToken(token), revokedAt: null },
+    select: { id: true, userId: true },
+  });
+
+  if (!record) return undefined;
+
+  // Fire-and-forget: record usage for the token list ("last used"). A failure
+  // here must never block an otherwise-valid request.
+  prisma.mcpAccessToken
+    .update({ where: { id: record.id }, data: { lastUsedAt: new Date() } })
+    .catch(() => {});
+
   return {
-    token: token!,
+    token,
     scopes: ["playlists:read", "playlists:write"],
-    clientId: "mcp-dev",
-    extra: { userId: process.env.MCP_DEV_USER_ID },
+    clientId: "mcp",
+    extra: { userId: record.userId },
   };
 }
 

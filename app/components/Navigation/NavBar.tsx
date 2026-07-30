@@ -7,6 +7,9 @@ import Image from "next/image";
 import { useUserStore } from "store/useUserStore";
 import { useAppStore } from "store/useAppStore";
 import { ProviderSwitcher } from "./ProviderSwitcher";
+import { McpTokens } from "../McpTokens";
+import { AppleMusicConnect } from "../AppleMusicConnect";
+import { AppleIcon, Coins } from "lucide-react";
 
 export default function Navbar() {
   const { isLoaded, isSignedIn } = useUser();
@@ -59,7 +62,22 @@ export default function Navbar() {
               <SignInButton />
             </SignedOut>
             <SignedIn>
-              <UserButton />
+              <UserButton>
+                <UserButton.UserProfilePage
+                  label="Connect Apple Music"
+                  url="profile"
+                  labelIcon={<AppleIcon className="w-4 h-4 text-gray-900" />}
+                >
+                  <AppleMusicConnect />
+                </UserButton.UserProfilePage>
+                <UserButton.UserProfilePage
+                  label="MCP Tokens"
+                  url="mcp"
+                  labelIcon={<Coins className="w-4 h-4 text-gray-900" />}
+                >
+                  <McpTokens />
+                </UserButton.UserProfilePage>
+              </UserButton>
             </SignedIn>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { AppleMusicConnect } from "../components/AppleMusicConnect";
+import { McpTokens } from "../components/McpTokens";
 
 export const metadata: Metadata = {
   title: "PlaylistFox - Profile",
@@ -16,6 +17,7 @@ export default async function Profile() {
 
         <div className="space-y-3">
           <AppleMusicConnect />
+          <McpTokens />
         </div>
       </div>
     </div>
