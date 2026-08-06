@@ -251,7 +251,8 @@ const Dashboard = ({ userData }: { userData: any }) => {
                 No music service connected
               </h2>
               <p className="text-gray-600 mb-4">
-                Connect Spotify or Apple Music to start subscribing to playlists.
+                Connect Spotify or Apple Music to start subscribing to
+                playlists.
               </p>
               <a
                 href="/profile"

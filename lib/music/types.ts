@@ -68,6 +68,12 @@ export interface MusicClient {
   searchPlaylists(query: string, limit?: number): Promise<PlaylistSummary[]>;
 
   /**
+   * Search the service for individual tracks. Used to resolve AI-suggested
+   * "Title — Artist" strings into real, addable tracks for vibe generation.
+   */
+  searchTracks(query: string, limit?: number): Promise<PlaylistTrack[]>;
+
+  /**
    * The user's own playlists — the candidates for a *destination* playlist.
    *
    * On Apple these are library playlists (p.…); on Spotify they're the playlists

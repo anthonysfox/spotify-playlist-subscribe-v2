@@ -66,10 +66,38 @@ model User {
   deletedAt        DateTime?        // Soft delete field
   deletedBy        String?          // Optional user ID who deleted this user
   managedPlaylists ManagedPlaylist[]
+  mcpTokens        McpAccessToken[]
 
   // Email can be unique only for non-deleted users
   @@unique([email, deletedAt])
   @@map("users")
+}
+
+/// A per-user API token for the MCP server. The plaintext is shown once at
+/// creation and never stored — only its SHA-256 hash is kept, so a token can be
+/// verified but not recovered. Revocation is a soft delete (`revokedAt`).
+model McpAccessToken {
+  id String @id @default(cuid())
+
+  // Owner. Keyed on clerkUserId to match the rest of the app.
+  userId String
+  user   User   @relation(fields: [userId], references: [clerkUserId], onDelete: Cascade)
+
+  // Optional human label, e.g. "Claude Desktop – laptop".
+  name String? @db.VarChar(120)
+
+  // SHA-256 of the token. Unique so verification is a direct lookup.
+  tokenHash String @unique
+
+  // First characters of the token, kept only so a user can tell tokens apart.
+  prefix String @db.VarChar(24)
+
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  revokedAt  DateTime? // Soft revoke — verifyToken ignores tokens with this set.
+
+  @@index([userId])
+  @@map("mcp_access_tokens")
 }
 
 // Represents a destination playlist on Spotify managed by your application for a user

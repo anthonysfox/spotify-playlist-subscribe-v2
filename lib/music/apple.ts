@@ -261,6 +261,27 @@ class AppleMusicClient implements MusicClient {
     return url ? url.replace("{w}", "640").replace("{h}", "640") : null;
   }
 
+  async searchTracks(query: string, limit = 5): Promise<PlaylistTrack[]> {
+    const storefront = await this.getStorefront();
+    const response = await this.request(
+      `/v1/catalog/${storefront}/search?term=${encodeURIComponent(
+        query,
+      )}&types=songs&limit=${limit}`,
+    );
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+
+    // Catalog song ids come back in the same shape addTracks accepts, so these
+    // resolve straight into a playlist.
+    return (data.results?.songs?.data ?? [])
+      .map((song: any) => this.toPlaylistTrack(song))
+      .filter((track: PlaylistTrack | null): track is PlaylistTrack =>
+        Boolean(track),
+      );
+  }
+
   async searchPlaylists(
     query: string,
     limit = 20,

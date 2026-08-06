@@ -7,6 +7,9 @@ import Image from "next/image";
 import { useUserStore } from "store/useUserStore";
 import { useAppStore } from "store/useAppStore";
 import { ProviderSwitcher } from "./ProviderSwitcher";
+import { McpTokens } from "../McpTokens";
+import { AppleMusicConnect } from "../AppleMusicConnect";
+import { AppleIcon, Coins } from "lucide-react";
 
 export default function Navbar() {
   const { isLoaded, isSignedIn } = useUser();
@@ -34,36 +37,52 @@ export default function Navbar() {
   }, [isLoaded, isSignedIn]);
 
   return (
-    <>
-      <header className="p-4 bg-white shadow-xs">
-        <div className="flex w-full h-16 items-center justify-between">
-          <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
-            <Link href={"/"} className="flex items-center">
-              <Image
-                src="/logo.png"
-                alt="PlaylistFox"
-                width={40}
-                height={40}
-                className="rounded-lg shadow-sm"
-              />
-              <h1 className="text-2xl font-bold text-gray-800 ml-3">
-                PlaylistFox
-              </h1>
-            </Link>
-          </div>
-          <div className="flex items-center gap-4 pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-            <SignedIn>
-              <ProviderSwitcher />
-            </SignedIn>
-            <SignedOut>
-              <SignInButton />
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </div>
+    <header className="sticky top-0 z-40 border-b border-black/5 bg-white/70 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <Link href="/" className="flex items-center gap-2.5">
+          <Image
+            src="/logo-no-bg.png"
+            alt="PlaylistFox"
+            width={140}
+            height={140}
+            className="h-9 w-9 object-contain drop-shadow-sm"
+          />
+          <span className="text-lg font-bold tracking-tight text-gray-900">
+            Playlist<span className="text-[#CC5500]">Fox</span>
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-3">
+          <SignedIn>
+            <ProviderSwitcher />
+          </SignedIn>
+          <SignedOut>
+            <SignInButton>
+              <button className="rounded-full bg-gradient-to-r from-[#CC5500] to-[#A0522D] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md hover:cursor-pointer">
+                Sign in
+              </button>
+            </SignInButton>
+          </SignedOut>
+          <SignedIn>
+            <UserButton>
+              <UserButton.UserProfilePage
+                label="Connect Apple Music"
+                url="profile"
+                labelIcon={<AppleIcon className="w-4 h-4 text-gray-900" />}
+              >
+                <AppleMusicConnect />
+              </UserButton.UserProfilePage>
+              <UserButton.UserProfilePage
+                label="MCP Tokens"
+                url="mcp"
+                labelIcon={<Coins className="w-4 h-4 text-gray-900" />}
+              >
+                <McpTokens />
+              </UserButton.UserProfilePage>
+            </UserButton>
+          </SignedIn>
         </div>
-      </header>
-    </>
+      </div>
+    </header>
   );
 }

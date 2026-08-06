@@ -130,6 +130,28 @@ class SpotifyClient implements MusicClient {
       }));
   }
 
+  async searchTracks(query: string, limit = 5): Promise<PlaylistTrack[]> {
+    const response = await this.request(
+      `/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`,
+    );
+
+    if (!response.ok) return [];
+
+    const data = await response.json();
+
+    return (data.tracks?.items ?? [])
+      .filter(Boolean)
+      .map((track: any) => ({
+        id: track.id,
+        name: track.name ?? "",
+        artists: (track.artists ?? [])
+          .map((artist: any) => artist?.name)
+          .filter(Boolean),
+        explicit: Boolean(track.explicit),
+        addedAt: null,
+      }));
+  }
+
   async getUserPlaylists(limit = 20, offset = 0): Promise<PlaylistSummary[]> {
     // /me/playlists returns playlists the user *follows* as well as ones they
     // own, and you can't add tracks to someone else's playlist. Only owned ones

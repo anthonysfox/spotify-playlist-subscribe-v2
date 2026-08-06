@@ -6,6 +6,7 @@ import NavBar from "@/components/Navigation/NavBar";
 import { Suspense } from "react";
 
 import { ClerkProvider } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { Metadata, Viewport } from "next";
 import InstallPrompt from "./components/InstallPrompt";
 import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
@@ -41,19 +42,31 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // The signed-in dashboard is a fixed-height app (inner panes scroll). The
+  // signed-out marketing pages should flow and scroll like a normal website —
+  // so the shell adapts instead of trapping everything in one scroll container.
+  const { userId } = await auth();
+  const isApp = Boolean(userId);
+
   return (
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${inter.variable} flex flex-col h-screen bg-gray-100 text-gray-800`}
+          className={`${inter.variable} bg-gray-100 text-gray-800 ${
+            isApp ? "flex flex-col h-screen overflow-hidden" : "min-h-screen"
+          }`}
         >
           <NavBar />
-          <main className="grow flex flex-col overflow-hidden p-4">
-            <div className="max-w-6xl mx-auto w-full flex flex-col h-full items-center">
-              {children}
-              <Toaster position="bottom-center" />
-            </div>
-          </main>
+          {isApp ? (
+            <main className="grow flex flex-col overflow-hidden p-4">
+              <div className="max-w-6xl mx-auto w-full flex flex-col h-full items-center">
+                {children}
+              </div>
+            </main>
+          ) : (
+            <main>{children}</main>
+          )}
+          <Toaster position="bottom-center" />
           <ServiceWorkerRegistration />
           <InstallPrompt />
         </body>

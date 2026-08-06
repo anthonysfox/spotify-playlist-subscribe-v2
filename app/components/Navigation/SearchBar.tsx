@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { Search, X } from "lucide-react";
+import { SearchAssistant } from "../SearchAssistant";
 
 export const SearchBar = ({
   value,
