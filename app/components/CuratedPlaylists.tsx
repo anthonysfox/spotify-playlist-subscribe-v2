@@ -28,7 +28,7 @@ interface CuratedPlaylistsProps {
   expandedPlaylist: string | null;
   previewTracks: any;
   setPreviewTracks: React.Dispatch<React.SetStateAction<any>>;
-  listRef: React.RefObject<HTMLDivElement>;
+  listRef: React.RefObject<HTMLDivElement | null>;
   isActive: boolean;
   provider: MusicProvider;
 }

@@ -17,8 +17,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PlaylistFox - Automatic Spotify Playlist Updates",
-  description: "Keep your Spotify playlists fresh with automatic track updates from your favorite sources",
+  title: "PlaylistFox - Automatic Playlist Updates",
+  description:
+    "Keep your Spotify and Apple Music playlists fresh with automatic track updates from your favorite sources",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
