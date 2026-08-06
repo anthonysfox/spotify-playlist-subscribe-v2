@@ -33,7 +33,7 @@ export function SearchAssistant({
   const [searchQuery, setSearchQuery] = useState("");
   const [input, setInput] = useState("");
 
-  const { messages, sendMessage, status } = useChat();
+  const { messages, sendMessage, status, setMessages, stop } = useChat();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -70,6 +70,19 @@ export function SearchAssistant({
       });
     }
   }, [messages, busy, open]);
+
+  // Reset on close: abort anything in flight, then clear the conversation after
+  // the close animation. A fresh chat every open means a wedged/interrupted
+  // conversation can never persist.
+  useEffect(() => {
+    if (open) return;
+    stop();
+    const t = setTimeout(() => {
+      setMessages([]);
+      setInput("");
+    }, 250);
+    return () => clearTimeout(t);
+  }, [open, stop, setMessages]);
 
   const runSearch = (e: React.FormEvent) => {
     e.preventDefault();

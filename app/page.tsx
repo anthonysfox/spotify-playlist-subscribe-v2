@@ -18,13 +18,15 @@ export default function Home() {
     );
   }
 
-  return (
-    <div className="grow flex flex-col p-4 h-full w-full">
-      {isSignedIn && user ? (
+  if (isSignedIn && user) {
+    return (
+      <div className="grow flex flex-col p-4 h-full w-full">
         <Dashboard userData={user} />
-      ) : (
-        <HomePage />
-      )}
-    </div>
-  );
+      </div>
+    );
+  }
+
+  // Signed-out landing flows as a normal, full-bleed page (the layout doesn't
+  // wrap it in the fixed app shell).
+  return <HomePage />;
 }

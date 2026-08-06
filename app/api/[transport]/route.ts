@@ -5,6 +5,7 @@ import { subscribe, SubscribeError, SubscribeParams } from "@/lib/subscribe";
 import prisma from "@/lib/prisma";
 import { triggerSync } from "@/lib/sync";
 import { hashToken } from "@/lib/mcp-tokens";
+import { describePlaylist } from "@/lib/describe-playlist";
 
 const handler = createMcpHandler(
   (server) => {
@@ -96,6 +97,23 @@ const handler = createMcpHandler(
           };
         }
 
+        // Best-effort "what's this like": top artists + sample tracks from the
+        // managed playlist's own tracks. One provider call; never fail the tool
+        // over it (provider might be disconnected, playlist empty, etc.).
+        let vibe: ReturnType<typeof describePlaylist> | undefined;
+        try {
+          const client = await getProvider(
+            playlist.provider as MusicProvider,
+          ).forUser(userId);
+          if (client) {
+            vibe = describePlaylist(
+              await client.getPlaylistTracks(playlist.externalPlaylistId),
+            );
+          }
+        } catch {
+          // enrichment is optional
+        }
+
         const result = {
           id: playlist.id,
           name: playlist.name,
@@ -104,6 +122,7 @@ const handler = createMcpHandler(
           syncMode: playlist.syncMode,
           trackCount: playlist.trackCount,
           vibePrompt: playlist.vibePrompt,
+          vibe,
           sources: playlist.subscriptions.map((sub) => ({
             id: sub.sourcePlaylist.id,
             name: sub.sourcePlaylist.name,
