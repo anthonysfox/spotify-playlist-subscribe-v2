@@ -3,6 +3,7 @@ import z from "zod";
 import { getProvider, MusicProvider } from "../music";
 import prisma from "../prisma";
 import { subscribe } from "../subscribe";
+import { unsubscribe } from "../unsubscribe";
 import { generateTracklist, resolveTracks } from "../generate-playlist";
 
 export function buildTools(userId: string) {
@@ -19,6 +20,56 @@ export function buildTools(userId: string) {
         );
         if (!client) return { error: `${provider} isn't connected` };
         return client.searchPlaylists(query, 10);
+      },
+    }),
+
+    listManagedPlaylistDetails: tool({
+      description:
+        "Lists the details of a managed playlist including its settings and source playlists. Don't include anything about IDs in the response for either the managed playlist or the source playlists",
+      inputSchema: z.object({
+        managedPlaylistId: z.string(),
+      }),
+      execute: async ({ managedPlaylistId }) => {
+        const playlist = await prisma.managedPlaylist.findFirst({
+          where: { userId, deletedAt: null, id: managedPlaylistId },
+          include: {
+            subscriptions: {
+              where: {
+                sourcePlaylist: {
+                  deletedAt: null,
+                },
+              },
+              include: {
+                sourcePlaylist: true,
+              },
+            },
+          },
+        });
+        if (!playlist) return { error: "Managed playlist not found." };
+
+        // Flatten to plain, JSON-serializable fields — the raw Prisma record
+        // carries native Date objects (createdAt, nextSyncTime, ...) at every
+        // level, and the AI SDK can't fold those into the next model call's
+        // prompt (see the same note on createSubscription's return above).
+        return {
+          name: playlist.name,
+          provider: playlist.provider,
+          trackCount: playlist.trackCount,
+          syncInterval: playlist.syncInterval,
+          syncQuantityPerSource: playlist.syncQuantityPerSource,
+          syncMode: playlist.syncMode,
+          explicitContentFilter: playlist.explicitContentFilter,
+          trackAgeLimit: playlist.trackAgeLimit,
+          vibePrompt: playlist.vibePrompt,
+          lastSyncCompletedAt:
+            playlist.lastSyncCompletedAt?.toISOString() ?? null,
+          nextSyncTime: playlist.nextSyncTime?.toISOString() ?? null,
+          sources: playlist.subscriptions.map((sub) => ({
+            sourcePlaylistId: sub.sourcePlaylist.id,
+            name: sub.sourcePlaylist.name,
+            trackCount: sub.sourcePlaylist.trackCount,
+          })),
+        };
       },
     }),
 
@@ -82,6 +133,104 @@ export function buildTools(userId: string) {
         }),
     }),
 
+    addArtistsToPlaylist: tool({
+      description:
+        "Add more music from specific artists into an EXISTING managed playlist " +
+        "on an ongoing basis. Use this when the user says things like 'add more " +
+        "John Mayer' or 'I want more Justin Bieber and Jon Bellion in my Chill " +
+        "playlist'. For each artist, it finds the service's official artist " +
+        "playlist (e.g. Spotify's 'This Is <Artist>', which blends the artist's " +
+        "catalog with similar songs) and subscribes the destination playlist to " +
+        "it — so it syncs in fresh tracks now AND keeps adding more of that " +
+        "artist on the normal sync schedule, not just once. Requires an " +
+        "existing managedPlaylistId (look it up with listManagedPlaylists first, " +
+        "or ask the user which playlist).",
+      inputSchema: z.object({
+        managedPlaylistId: z.string(),
+        artists: z
+          .array(z.string())
+          .min(1)
+          .max(5)
+          .describe("Artist names, e.g. ['John Mayer', 'Justin Bieber']"),
+        syncFrequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).default("WEEKLY"),
+        provider: z.enum(["SPOTIFY", "APPLE_MUSIC"]).default("SPOTIFY"),
+      }),
+      execute: async ({
+        managedPlaylistId,
+        artists,
+        syncFrequency,
+        provider,
+      }) => {
+        try {
+          const client = await getProvider(provider).forUser(userId);
+          if (!client) return { error: `${provider} isn't connected` };
+
+          const dest = await prisma.managedPlaylist.findFirst({
+            where: { id: managedPlaylistId, userId, deletedAt: null },
+          });
+          if (!dest) return { error: "Destination playlist not found." };
+
+          const managedPlaylist = {
+            id: dest.externalPlaylistId,
+            name: dest.name,
+            imageUrl: dest.imageUrl,
+            trackCount: dest.trackCount,
+          };
+
+          const results = [];
+
+          for (const artist of artists) {
+            // Prefer the service's own official artist playlist (Spotify's
+            // "This Is <Artist>") — curated, blends the artist's catalog with
+            // similar tracks, and Spotify refreshes it periodically, so
+            // re-syncing keeps surfacing new songs rather than repeating the
+            // same fixed set.
+            const hits = await client.searchPlaylists(`This is ${artist}`, 5);
+            const officialMix = hits.find(
+              (p) =>
+                p.owner?.toLowerCase() === "spotify" &&
+                p.name.toLowerCase().includes(artist.toLowerCase()),
+            );
+            const source =
+              officialMix ??
+              hits[0] ??
+              (await client.searchPlaylists(artist, 1))[0];
+
+            if (!source) {
+              results.push({ artist, ok: false, error: "No playlist found" });
+              continue;
+            }
+
+            try {
+              await subscribe({
+                userId,
+                provider,
+                sourcePlaylist: {
+                  id: source.id,
+                  name: source.name,
+                  imageUrl: source.imageUrl,
+                  trackCount: source.trackCount,
+                },
+                managedPlaylist,
+                syncFrequency,
+              });
+              results.push({ artist, ok: true, source: source.name });
+            } catch (error: any) {
+              results.push({
+                artist,
+                ok: false,
+                error: error?.message ?? "Couldn't subscribe",
+              });
+            }
+          }
+
+          return { playlist: dest.name, results };
+        } catch (error: any) {
+          return { error: error?.message ?? "Couldn't add artists" };
+        }
+      },
+    }),
+
     createSubscription: tool({
       description: "Subscribe a source playlist to a managed one.",
       inputSchema: z.object({
@@ -137,15 +286,46 @@ export function buildTools(userId: string) {
           });
 
           // Return a slim summary — never the full nested Prisma object, which
-          // bloats the conversation and can break history conversion.
+          // bloats the conversation and can break history conversion. No
+          // internal ids either: nothing downstream takes a subscriptionId as
+          // input, so it'd only ever end up recited back to the user.
           return {
             ok: true,
             provider,
             playlist: result.managedPlaylist?.name ?? newPlaylistName,
-            subscriptionId: result.subscriptionId,
           };
         } catch (error: any) {
           return { error: error?.message ?? "Couldn't create subscription" };
+        }
+      },
+    }),
+
+    removeSource: tool({
+      description:
+        "Unsubscribe a source playlist from a managed playlist, so it stops " +
+        "pulling songs from it. Get the sourcePlaylistId from " +
+        "listManagedPlaylistDetails. If this is the playlist's last source, " +
+        "the managed playlist is removed from PlaylistFox entirely — the " +
+        "playlist itself isn't touched on the music service, it just stops " +
+        "being auto-synced. Confirm with the user before calling this.",
+      inputSchema: z.object({
+        managedPlaylistId: z.string(),
+        sourcePlaylistId: z.string(),
+      }),
+      execute: async ({ managedPlaylistId, sourcePlaylistId }) => {
+        try {
+          const result = await unsubscribe({
+            userId,
+            managedPlaylistId,
+            sourcePlaylistId,
+          });
+          return {
+            ok: true,
+            playlist: result.playlistName,
+            managedPlaylistDeleted: result.managedPlaylistDeleted,
+          };
+        } catch (error: any) {
+          return { error: error?.message ?? "Couldn't remove that source" };
         }
       },
     }),

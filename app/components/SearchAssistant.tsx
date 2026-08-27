@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useChat } from "@ai-sdk/react";
 import { Search, Sparkles, X, ArrowUp, Loader2 } from "lucide-react";
+import { MemoizedMarkdown } from "./MemoizedMarkdown";
 
 const SUGGESTIONS = [
   "What playlists am I managing?",
@@ -258,10 +259,20 @@ function MessageBubble({ message }: { message: any }) {
       >
         {message.parts.map((part: any, i: number) => {
           if (part.type === "text") {
+            if (isUser) {
+              return (
+                <span key={i} className="whitespace-pre-wrap">
+                  {part.text}
+                </span>
+              );
+            }
             return (
-              <span key={i} className="whitespace-pre-wrap">
-                {part.text}
-              </span>
+              <div
+                key={i}
+                className="prose prose-sm max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:my-1.5 prose-pre:my-1.5 prose-a:text-[#CC5500]"
+              >
+                <MemoizedMarkdown content={part.text} id={`${message.id}-${i}`} />
+              </div>
             );
           }
           // Surface tool calls so the agent's work is visible, not a black box.

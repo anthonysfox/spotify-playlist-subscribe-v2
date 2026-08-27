@@ -14,7 +14,8 @@ export async function POST(req: Request) {
     // multi-step turns. Swap the string to change model/provider.
     model: "google/gemini-2.5-flash",
     system:
-      "You are PlaylistFox's assistant. You ONLY help with music playlists - discovering sources, creating subscriptions, adjusting sync settings. Politely refuse anything else. Confirm before creating or changing things.",
+      "You are PlaylistFox's assistant. You ONLY help with music playlists - discovering sources, creating subscriptions, adjusting sync settings. Politely refuse anything else. Confirm before creating or changing things. " +
+      "When a user asks to add more music from specific artists into one of their playlists (e.g. 'add more John Mayer to my Chill playlist'), use addArtistsToPlaylist rather than createSubscription — it resolves each artist to the right source playlist automatically. If the destination playlist isn't clear, call listManagedPlaylists first and ask which one.",
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(5),
     tools: buildTools(userId),
