@@ -1,4 +1,4 @@
-type SyncScheduleOptions = {
+export type SyncScheduleOptions = {
   timeZone?: string | null;
   customDays?: string[] | string | null;
   customTime?: string | null;
@@ -50,7 +50,7 @@ function getTimeZoneOffset(date: Date, timeZone: string) {
     parts.day,
     parts.hour,
     parts.minute,
-    parts.second
+    parts.second,
   );
   return asUtc - date.getTime();
 }
@@ -62,7 +62,7 @@ function zonedTimeToUtcDate(parts: ZonedParts, timeZone: string) {
     parts.day,
     parts.hour,
     parts.minute,
-    parts.second
+    parts.second,
   );
   const offset = getTimeZoneOffset(new Date(utcGuess), timeZone);
   return new Date(utcGuess - offset);
@@ -99,7 +99,10 @@ function normalizeCustomDays(days?: string[] | string | null) {
       const parsed = JSON.parse(trimmed);
       if (Array.isArray(parsed)) return parsed;
     } catch {
-      return trimmed.split(",").map((day) => day.trim()).filter(Boolean);
+      return trimmed
+        .split(",")
+        .map((day) => day.trim())
+        .filter(Boolean);
     }
     return null;
   }
@@ -109,7 +112,7 @@ function normalizeCustomDays(days?: string[] | string | null) {
 export function calculateNextCustomRun(
   days: string[] | string | null | undefined,
   time: string | null | undefined,
-  timeZone?: string | null
+  timeZone?: string | null,
 ) {
   const normalizedDays = normalizeCustomDays(days);
   if (!normalizedDays?.length) return null;
@@ -151,7 +154,7 @@ export function calculateNextCustomRun(
         minute: Number.isFinite(minutes) ? minutes : 0,
         second: 0,
       },
-      zone
+      zone,
     );
 
     if (candidateUtc <= now) continue;
@@ -164,16 +167,12 @@ export function calculateNextCustomRun(
 
 export function calculateNextSyncTime(
   syncFrequency: string,
-  options: SyncScheduleOptions = {}
+  options: SyncScheduleOptions = {},
 ) {
   const zone = normalizeTimeZone(options.timeZone);
 
   if (syncFrequency === "CUSTOM") {
-    return calculateNextCustomRun(
-      options.customDays,
-      options.customTime,
-      zone
-    );
+    return calculateNextCustomRun(options.customDays, options.customTime, zone);
   }
 
   const now = new Date();
@@ -203,6 +202,6 @@ export function calculateNextSyncTime(
       minute: 0,
       second: 0,
     },
-    zone
+    zone,
   );
 }
