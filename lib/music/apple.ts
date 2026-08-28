@@ -166,7 +166,10 @@ class AppleMusicClient implements MusicClient {
     };
   }
 
-  private async paginate(firstPath: string): Promise<PlaylistTrack[]> {
+  private async paginate(
+    firstPath: string,
+    limit?: number,
+  ): Promise<PlaylistTrack[]> {
     const tracks: PlaylistTrack[] = [];
     const seen = new Set<string>();
 
@@ -174,6 +177,8 @@ class AppleMusicClient implements MusicClient {
     let pages = 0;
 
     while (next) {
+      if (limit && tracks.length >= limit) break;
+
       // A `next` that points back at a page we've already fetched would loop
       // forever and take the cron job's memory with it. Trust Apple, but bound
       // it — both by page count and by never re-fetching the same path.
@@ -211,20 +216,29 @@ class AppleMusicClient implements MusicClient {
       next = body.next ?? null;
     }
 
-    return tracks;
+    return limit ? tracks.slice(0, limit) : tracks;
   }
 
-  async getPlaylistTracks(playlistId: string): Promise<PlaylistTrack[]> {
+  async getPlaylistTracks(
+    playlistId: string,
+    limit?: number,
+  ): Promise<PlaylistTrack[]> {
+    // A `limit` (preview mode) only needs a handful of tracks, so ask for
+    // exactly that many per page instead of the usual 100.
+    const pageSize = limit ? Math.min(limit, 100) : 100;
+
     if (isLibraryPlaylist(playlistId)) {
       return this.paginate(
-        `/v1/me/library/playlists/${playlistId}/tracks?limit=100`,
+        `/v1/me/library/playlists/${playlistId}/tracks?limit=${pageSize}`,
+        limit,
       );
     }
 
     const storefront = await this.getStorefront();
 
     return this.paginate(
-      `/v1/catalog/${storefront}/playlists/${playlistId}/tracks?limit=100`,
+      `/v1/catalog/${storefront}/playlists/${playlistId}/tracks?limit=${pageSize}`,
+      limit,
     );
   }
 

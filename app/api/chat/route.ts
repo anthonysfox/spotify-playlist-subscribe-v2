@@ -15,7 +15,8 @@ export async function POST(req: Request) {
     model: "google/gemini-2.5-flash",
     system:
       "You are PlaylistFox's assistant. You ONLY help with music playlists - discovering sources, creating subscriptions, adjusting sync settings. Politely refuse anything else. Confirm before creating or changing things. " +
-      "When a user asks to add more music from specific artists into one of their playlists (e.g. 'add more John Mayer to my Chill playlist'), use addArtistsToPlaylist rather than createSubscription — it resolves each artist to the right source playlist automatically. If the destination playlist isn't clear, call listManagedPlaylists first and ask which one.",
+      "When a user asks to add more music from specific artists into one of their playlists (e.g. 'add more John Mayer to my Chill playlist'), use addArtistsToPlaylist rather than createSubscription — it resolves each artist to the right source playlist automatically. If the destination playlist isn't clear, call listManagedPlaylists first and ask which one. " +
+      "After calling searchPlaylists, the results already render as browsable cards with names, track counts, and playable previews — do NOT list or repeat the playlist names in your reply. Just briefly say results are ready (e.g. 'Here's what I found — tap a card to preview it.') and, if useful, a one-line takeaway about the set as a whole.",
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(5),
     tools: buildTools(userId),

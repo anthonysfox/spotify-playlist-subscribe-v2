@@ -58,8 +58,15 @@ export interface MusicClient {
   readonly provider: MusicProvider;
   readonly capabilities: ProviderCapabilities;
 
-  /** Every track on a playlist, with the metadata the engine needs to judge it. */
-  getPlaylistTracks(playlistId: string): Promise<PlaylistTrack[]>;
+  /**
+   * Every track on a playlist, with the metadata the engine needs to judge it.
+   *
+   * Pass `limit` for a cheap preview — implementations stop as soon as they
+   * have enough tracks instead of paginating through the whole playlist, so a
+   * 3-track preview of a 2,000-track playlist is one small request, not a full
+   * fetch of everything followed by a slice.
+   */
+  getPlaylistTracks(playlistId: string, limit?: number): Promise<PlaylistTrack[]>;
 
   /** Name, artwork and size. Null if the playlist is gone or not visible to us. */
   getPlaylist(playlistId: string): Promise<PlaylistSummary | null>;

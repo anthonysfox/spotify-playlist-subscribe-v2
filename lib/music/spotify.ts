@@ -34,16 +34,25 @@ class SpotifyClient implements MusicClient {
     });
   }
 
-  async getPlaylistTracks(playlistId: string): Promise<PlaylistTrack[]> {
+  async getPlaylistTracks(
+    playlistId: string,
+    limit?: number,
+  ): Promise<PlaylistTrack[]> {
     // Ask for the metadata the engine actually needs. This used to request only
     // `items(track(id))`, which left the engine unable to tell what any song was
     // — no filtering, no dedupe, no judgement possible.
     const fields = "items(added_at,track(id,name,explicit,artists(name))),next";
+    // A `limit` (preview mode) only ever needs a handful of tracks, so ask
+    // Spotify for exactly that many per page instead of the usual 50 — no
+    // point paginating through a page of 50 to read the first 3.
+    const pageSize = limit ? Math.min(limit, 50) : 50;
     const tracks: PlaylistTrack[] = [];
 
-    let next: string | null = `/playlists/${playlistId}/tracks?fields=${fields}&limit=50`;
+    let next: string | null = `/playlists/${playlistId}/tracks?fields=${fields}&limit=${pageSize}`;
 
     while (next) {
+      if (limit && tracks.length >= limit) break;
+
       // Spotify's `next` is an absolute URL, so only the first hop is relative.
       const response: Response = next.startsWith("http")
         ? await fetch(next, {
@@ -83,7 +92,7 @@ class SpotifyClient implements MusicClient {
       next = data.next ?? null;
     }
 
-    return tracks;
+    return limit ? tracks.slice(0, limit) : tracks;
   }
 
   async getPlaylist(playlistId: string): Promise<PlaylistSummary | null> {

@@ -16,6 +16,10 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const playlistId = searchParams.get("id");
   const provider = (searchParams.get("provider") ?? "SPOTIFY") as MusicProvider;
+  // Optional preview mode: fetch only the first `limit` tracks instead of the
+  // whole playlist. Absent/invalid -> full list, same as before this param existed.
+  const limitParam = searchParams.get("limit");
+  const limit = limitParam ? Number(limitParam) : undefined;
 
   if (!playlistId) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });
@@ -32,7 +36,10 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
-      tracks: await client.getPlaylistTracks(playlistId),
+      tracks: await client.getPlaylistTracks(
+        playlistId,
+        Number.isFinite(limit) ? limit : undefined,
+      ),
     });
   } catch (error: any) {
     console.error(`Failed to read tracks on ${provider}:`, error.message);
