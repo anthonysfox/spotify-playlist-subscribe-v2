@@ -160,15 +160,36 @@ describe("calculateNextSyncTime", () => {
     );
   });
 
+  it("DAILY respects a non-UTC timezone", () => {
+    vi.setSystemTime(new Date("2026-08-26T20:00:00Z"));
+    expect(calculateNextSyncTime("DAILY", { timeZone: "Asia/Tokyo" })).toEqual(
+      new Date("2026-08-27T15:00:00Z"),
+    );
+  });
+
   it("WEEKLY advances to the next UTC midnight a week from now", () => {
     expect(calculateNextSyncTime("WEEKLY")).toEqual(
       new Date("2026-09-02T00:00:00Z"),
     );
   });
 
+  it("WEEKLY recalculates the offset for the target date, not 'now'", () => {
+    vi.setSystemTime(new Date("2026-03-05T12:00:00Z")); // pre-transition, EST (-5)
+    expect(
+      calculateNextSyncTime("WEEKLY", { timeZone: "America/New_York" }),
+    ).toEqual(new Date("2026-03-12T04:00:00Z")); // post-transition, EDT (-4)
+  });
+
   it("MONTHLY advances to the next UTC midnight a month from now", () => {
     expect(calculateNextSyncTime("MONTHLY")).toEqual(
       new Date("2026-09-26T00:00:00Z"),
+    );
+  });
+
+  it("MONTHLY test for end of month to next month where it is less than 31 days", () => {
+    vi.setSystemTime(new Date("2026-01-31T00:00:00Z"));
+    expect(calculateNextSyncTime("MONTHLY")).toEqual(
+      new Date("2026-02-28T00:00:00Z"),
     );
   });
 

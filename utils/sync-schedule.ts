@@ -84,8 +84,15 @@ function addUtcWeeks(date: Date, weeks: number) {
 }
 
 function addUtcMonths(date: Date, months: number) {
+  const day = date.getUTCDate();
   const next = new Date(date.getTime());
   next.setUTCMonth(next.getUTCMonth() + months);
+
+  // If setUTCMonth overflowed into a later month (target month was too short for this day), clamp back to the last day of the intended month
+  if (next.getUTCDate() !== day) {
+    next.setUTCDate(0);
+  }
+
   return next;
 }
 
