@@ -14,7 +14,11 @@
     "postinstall": "prisma generate",
     "apple:check": "tsx scripts/apple-check.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:db:up": "docker compose up -d --wait postgres-test",
+    "test:db:down": "docker compose down",
+    "test:db:migrate": "POSTGRES_URL_NON_POOLING=postgresql://test:test@localhost:5433/playlistfox_test prisma migrate deploy",
+    "test:integration": "POSTGRES_URL_NON_POOLING=postgresql://test:test@localhost:5433/playlistfox_test vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.12",
