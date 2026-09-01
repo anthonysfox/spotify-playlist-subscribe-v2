@@ -12,6 +12,8 @@
 
 A personal Spotify playlist subscription service that lets you create managed playlists which automatically sync new songs from playlists you subscribe to — on a daily, weekly, or monthly schedule.
 
+Also doubles as a place to actually learn things properly: testing, CI/CD, database and system design, AI tool-calling, and the general practices a toy project usually lets you skip.
+
 > This is a personal project and is not intended for public use, distribution, or contribution.
 
 ## How It Works
