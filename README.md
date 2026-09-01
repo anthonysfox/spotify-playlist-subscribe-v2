@@ -4,6 +4,12 @@
 
 <h1 align="center">PlaylistFox</h1>
 
+<p align="center">
+  <a href="https://github.com/anthonysfox/spotify-playlist-subscribe-v2/actions/workflows/test.yml">
+    <img src="https://github.com/anthonysfox/spotify-playlist-subscribe-v2/actions/workflows/test.yml/badge.svg" alt="Tests">
+  </a>
+</p>
+
 A personal Spotify playlist subscription service that lets you create managed playlists which automatically sync new songs from playlists you subscribe to — on a daily, weekly, or monthly schedule.
 
 > This is a personal project and is not intended for public use, distribution, or contribution.
@@ -37,6 +43,10 @@ A personal Spotify playlist subscription service that lets you create managed pl
 | Database | PostgreSQL with Prisma ORM |
 | Animations | GSAP |
 | Deployment | Vercel |
+
+## Testing
+
+Covered at two levels: unit tests for pure logic — sync scheduling, playlist dedupe/filtering, subscription rules — and integration tests that run against a real, disposable Postgres database to verify behavior a mock can't, like unique constraints and cascading deletes actually firing correctly. Both run in CI on every push and pull request.
 
 ## License
 
