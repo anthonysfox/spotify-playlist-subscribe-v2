@@ -117,9 +117,10 @@ class SpotifyClient implements MusicClient {
   async searchPlaylists(
     query: string,
     limit = 20,
+    offset = 0,
   ): Promise<PlaylistSummary[]> {
     const response = await this.request(
-      `/search?q=${encodeURIComponent(query)}&type=playlist&limit=${limit}`,
+      `/search?q=${encodeURIComponent(query)}&type=playlist&limit=${limit}&offset=${offset}`,
     );
 
     if (!response.ok) return [];

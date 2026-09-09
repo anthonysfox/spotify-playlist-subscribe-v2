@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
   const query = searchParams.get("q")?.trim();
   const provider = (searchParams.get("provider") ?? "SPOTIFY") as MusicProvider;
   const limit = Number(searchParams.get("limit") ?? 20);
+  const offset = Math.max(0, Number(searchParams.get("offset") ?? 0) || 0);
 
   if (!query) {
     return NextResponse.json({ error: "q is required" }, { status: 400 });
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       provider,
-      playlists: await client.searchPlaylists(query, limit),
+      playlists: await client.searchPlaylists(query, limit, offset),
     });
   } catch (error: any) {
     console.error(`Search failed on ${provider}:`, error.message);

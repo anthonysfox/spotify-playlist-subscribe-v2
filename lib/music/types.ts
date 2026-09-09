@@ -72,7 +72,11 @@ export interface MusicClient {
   getPlaylist(playlistId: string): Promise<PlaylistSummary | null>;
 
   /** Search the service for playlists to subscribe to. */
-  searchPlaylists(query: string, limit?: number): Promise<PlaylistSummary[]>;
+  searchPlaylists(
+    query: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<PlaylistSummary[]>;
 
   /**
    * Search the service for individual tracks. Used to resolve AI-suggested
