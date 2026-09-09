@@ -16,29 +16,43 @@ const READ_TOOLS = new Set([
 export function MessageBubble({ message }: { message: any }) {
   const isUser = message.role === "user";
 
+  if (isUser) {
+    return (
+      <div className="flex justify-end">
+        <div className="max-w-[85%] rounded-[14px_14px_4px_14px] bg-ink px-3.5 py-2 text-[13px] leading-relaxed text-surface">
+          {message.parts.map((part: any, i: number) =>
+            part.type === "text" && part.text ? (
+              <span key={i} className="whitespace-pre-wrap">
+                {part.text}
+              </span>
+            ) : null,
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Assistant — bubbleless, with a fox chip anchoring the turn (the modern
+  // chat convention: bubbled user, avatar-marked assistant).
   return (
-    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-      <div
-        className={
-          isUser
-            ? "max-w-[85%] rounded-[14px_14px_4px_14px] bg-ink px-3.5 py-2 text-[13px] leading-relaxed text-surface"
-            : "flex max-w-[92%] flex-col gap-2"
-        }
-      >
+    <div className="flex gap-2.5">
+      <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface shadow-[0_0_0_1px_var(--color-line)]">
+        <Image
+          src="/logo.png"
+          alt=""
+          width={28}
+          height={28}
+          className="h-7 w-7 object-cover"
+        />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
         {message.parts.map((part: any, i: number) => {
           if (part.type === "text") {
             if (!part.text) return null;
-            if (isUser) {
-              return (
-                <span key={i} className="whitespace-pre-wrap">
-                  {part.text}
-                </span>
-              );
-            }
             return (
               <div
                 key={i}
-                className="prose prose-sm max-w-none text-[13px] text-ink-70 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:my-1.5 prose-a:text-brand-deep"
+                className="prose prose-sm max-w-none text-[13px] text-ink prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:my-1.5 prose-a:text-brand-deep"
               >
                 <MemoizedMarkdown content={part.text} id={`${message.id}-${i}`} />
               </div>
