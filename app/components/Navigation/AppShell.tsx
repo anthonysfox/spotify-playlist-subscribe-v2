@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, SignOutButton } from "@clerk/nextjs";
 import { Compass, Library, Activity, PlugZap } from "lucide-react";
 import {
   useMusicStore,
@@ -155,13 +155,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          <div className="flex items-center gap-2 px-2">
+          <div className="flex items-center justify-between gap-2 px-2">
             {/* Apple Music + MCP tokens moved to /settings/connections, so the
                 account menu is just Clerk's own pages now. */}
-            <UserButton
-              appearance={{ elements: { userButtonAvatarBox: "h-7 w-7" } }}
-            />
-            <span className="truncate text-[12.5px] text-ink-50">Account</span>
+            <div className="flex min-w-0 items-center gap-2">
+              <UserButton
+                appearance={{ elements: { userButtonAvatarBox: "h-7 w-7" } }}
+              />
+              <span className="truncate text-[12.5px] text-ink-50">
+                Account
+              </span>
+            </div>
+            <SignOutButton redirectUrl="/">
+              <button className="shrink-0 text-[12px] font-medium text-ink-50 transition-colors hover:text-warn-text">
+                Sign out
+              </button>
+            </SignOutButton>
           </div>
         </div>
       </aside>

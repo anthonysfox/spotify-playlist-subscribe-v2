@@ -35,12 +35,6 @@ export default function Navbar() {
           >
             How it works
           </a>
-          <a
-            href="#services"
-            className="hidden text-[13.5px] font-medium text-ink-50 transition-colors hover:text-ink-70 sm:block"
-          >
-            Services
-          </a>
           <SignedOut>
             <SignInButton>
               <button className="rounded-full border border-line-strong px-4 py-1.5 text-[13.5px] font-medium text-ink transition-colors hover:border-brand/40 hover:text-brand hover:cursor-pointer">

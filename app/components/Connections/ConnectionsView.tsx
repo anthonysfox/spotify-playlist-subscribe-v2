@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser, useClerk } from "@clerk/nextjs";
+import { useUser, useClerk, SignOutButton } from "@clerk/nextjs";
 import { useMusicStore } from "store/useMusicStore";
 import { AppleMusicConnect } from "../AppleMusicConnect";
 import { McpTokens } from "../McpTokens";
@@ -31,13 +31,22 @@ export function ConnectionsView() {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-y-auto px-4 py-5 min-[900px]:px-6 min-[900px]:py-6">
       <div className="mx-auto w-full max-w-2xl">
-        <h1 className="mb-1 font-display text-[24px] font-semibold tracking-[-0.02em] text-ink">
-          Connections
-        </h1>
-        <p className="mb-6 text-[13px] text-ink-50">
-          The music services PlaylistFox can sync with, and tokens for the MCP
-          server.
-        </p>
+        <div className="mb-6 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="mb-1 font-display text-[24px] font-semibold tracking-[-0.02em] text-ink">
+              Connections
+            </h1>
+            <p className="text-[13px] text-ink-50">
+              The music services PlaylistFox can sync with, and tokens for the
+              MCP server.
+            </p>
+          </div>
+          <SignOutButton redirectUrl="/">
+            <button className="shrink-0 rounded-full border border-line-strong px-3.5 py-1.5 text-[12.5px] font-medium text-ink-70 transition-colors hover:border-warn/40 hover:text-warn-text">
+              Sign out
+            </button>
+          </SignOutButton>
+        </div>
 
         <div className="flex flex-col gap-3">
           {/* Spotify — managed through Clerk's connected accounts */}

@@ -281,7 +281,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
       </div>
 
       {/* Tabs */}
-      <div className="mt-5 flex gap-1 border-b border-line">
+      <div className="mt-5 flex gap-1 overflow-x-auto border-b border-line">
         {TABS.map((t) => (
           <Link
             key={t.id}
@@ -305,7 +305,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
               <div className="mb-4 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
                 How a run flows
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 overflow-x-auto pb-1">
                 <div className="flex flex-col gap-2">
                   {sources.slice(0, 3).map((s) => (
                     <div
@@ -374,7 +374,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                   />
                 </svg>
 
-                <div className="min-w-0 flex-1 rounded-xl border border-line bg-brand-tint-soft p-3">
+                <div className="min-w-[180px] flex-1 rounded-xl border border-line bg-brand-tint-soft p-3">
                   <div className="flex items-center gap-2">
                     <CoverArt
                       src={playlist.imageUrl}

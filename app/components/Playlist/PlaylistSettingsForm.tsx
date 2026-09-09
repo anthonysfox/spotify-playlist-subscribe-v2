@@ -274,15 +274,15 @@ export function PlaylistSettingsForm({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-surface">
-      <div className="flex min-h-0 flex-1">
-        {/* Section nav */}
-        <div className="flex w-[176px] shrink-0 flex-col gap-0.5 border-r border-line p-3">
+      <div className="flex min-h-0 flex-1 flex-col min-[720px]:flex-row">
+        {/* Section nav — horizontal strip on mobile, sidebar on desktop */}
+        <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-line p-2 min-[720px]:w-[176px] min-[720px]:flex-col min-[720px]:gap-0.5 min-[720px]:border-b-0 min-[720px]:border-r min-[720px]:p-3">
           {SECTIONS.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => setSection(s.id)}
-              className={`rounded-[9px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${
+              className={`whitespace-nowrap rounded-[9px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${
                 section === s.id
                   ? "bg-brand-tint text-brand-deep"
                   : "text-ink-70 hover:bg-ground-alt"
@@ -294,7 +294,7 @@ export function PlaylistSettingsForm({
           <button
             type="button"
             onClick={() => setSection("stop")}
-            className={`mt-auto rounded-[9px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${
+            className={`whitespace-nowrap rounded-[9px] px-3 py-2 text-left text-[13px] font-medium transition-colors min-[720px]:mt-auto ${
               section === "stop"
                 ? "bg-warn/10 text-warn-text"
                 : "text-warn-text hover:bg-warn/10"
@@ -305,7 +305,7 @@ export function PlaylistSettingsForm({
         </div>
 
         {/* Section body */}
-        <div className="min-w-0 flex-1 overflow-y-auto p-6">
+        <div className="min-w-0 flex-1 overflow-y-auto p-4 min-[720px]:p-6">
           {section === "schedule" && (
             <div>
               <h3 className="font-display text-[15px] font-semibold text-ink">
@@ -626,9 +626,9 @@ export function PlaylistSettingsForm({
         </div>
       </div>
 
-      {/* Diff footer */}
-      <div className="flex items-center gap-3 border-t border-line px-6 py-3.5">
-        <div className="flex flex-1 items-center gap-2">
+      {/* Diff footer — summary stacks above the buttons on mobile */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line px-4 py-3 min-[720px]:flex-nowrap min-[720px]:px-6 min-[720px]:py-3.5">
+        <div className="flex basis-full items-center gap-2 min-[720px]:basis-auto min-[720px]:flex-1">
           <span
             className={`h-[7px] w-[7px] shrink-0 rounded-full ${
               dirty ? "bg-brand" : "bg-ink-25"
