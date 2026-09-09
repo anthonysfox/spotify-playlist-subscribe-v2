@@ -42,7 +42,13 @@ export function MessageBubble({ message }: { message: any }) {
             return <PlaylistResultCards key={i} playlists={part.output} />;
           }
           if (typeof part.type === "string" && part.type.startsWith("tool-")) {
-            return <ToolPill key={i} name={part.type.replace("tool-", "")} />;
+            return (
+              <ToolPill
+                key={i}
+                name={part.type.replace("tool-", "")}
+                done={part.state === "output-available"}
+              />
+            );
           }
           return null;
         })}
@@ -51,11 +57,33 @@ export function MessageBubble({ message }: { message: any }) {
   );
 }
 
-function ToolPill({ name }: { name: string }) {
+/**
+ * Human-readable status text per tool, shown while it's running (and, with
+ * `done`, once it's finished). A generic "typing…" indicator during a
+ * multi-second Spotify search or subscribe reads as the app being hung —
+ * this is what actually tells the user something specific is happening.
+ */
+const TOOL_STATUS_LABELS: Record<string, string> = {
+  searchPlaylists: "Searching Spotify",
+  listManagedPlaylistDetails: "Loading playlist details",
+  listManagedPlaylists: "Loading your playlists",
+  generatePlaylist: "Generating your playlist",
+  addArtistsToPlaylist: "Adding artists",
+  createSubscription: "Subscribing",
+  removeSource: "Unsubscribing",
+};
+
+function ToolPill({ name, done }: { name: string; done: boolean }) {
+  const label =
+    TOOL_STATUS_LABELS[name] ??
+    name.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+
   return (
     <span className="my-1 inline-flex items-center gap-1.5 rounded-full bg-white/60 px-2 py-0.5 text-xs font-medium text-gray-500 ring-1 ring-black/5">
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#CC5500]" />
-      {name.replace(/_/g, " ")}
+      <span
+        className={`h-1.5 w-1.5 rounded-full bg-[#CC5500] ${done ? "" : "animate-pulse"}`}
+      />
+      {done ? `${label} — done` : `${label}…`}
     </span>
   );
 }

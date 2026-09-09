@@ -6,7 +6,7 @@ export const PROVIDER_LABELS: Record<MusicProvider, string> = {
   APPLE_MUSIC: "Apple Music",
 };
 
-const PROVIDER_ORDER: MusicProvider[] = ["SPOTIFY", "APPLE_MUSIC"];
+export const PROVIDER_ORDER: MusicProvider[] = ["SPOTIFY", "APPLE_MUSIC"];
 
 type Connections = Record<MusicProvider, boolean>;
 
@@ -18,6 +18,25 @@ interface MusicStore {
 
   setActiveProvider: (provider: MusicProvider) => void;
   loadConnections: () => Promise<void>;
+  /**
+   * Seed connections directly (e.g. from data a Server Component already
+   * fetched) instead of fetching them again client-side. Same
+   * active-provider selection logic as loadConnections, so the two paths
+   * can't drift apart.
+   */
+  setConnections: (connections: Connections | null) => void;
+}
+
+/** Keep the current choice if it's still connected; otherwise fall back to the
+ * first connected service (Spotify first, only because that's where existing
+ * subscriptions live). */
+function pickActiveProvider(
+  connections: Connections | null,
+  current: MusicProvider | null,
+): MusicProvider | null {
+  if (!connections) return null;
+  if (current && connections[current]) return current;
+  return PROVIDER_ORDER.find((provider) => connections[provider]) ?? null;
 }
 
 /**
@@ -33,6 +52,11 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
 
   setActiveProvider: (provider) => set({ activeProvider: provider }),
 
+  setConnections: (connections) => {
+    const activeProvider = pickActiveProvider(connections, get().activeProvider);
+    set({ connections, activeProvider });
+  },
+
   loadConnections: async () => {
     try {
       const response = await fetch("/api/music/connections");
@@ -42,17 +66,10 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
         connections: Connections;
       };
 
-      const current = get().activeProvider;
-
-      // Keep the current choice if it's still connected; otherwise fall back to
-      // the first connected service (Spotify first, only because that's where
-      // existing subscriptions live).
-      const activeProvider =
-        current && connections[current]
-          ? current
-          : PROVIDER_ORDER.find((provider) => connections[provider]) ?? null;
-
-      set({ connections, activeProvider });
+      set({
+        connections,
+        activeProvider: pickActiveProvider(connections, get().activeProvider),
+      });
     } catch {
       // Leave connections null; the UI shows a loading/disabled state.
     }
@@ -65,4 +82,12 @@ export function connectedProviders(
 ): MusicProvider[] {
   if (!connections) return [];
   return PROVIDER_ORDER.filter((provider) => connections[provider]);
+}
+
+/** The flip side of connectedProviders — what's still available to connect. */
+export function unconnectedProviders(
+  connections: Connections | null,
+): MusicProvider[] {
+  if (!connections) return [];
+  return PROVIDER_ORDER.filter((provider) => !connections[provider]);
 }

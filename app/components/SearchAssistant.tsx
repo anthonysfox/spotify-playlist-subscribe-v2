@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useChat } from "@ai-sdk/react";
-import { Search, Sparkles, X, ArrowUp, Loader2 } from "lucide-react";
+import { Sparkles, X, ArrowUp, Loader2, RotateCcw } from "lucide-react";
 import { MessageBubble, TypingDots } from "./Chat/ChatMessage";
+import { useAssistantStore } from "store/useAssistantStore";
 
 const SUGGESTIONS = [
   "What playlists am I managing?",
@@ -13,10 +14,17 @@ const SUGGESTIONS = [
 ];
 
 /**
- * A search bar plus an assistant chat that opens in an overlay modal.
+ * The AI assistant panel, plus a persistent trigger button.
  *
- * The chat is a portal'd, fixed overlay — it never touches document flow, so it
- * can't push the playlist grid around. The open/close animation only touches
+ * Mounted once at the Dashboard level so it survives tab switches — it used
+ * to live inside the Discover-only search bar, which meant the assistant
+ * (and its own suggested question "What playlists am I managing?") vanished
+ * entirely on the Subscribed tab. Opening is driven by useAssistantStore so
+ * other components (the Discover search bar's "Ask AI") can open it with a
+ * seeded message without needing a direct reference to this component.
+ *
+ * The chat is a portal'd, fixed overlay — it never touches document flow, so
+ * it can't push the page around. The open/close animation only touches
  * opacity and transform (both GPU-composited) and keeps a constant border
  * radius, which is what keeps it smooth: no height reflow, no corner-radius
  * interpolation, no multi-step lag.
@@ -24,31 +32,57 @@ const SUGGESTIONS = [
  * Needs an `/api/chat` route (the useChat default endpoint). The UI works
  * without it; the replies won't.
  */
-export function SearchAssistant({
-  onSearch,
-}: {
-  onSearch?: (query: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
+export function SearchAssistant() {
+  const open = useAssistantStore((s) => s.open);
+  const pendingMessage = useAssistantStore((s) => s.pendingMessage);
+  const openWithMessage = useAssistantStore((s) => s.openWithMessage);
+  const close = useAssistantStore((s) => s.close);
+
   const [mounted, setMounted] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [input, setInput] = useState("");
 
   const { messages, sendMessage, status, setMessages, stop } = useChat();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const busy = status === "submitted" || status === "streaming";
 
   // Portals need the DOM; only render the overlay client-side.
   useEffect(() => setMounted(true), []);
 
-  // While open: Esc closes, background scroll is locked, and the input focuses.
+  // While open: Esc closes, background scroll is locked, the input focuses,
+  // and Tab is trapped inside the panel so keyboard/screen-reader users can't
+  // walk straight into the page behind it.
   useEffect(() => {
     if (!open) return;
 
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    window.addEventListener("keydown", onKey);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        close();
+        return;
+      }
+      if (e.key !== "Tab") return;
+
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
 
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -56,11 +90,11 @@ export function SearchAssistant({
     const focusTimer = setTimeout(() => inputRef.current?.focus(), 60);
 
     return () => {
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
       clearTimeout(focusTimer);
     };
-  }, [open]);
+  }, [open, close]);
 
   // Keep the latest message in view as it streams.
   useEffect(() => {
@@ -72,23 +106,34 @@ export function SearchAssistant({
     }
   }, [messages, busy, open]);
 
-  // Reset on close: abort anything in flight, then clear the conversation after
-  // the close animation. A fresh chat every open means a wedged/interrupted
-  // conversation can never persist.
+  // Abort anything in flight on close, but keep the conversation — closing
+  // the panel to look at what the assistant just did (a new card in the
+  // list) shouldn't mean losing the thread when it's reopened.
   useEffect(() => {
     if (open) return;
     stop();
-    const t = setTimeout(() => {
-      setMessages([]);
-      setInput("");
-    }, 250);
-    return () => clearTimeout(t);
-  }, [open, stop, setMessages]);
+  }, [open, stop]);
 
-  const runSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchQuery.trim();
-    if (q) onSearch?.(q);
+  // The one case that DOES need a hard reset: a genuinely wedged/errored
+  // request, which a stale conversation would just resubmit into again.
+  useEffect(() => {
+    if (status !== "error") return;
+    setMessages([]);
+    setInput("");
+  }, [status, setMessages]);
+
+  // Seed the conversation with whatever was passed to openWithMessage (e.g.
+  // the Discover search bar's "Ask AI"), then consume it so it can't refire.
+  useEffect(() => {
+    if (!open || !pendingMessage) return;
+    sendMessage({ text: pendingMessage });
+    useAssistantStore.setState({ pendingMessage: null });
+  }, [open, pendingMessage, sendMessage]);
+
+  const newChat = () => {
+    stop();
+    setMessages([]);
+    setInput("");
   };
 
   const submit = (e: React.FormEvent) => {
@@ -106,43 +151,34 @@ export function SearchAssistant({
 
   return (
     <>
-      {/* Static search bar — fixed shape, so there's nothing to glitch. */}
-      <form
-        onSubmit={runSearch}
-        className="flex w-full max-w-2xl mx-auto items-center gap-2 rounded-full bg-white p-2 pl-4 shadow-md ring-1 ring-black/5 transition-shadow hover:shadow-lg"
+      {/* Persistent trigger — visible on every tab, not just Discover. */}
+      <button
+        type="button"
+        onClick={() => openWithMessage()}
+        aria-label="Open PlaylistFox assistant"
+        className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-[#CC5500] to-[#A0522D] text-white shadow-lg transition-shadow hover:shadow-xl"
       >
-        <Search className="h-5 w-5 shrink-0 text-gray-400" />
-        <input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search playlists…"
-          className="min-w-0 flex-1 bg-transparent py-2.5 text-gray-900 placeholder:text-gray-400 focus:outline-hidden"
-        />
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#CC5500] to-[#A0522D] px-3.5 py-2 text-sm font-medium text-white shadow-sm transition-shadow hover:shadow-md"
-        >
-          <Sparkles className="h-4 w-4" />
-          Ask AI
-        </button>
-      </form>
+        <Sparkles className="h-5 w-5" />
+      </button>
 
       {/* Chat overlay — portal'd to body so it escapes any overflow/transform
           parent and never affects layout. Kept mounted so the conversation
           persists across open/close; visibility toggles via opacity + pointer
-          events only. */}
+          events only. `inert` while closed keeps its (still-focusable-by-
+          default) contents out of tab order and hidden from screen readers,
+          rather than relying on aria-hidden alone. */}
       {mounted &&
         createPortal(
           <div
             aria-hidden={!open}
+            inert={!open}
             className={`fixed inset-0 z-[100] flex items-start justify-center p-4 pt-[12vh] ${
               open ? "" : "pointer-events-none"
             }`}
           >
             {/* Backdrop — only opacity animates */}
             <div
-              onClick={() => setOpen(false)}
+              onClick={close}
               className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-200 ${
                 open ? "opacity-100" : "opacity-0"
               }`}
@@ -150,6 +186,10 @@ export function SearchAssistant({
 
             {/* Panel — only opacity + transform animate; radius is constant */}
             <div
+              ref={panelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Ask PlaylistFox"
               style={{ transformOrigin: "top center" }}
               className={`relative flex w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 transition-[opacity,transform] duration-200 ease-out ${
                 open
@@ -167,14 +207,27 @@ export function SearchAssistant({
                     Ask PlaylistFox
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  aria-label="Close"
-                  className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  {messages.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={newChat}
+                      aria-label="New chat"
+                      title="New chat"
+                      className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={close}
+                    aria-label="Close"
+                    className="rounded-full p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               {/* Messages — fixed-height scroll region, no layout animation */}
