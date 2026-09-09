@@ -25,19 +25,11 @@ export const SimplePlaylistList = ({
     useState<PlaylistSummary | null>(null);
   const [previewTracks, setPreviewTracks] = useState<any[]>([]);
   const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
 
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
-
-  useEffect(() => {
-    const ua = navigator.userAgent;
-    setIsMobile(
-      /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua),
-    );
-  }, []);
 
   useEffect(() => {
     if (!selectMode) return;
@@ -122,15 +114,9 @@ export const SimplePlaylistList = ({
   };
 
   const handleViewTracks = async (playlist: PlaylistSummary) => {
-    if (isMobile) {
-      const externalUrl =
-        playlist.provider === "SPOTIFY"
-          ? `https://open.spotify.com/playlist/${playlist.id}`
-          : `https://music.apple.com/playlist/${playlist.id}`;
-      window.open(externalUrl, "_blank");
-      return;
-    }
-
+    // No user-agent branch: a phone plays a 30s preview fine, and the preview
+    // drawer becomes a bottom sheet under 720px (README artboards 9a/9b). The
+    // deep link stays, demoted to the "Open in …" action inside the sheet.
     setSelectedPlaylistForModal(playlist);
     setPreviewTracks([]);
     setTrackModalOpen(true);

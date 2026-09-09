@@ -297,7 +297,7 @@ export const Subscriptions = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search playlists and sources"
-            className="min-w-[180px] flex-1 rounded-full border border-line-strong bg-surface px-4 py-2 text-[13px] text-ink placeholder:text-ink-25 focus:border-brand/40 focus:outline-none"
+            className="min-w-[180px] flex-1 rounded-full border border-line-strong bg-surface px-4 py-2 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
           />
 
           <div className="flex rounded-full bg-ground-chip p-0.5">
@@ -549,9 +549,11 @@ export const Subscriptions = () => {
 
       {showSettings && selectedPlaylist && (
         <PlaylistSettingsModal
-          setShowPlaylistSettingsModal={setShowSettings}
-          setSelectedPlaylist={setSelectedPlaylist}
-          selectedPlaylist={selectedPlaylist}
+          playlist={selectedPlaylist as ManagedPlaylistWithSubscriptions}
+          onClose={() => {
+            setShowSettings(false);
+            setSelectedPlaylist(null);
+          }}
         />
       )}
     </div>

@@ -328,7 +328,7 @@ export function SubscribeSheet({
         value={destFilter}
         onChange={(e) => setDestFilter(e.target.value)}
         placeholder="Filter your playlists"
-        className="rounded-full border border-line-strong bg-surface px-3.5 py-2 text-[13px] text-ink placeholder:text-ink-25 focus:border-brand/40 focus:outline-none"
+        className="rounded-full border border-line-strong bg-surface px-3.5 py-2 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
       />
 
       <div className="flex flex-col gap-1.5">
@@ -402,7 +402,7 @@ export function SubscribeSheet({
               value={newPlaylistName}
               onChange={(e) => setNewPlaylistName(e.target.value)}
               placeholder="New playlist name"
-              className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink placeholder:text-ink-25 focus:outline-none"
+              className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink placeholder:text-ink-50 focus:outline-none"
             />
             <button
               type="button"
@@ -607,7 +607,7 @@ export function SubscribeSheet({
           value={vibePrompt}
           onChange={(e) => setVibePrompt(e.target.value)}
           placeholder="e.g. upbeat indie and synth-pop, nothing slow or sad"
-          className="w-full resize-none rounded-lg border border-line-strong bg-surface p-2.5 text-[13px] text-ink placeholder:text-ink-25 focus:border-brand/40 focus:outline-none"
+          className="w-full resize-none rounded-lg border border-line-strong bg-surface p-2.5 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
         />
         <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-35">
           {vibePrompt.trim()

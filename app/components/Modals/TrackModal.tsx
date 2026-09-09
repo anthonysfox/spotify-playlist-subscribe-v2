@@ -29,7 +29,9 @@ interface TrackModalProps {
   onSubscribe?: () => void;
 }
 
-const EAGER_RESOLVE = 14; // resolve the top of the list on open; the rest on hover
+// Resolve this many rows on open so their state is known before a click. There
+// is no hover on touch, so the eager set has to cover more of the list there.
+const EAGER_RESOLVE = 30;
 
 function fmt(seconds: number) {
   const s = Math.max(0, Math.floor(seconds));
@@ -175,15 +177,15 @@ export const TrackModal: React.FC<TrackModalProps> = ({
   const playingTrack = tracks.find((t) => t.id === playingId) ?? null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-ink/40">
+    <div className="fixed inset-0 z-50 flex justify-end bg-ink/40 max-[719px]:items-end max-[719px]:justify-center">
       <audio ref={audioRef} preload="none" playsInline className="hidden" />
       <button
         type="button"
         aria-label="Close"
         onClick={onClose}
-        className="flex-1 cursor-default"
+        className="absolute inset-0 cursor-default"
       />
-      <div className="flex w-full max-w-[440px] flex-col bg-surface shadow-[-8px_0_30px_rgba(26,21,18,0.12)]">
+      <div className="relative z-10 flex w-full max-w-[440px] flex-col bg-surface shadow-[-8px_0_30px_rgba(26,21,18,0.12)] max-[719px]:max-h-[92vh] max-[719px]:rounded-t-[18px] max-[719px]:pb-[env(safe-area-inset-bottom)]">
         {/* Header */}
         <div className="border-b border-line px-5 py-4">
           <div className="mb-3.5 flex items-center justify-between">
@@ -259,7 +261,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                   key={i}
                   className="flex items-center gap-3 rounded-[11px] px-3 py-2.5"
                 >
-                  <span className="w-[22px] shrink-0 text-center font-mono text-[12.5px] text-ink-25">
+                  <span className="w-[22px] shrink-0 text-center font-mono text-[12.5px] text-ink-35">
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -306,7 +308,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                       ) : isHovered && !noPreview ? (
                         <Play className="h-3.5 w-3.5 text-ink-50" />
                       ) : (
-                        <span className="font-mono text-[12.5px] text-ink-25">
+                        <span className="font-mono text-[12.5px] text-ink-35">
                           {index + 1}
                         </span>
                       )}
@@ -339,7 +341,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                       </span>
                     )}
                     {noPreview && (
-                      <span className="shrink-0 text-[11.5px] text-[#C9BEB4]">
+                      <span className="shrink-0 text-[11.5px] text-ink-50">
                         no preview
                       </span>
                     )}

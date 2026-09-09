@@ -337,7 +337,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search playlists — or describe a vibe"
-          className="min-w-0 flex-1 bg-transparent py-1.5 text-[14px] text-ink placeholder:text-ink-25 focus:outline-none"
+          className="min-w-0 flex-1 bg-transparent py-1.5 text-[14px] text-ink placeholder:text-ink-50 focus:outline-none"
         />
         {searchText && (
           <button
