@@ -32,6 +32,87 @@ const Dot = ({ className }: { className: string }) => (
   <span className={`h-[7px] w-[7px] shrink-0 rounded-full ${className}`} />
 );
 
+const Bar = ({ w }: { w: string }) => (
+  <span
+    className="block h-2 rounded-full bg-ink/10"
+    style={{ width: w }}
+  />
+);
+
+/** A small, honest mock of what each step looks like in the app. */
+function StepMock({ i }: { i: number }) {
+  const shell =
+    "mt-4 h-[132px] w-full overflow-hidden rounded-xl border border-line bg-ground p-2.5";
+
+  if (i === 0) {
+    // Browse & subscribe
+    return (
+      <div className={`${shell} flex flex-col gap-1.5`}>
+        {[0, 1, 2].map((r) => (
+          <div
+            key={r}
+            className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-1.5"
+          >
+            <span className="art-placeholder h-6 w-6 shrink-0 rounded-md" />
+            <Bar w={r === 1 ? "44%" : "60%"} />
+            <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[11px] leading-none text-surface">
+              +
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (i === 1) {
+    // The managed playlist
+    return (
+      <div className={`${shell} flex flex-col justify-center`}>
+        <div className="rounded-lg border-[1.5px] border-brand bg-brand-tint-soft p-2.5">
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className="art-placeholder h-6 w-6 shrink-0 rounded-md" />
+            <Bar w="50%" />
+            <span className="ml-auto rounded-full bg-surface px-1.5 py-0.5 font-mono text-[9px] text-brand-deep">
+              weekly
+            </span>
+          </div>
+          <div className="flex gap-1.5">
+            {[0, 1].map((c) => (
+              <span
+                key={c}
+                className="flex items-center gap-1 rounded-full bg-surface px-1.5 py-0.5"
+              >
+                <span className="art-placeholder h-3 w-3 rounded-[3px]" />
+                <span className="block h-1.5 w-6 rounded-full bg-ink/10" />
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // It stays fresh — a run feed
+  return (
+    <div className={`${shell} flex flex-col gap-1.5`}>
+      {[
+        ["bg-ok", "+7"],
+        ["bg-ok", "+4"],
+        ["bg-ink-25", "+0"],
+      ].map(([dot, n], r) => (
+        <div
+          key={r}
+          className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-1.5"
+        >
+          <Dot className={dot} />
+          <Bar w={r === 2 ? "38%" : "52%"} />
+          <span className="ml-auto font-mono text-[10px] text-ink-35">{n}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export const HomePage = () => {
   return (
     <div className="bg-ground text-ink-70">
@@ -188,7 +269,7 @@ export const HomePage = () => {
                 <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-50">
                   {step.body}
                 </p>
-                <div className="art-placeholder mt-4 h-[120px] w-full rounded-xl" />
+                <StepMock i={i} />
               </div>
             ))}
           </div>
