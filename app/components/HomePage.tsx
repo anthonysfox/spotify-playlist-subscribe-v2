@@ -1,7 +1,41 @@
 import { SignInButton } from "@clerk/nextjs";
 import React from "react";
 import Image from "next/image";
-import { RotatingFeatures } from "./RotatingFeatures";
+import { ChevronDown } from "lucide-react";
+import { LandingPreview } from "./LandingPreview";
+
+const FEATURES = [
+  {
+    title: "Auto-Sync",
+    description: "Fresh tracks on your schedule — daily, weekly, or monthly.",
+    path: "M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z",
+  },
+  {
+    title: "Smart Discovery",
+    description: "New music from the artists and playlists you love.",
+    path: "M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z",
+  },
+  {
+    title: "One Place",
+    description: "Every subscription, both services, one dashboard.",
+    path: "M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z",
+  },
+];
+
+const STEPS = [
+  {
+    title: "Pick your sources",
+    description: "Subscribe to any playlist you already follow — yours or public.",
+  },
+  {
+    title: "Point at a managed playlist",
+    description: "A playlist PlaylistFox owns on your behalf, brand new or existing.",
+  },
+  {
+    title: "It stays fresh on its own",
+    description: "New tracks land automatically, on whatever schedule you set.",
+  },
+];
 
 const SpotifyIcon = ({ className }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">
@@ -80,34 +114,114 @@ export const HomePage = () => {
           updated automatically — on Spotify and Apple Music.
         </p>
 
-        {/* Motion: the auto-rotating feature reel */}
-        <div className="mt-10 w-full max-w-md">
-          <RotatingFeatures />
+        {/* Three static cards — a visitor scanning for a few seconds used to
+            see one third of this at a time, with no indication there was
+            more. */}
+        <div className="mt-10 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
+          {FEATURES.map((feature) => (
+            <div
+              key={feature.title}
+              className="flex flex-col items-center gap-2 rounded-2xl bg-white/70 p-4 text-center ring-1 ring-black/5 backdrop-blur shadow-sm"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#CC5500] to-[#A0522D] shadow-sm">
+                <svg
+                  className="h-5 w-5 text-white"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d={feature.path}
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold leading-tight text-gray-900">
+                  {feature.title}
+                </h3>
+                <p className="mt-0.5 text-xs leading-snug text-gray-500">
+                  {feature.description}
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Single, confident CTA */}
-        <div className="mt-9 w-full max-w-xs">
+        {/* Access notice — moved above the CTA. It used to sit below in
+            small print, so the actual flow for a new Spotify user was:
+            click the big button, authorize, hit the dev-mode allowlist
+            wall, get an error, leave. Seeing this first avoids that dead
+            end entirely. */}
+        <p className="mt-8 max-w-xs text-sm text-gray-500">
+          New here and using Spotify? Spotify&apos;s developer mode requires an
+          allowlist —{" "}
+          <a
+            href="mailto:anthonysfox1@gmail.com?subject=PlaylistFox%20access%20request"
+            className="font-semibold text-[#CC5500] underline-offset-2 hover:underline"
+          >
+            email anthonysfox1@gmail.com
+          </a>{" "}
+          first to request access.
+        </p>
+
+        {/* Single, confident CTA. Label is deliberately provider-neutral for
+            now — Clerk's own sign-in page offers both Spotify and Apple, but
+            splitting this into two distinct branded buttons needs the exact
+            Spotify custom-OAuth strategy identifier from the Clerk dashboard
+            first, so a wrong guess can't silently break sign-in. */}
+        <div className="mt-4 w-full max-w-xs">
           <SignInButton>
             <button className="group w-full rounded-2xl bg-gradient-to-r from-[#CC5500] to-[#A0522D] px-6 py-4 text-lg font-semibold text-white shadow-lg shadow-orange-900/20 transition-all hover:shadow-xl hover:shadow-orange-900/25 hover:cursor-pointer">
               <span className="flex items-center justify-center gap-2.5">
-                Sign in
+                Get started
                 <ArrowIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </span>
             </button>
           </SignInButton>
         </div>
 
-        {/* Access notice */}
-        <p className="mt-6 text-sm text-gray-400">
-          New here and using Spotify? Email{" "}
-          <a
-            href="mailto:anthonysfox1@gmail.com"
-            className="font-semibold text-[#CC5500] underline-offset-2 hover:underline"
-          >
-            anthonysfox1@gmail.com
-          </a>{" "}
-          to request access.
-        </p>
+        {/* Scroll cue — the product preview and "how it works" steps below
+            are otherwise a section nobody scrolling past a single-viewport
+            hero would think to look for. A quiet text link, not another
+            gradient button — the CTA above is the one primary action here. */}
+        <a
+          href="#how-it-works"
+          className="mt-10 flex flex-col items-center gap-1 text-sm text-gray-400 transition-colors hover:text-[#CC5500]"
+        >
+          See how it works
+          <ChevronDown className="h-4 w-4 animate-bounce" />
+        </a>
+      </section>
+
+      {/* Below the fold: what it actually looks like, and how it works —
+          previously nothing on the page showed the product or explained the
+          core mental model (a source playlist you follow vs. a managed
+          playlist you own that receives tracks) before asking for OAuth
+          access. */}
+      <section
+        id="how-it-works"
+        className="relative mx-auto flex max-w-5xl scroll-mt-16 flex-col items-center gap-12 px-6 py-20 lg:flex-row lg:items-start lg:gap-16"
+      >
+        <div className="flex w-full max-w-md flex-col gap-6 lg:pt-4">
+          {STEPS.map((step, i) => (
+            <div key={step.title} className="flex gap-4">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#CC5500] to-[#A0522D] text-sm font-bold text-white">
+                {i + 1}
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">{step.title}</h3>
+                <p className="mt-0.5 text-sm text-gray-500">
+                  {step.description}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex w-full justify-center lg:justify-end">
+          <LandingPreview />
+        </div>
       </section>
     </div>
   );

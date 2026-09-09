@@ -1,45 +1,24 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
 import type { PlaylistSummary, MusicProvider } from "@/lib/music/types";
-import type { SelectablePlaylist } from "@/types";
 import { SimplePlaylistList } from "./Playlist/SimpleList";
-import { SearchBar } from "./Navigation/SearchBar";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Search,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import { CategoryFilters } from "./Filters/CategoryFilters";
-import { FilterModal } from "./Modals/FilterModal";
-import { categorySubOptions, frontendCategories } from "constants/categories";
-import { SearchAssistant } from "./SearchAssistant";
+import { categorySubOptions } from "constants/categories";
+import { useAssistantStore } from "store/useAssistantStore";
 
 interface CuratedPlaylistsProps {
-  // Shares Dashboard's selectedPlaylist state, which also holds managed
-  // playlists. This component only ever writes Spotify playlists into it, so
-  // accepting the wider setter costs nothing and keeps the types truthful.
-  setSelectedPlaylist: React.Dispatch<
-    React.SetStateAction<SelectablePlaylist | null>
-  >;
-  setShowSubscribeModal: React.Dispatch<React.SetStateAction<boolean>>;
-  setExpandedPlaylist: React.Dispatch<React.SetStateAction<string | null>>;
-  expandedPlaylist: string | null;
-  previewTracks: any;
-  setPreviewTracks: React.Dispatch<React.SetStateAction<any>>;
+  /** Open the subscribe sheet for one or more source playlists (a single `+`
+   *  click passes one; batch-select passes several). */
+  onSubscribe: (sources: PlaylistSummary[]) => void;
   listRef: React.RefObject<HTMLDivElement | null>;
   isActive: boolean;
   provider: MusicProvider;
 }
 
 export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
-  setSelectedPlaylist,
-  setShowSubscribeModal,
-  setExpandedPlaylist,
-  expandedPlaylist,
-  previewTracks,
-  setPreviewTracks,
+  onSubscribe,
   listRef,
   isActive,
   provider,
@@ -51,8 +30,11 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
   const [offset, setOffset] = useState(0);
   const [loadedAll, setLoadedAll] = useState(false);
   const [searchText, setSearchText] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
+  const openAssistantWithMessage = useAssistantStore(
+    (s) => s.openWithMessage,
+  );
   const [error, setError] = useState<string | null>(null);
 
   // Pagination state
@@ -338,128 +320,106 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
     setActiveSubOption(subOption);
   };
 
-  // Remove the old scroll handler since we're using Intersection Observer now
-
   return (
-    <div className="space-y-6 flex flex-col h-full">
-      {/* Search Bar */}
-      <div className="relative">
-        {/* <SearchBar value={searchText} onChange={setSearchText} /> */}
-        <SearchAssistant onSearch={setSearchText} />
-
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      {/* Search — a plain text filter for the grid below. "Ask the fox" hands
+          whatever's typed to the assistant panel instead of discarding it. */}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const q = searchQuery.trim();
+          if (q) setSearchText(q);
+        }}
+        className="flex items-center gap-2 rounded-full border border-line-strong bg-surface py-2 pl-4 pr-2"
+      >
+        <Search className="h-4 w-4 shrink-0 text-ink-25" />
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search playlists — or describe a vibe"
+          className="min-w-0 flex-1 bg-transparent py-1.5 text-[14px] text-ink placeholder:text-ink-25 focus:outline-none"
+        />
         {searchText && (
           <button
+            type="button"
             onClick={() => {
               setSearchText("");
+              setSearchQuery("");
               setIsSearchMode(false);
             }}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            aria-label="Clear search"
+            className="px-1 text-ink-35 hover:text-ink-70"
           >
             ✕
           </button>
         )}
-      </div>
-
-      {/* Filter Button */}
-      <div className="flex flex-wrap gap-2 justify-end">
         <button
-          onClick={() => setShowFilters(true)}
-          className="px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-[#CC5500] to-[#A0522D] text-white hover:from-[#B04A00] hover:to-[#8B4513] shadow-lg hover:shadow-xl flex items-center gap-2"
+          type="button"
+          onClick={() => openAssistantWithMessage(searchQuery)}
+          className="flex shrink-0 items-center gap-1.5 rounded-full border border-brand/25 bg-brand-tint px-3.5 py-2 text-[13px] font-medium text-brand-deep transition-colors hover:bg-brand-tint-soft"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            className="text-white"
-          >
-            <path
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              d="M3 6h18M7 12h10M10 18h4"
+          <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-surface">
+            <Image
+              src="/logo.png"
+              alt=""
+              width={22}
+              height={22}
+              className="h-[22px] w-[22px] object-cover"
             />
-          </svg>
-          <div className="flex flex-col items-start">
-            <span className="text-xs text-orange-100">Filter</span>
-            <span className="text-sm font-bold">
-              {(() => {
-                const categoryName =
-                  frontendCategories.find((cat) => cat.id === activeCategory)
-                    ?.name || activeCategory;
-                const subOptionName =
-                  categorySubOptions[
-                    activeCategory as keyof typeof categorySubOptions
-                  ]?.find((sub) => sub.id === activeSubOption)?.name ||
-                  activeSubOption;
-                return `${categoryName} • ${subOptionName}`;
-              })()}
-            </span>
-          </div>
+          </span>
+          Ask the fox
         </button>
-      </div>
+      </form>
 
-      {/* Playlists */}
-      <div className="grow overflow-hidden min-h-0 flex flex-col">
-        <div
-          className="h-full overflow-y-auto overflow-x-hidden min-h-0 flex-1 custom-scrollbar scrollbar-visible p-3"
-          ref={listRef}
-        >
-          <SimplePlaylistList
-            playlists={playlists}
-            setSelectedPlaylist={setSelectedPlaylist}
-            setShowSubscribeModal={setShowSubscribeModal}
-          />
-
-          {/* Loading indicator */}
-          {loading && playlists.length > 0 && (
-            <div className="flex justify-center py-6">
-              <div className="w-6 h-6 border-2 border-[#CC5500] border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          )}
-
-          {/* Intersection Observer Sentinel */}
-          {!loadedAll && (
-            <div
-              ref={sentinelRef}
-              className="h-10 flex items-center justify-center"
-            >
-              {/* This invisible element triggers loading more content */}
-            </div>
-          )}
-
-          {/* End of results indicator */}
-          {loadedAll && playlists.length > 0 && (
-            <div className="text-center py-6">
-              <p className="text-gray-500 text-sm">No more playlists to load</p>
-            </div>
-          )}
-
-          {/* Error state */}
-          {error && (
-            <div className="text-center py-6">
-              <p className="text-red-500 text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* No results */}
-          {!loading && !playlists.length && !error && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No playlists found</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <FilterModal
-        isOpen={showFilters}
-        onClose={() => setShowFilters(false)}
-        handleCategoryChange={handleCategoryChange}
-        handleSubOptionChange={handleSubOptionChange}
+      {/* Category filters — inline chips, no modal. */}
+      <CategoryFilters
         isSearchMode={isSearchMode}
         activeCategory={activeCategory}
         activeSubOption={activeSubOption}
+        handleCategoryChange={handleCategoryChange}
+        handleSubOptionChange={handleSubOptionChange}
       />
+
+      {/* Grid */}
+      <div className="flex min-h-0 grow flex-col overflow-hidden">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar scrollbar-visible pr-1"
+          ref={listRef}
+        >
+          <SimplePlaylistList playlists={playlists} onSubscribe={onSubscribe} />
+
+          {loading && playlists.length > 0 && (
+            <div className="flex justify-center py-6">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+            </div>
+          )}
+
+          {!loadedAll && (
+            <div
+              ref={sentinelRef}
+              className="flex h-10 items-center justify-center"
+            />
+          )}
+
+          {loadedAll && playlists.length > 0 && (
+            <p className="py-6 text-center text-[13px] text-ink-35">
+              No more playlists to load
+            </p>
+          )}
+
+          {error && (
+            <p className="py-6 text-center text-[13px] text-warn-text">
+              {error}
+            </p>
+          )}
+
+          {!loading && !playlists.length && !error && (
+            <p className="py-12 text-center text-[13px] text-ink-50">
+              No playlists found
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

@@ -3,6 +3,83 @@
 @config '../tailwind.config.js';
 
 /*
+  PlaylistFox redesign tokens (see design_handoff_playlistfox_redesign/README.md
+  "Design tokens"). Everything in the redesigned UI references these — no raw hex
+  in components, and the #CC5500 -> #A0522D gradient is gone: `brand` is now a
+  flat accent, "one loud thing per screen".
+*/
+@theme {
+  /* Color */
+  --color-brand: #cc5500; /* primary action, "this is subscribed", accents */
+  --color-brand-deep: #a0522d; /* text on tint, hover for brand text */
+  --color-brand-tint: #fff1e6; /* selected chip / soft brand background */
+  --color-brand-tint-soft: #fff9f4; /* selected card background */
+
+  --color-ink: #1a1512; /* primary text, dark surfaces, primary dark button */
+  --color-ink-70: #4a423c; /* body text */
+  --color-ink-50: #6b635c; /* secondary text */
+  --color-ink-35: #8c837b; /* tertiary text, mono labels */
+  --color-ink-25: #a79e96; /* placeholder text, inactive icon strokes */
+
+  --color-line: rgba(26, 21, 18, 0.08); /* hairline borders */
+  --color-line-strong: rgba(26, 21, 18, 0.12); /* input / secondary-button borders */
+
+  --color-ground: #fbf8f5; /* app background (warm off-white) */
+  --color-ground-alt: #f4f0eb; /* inset panels, mobile search fields */
+  --color-ground-chip: #efeae4; /* segmented-control track */
+  --color-surface: #ffffff; /* cards, headers, sheets */
+  --color-surface-sunk: #fcfaf8; /* expanded-panel background */
+
+  --color-ok: #16a34a; /* sync succeeded (dot) */
+  --color-ok-text: #166534;
+  --color-warn: #ea580c; /* sync failed (dot) */
+  --color-warn-text: #9a3412;
+
+  --color-spotify: #1db954; /* provider dot only */
+  --color-apple: #fa243c; /* provider dot only */
+
+  /* Type — replaces Inter. Bound to the next/font CSS vars set in app/layout.tsx. */
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, monospace;
+
+  /* Motion */
+  --animate-softpulse: softpulse 1.6s ease-in-out infinite;
+  --animate-flowdash: flowdash 1.2s linear infinite;
+}
+
+/* "syncing now" status dots */
+@keyframes softpulse {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* dashed SVG connectors on the (later) playlist-detail sync line */
+@keyframes flowdash {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+/*
+  Placeholder cover-art fill: used wherever a playlist has no `imageUrl` yet
+  (a brand-new Apple Music playlist has none until it has tracks). The design
+  file marks every missing asset with this diagonal stripe.
+*/
+@utility art-placeholder {
+  background-image: repeating-linear-gradient(
+    135deg,
+    #e4dbd2 0 8px,
+    #f1eae2 8px 16px
+  );
+}
+
+/*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
   looks the same as it did with Tailwind CSS v3.

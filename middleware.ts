@@ -10,7 +10,10 @@ const isProtectedRoute = createRouteMatcher([
   "/api/apple-music(.*)",
   "/api/music(.*)",
   "/profile(.*)",
-  "/dashboard(.*)"
+  "/dashboard(.*)",
+  "/library(.*)",
+  "/activity(.*)",
+  "/settings(.*)"
 ]);
 
 // Define public API routes that don't need auth
