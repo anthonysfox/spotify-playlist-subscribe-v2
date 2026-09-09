@@ -11,13 +11,9 @@ import {
 import toast from "react-hot-toast";
 import { useUserStore, pendingRemovalKey } from "store/useUserStore";
 import { PROVIDER_LABELS } from "store/useMusicStore";
-import type {
-  ManagedPlaylistWithSubscriptions,
-  SelectablePlaylist,
-} from "@/types";
+import type { ManagedPlaylistWithSubscriptions } from "@/types";
 import type { MusicProvider } from "@/lib/music/types";
 import { SubscriptionSkeleton } from "../Skeletons/SubscriptionSkeleton";
-import { PlaylistSettingsModal } from "../Modals/SettingsModal";
 import { formatRelativeTime } from "utils/formatRelativeTime";
 
 type ProviderFilter = "ALL" | MusicProvider;
@@ -143,10 +139,6 @@ export const Subscriptions = () => {
   const [sortKey, setSortKey] = useState<SortKey>("nextSync");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
-  const [selectedPlaylist, setSelectedPlaylist] =
-    useState<SelectablePlaylist | null>(null);
-  const [showSettings, setShowSettings] = useState(false);
-
   useEffect(() => {
     async function fetchSubscriptions() {
       setIsLoading(true);
@@ -242,11 +234,6 @@ export const Subscriptions = () => {
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-
-  const openSettings = (playlist: ManagedPlaylistWithSubscriptions) => {
-    setSelectedPlaylist(playlist);
-    setShowSettings(true);
-  };
 
   if (isLoading) {
     return (
@@ -399,9 +386,12 @@ export const Subscriptions = () => {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="truncate font-display text-[15px] font-semibold text-ink">
+                        <Link
+                          href={`/library/${playlist.id}`}
+                          className="truncate font-display text-[15px] font-semibold text-ink hover:text-brand-deep"
+                        >
                           {playlist.name}
-                        </span>
+                        </Link>
                         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ground-alt px-2 py-0.5 text-[11px] font-medium text-ink-50">
                           <span
                             className={`h-1.5 w-1.5 rounded-full ${PROVIDER_DOT[playlist.provider]}`}
@@ -422,12 +412,14 @@ export const Subscriptions = () => {
                       <IconButton label="Sync now" onClick={handleSyncNow}>
                         <RefreshCw className="h-3.5 w-3.5" />
                       </IconButton>
-                      <IconButton
-                        label={`Settings for ${playlist.name}`}
-                        onClick={() => openSettings(playlist)}
+                      <Link
+                        href={`/library/${playlist.id}/settings`}
+                        aria-label={`Settings for ${playlist.name}`}
+                        title="Settings"
+                        className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border border-line text-ink-35 transition-colors hover:border-line-strong hover:bg-ground-alt hover:text-ink-70"
                       >
                         <Settings className="h-3.5 w-3.5" />
-                      </IconButton>
+                      </Link>
                       <IconButton
                         label={isOpen ? "Collapse" : "Expand"}
                         onClick={() => toggleExpanded(playlist.id)}
@@ -546,16 +538,6 @@ export const Subscriptions = () => {
           </div>
         )}
       </div>
-
-      {showSettings && selectedPlaylist && (
-        <PlaylistSettingsModal
-          playlist={selectedPlaylist as ManagedPlaylistWithSubscriptions}
-          onClose={() => {
-            setShowSettings(false);
-            setSelectedPlaylist(null);
-          }}
-        />
-      )}
     </div>
   );
 };
