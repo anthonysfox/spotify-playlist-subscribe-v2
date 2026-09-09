@@ -45,7 +45,16 @@ function CoverArt({
   src: string | null | undefined;
   className: string;
 }) {
-  if (src) return <img src={src} alt="" className={`${className} object-cover`} />;
+  if (src)
+    return (
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className={`${className} object-cover`}
+      />
+    );
   return <span className={`${className} art-placeholder`} />;
 }
 

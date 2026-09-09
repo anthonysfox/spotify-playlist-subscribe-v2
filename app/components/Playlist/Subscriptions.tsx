@@ -42,7 +42,16 @@ function CoverArt({
   alt: string;
   className: string;
 }) {
-  if (src) return <img src={src} alt={alt} className={`${className} object-cover`} />;
+  if (src)
+    return (
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        className={`${className} object-cover`}
+      />
+    );
   return <div className={`${className} art-placeholder`} aria-label={alt} />;
 }
 

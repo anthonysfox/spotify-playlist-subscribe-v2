@@ -184,6 +184,8 @@ export const SimplePlaylistList = ({
                       <img
                         src={playlist.imageUrl}
                         alt={playlist.name}
+                        loading="lazy"
+                        decoding="async"
                         className="aspect-square w-full object-cover transition-opacity group-hover:opacity-95"
                       />
                     ) : (

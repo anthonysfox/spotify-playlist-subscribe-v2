@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
 import {
@@ -33,7 +34,10 @@ export async function getManagedPlaylistsForUser(userId: string) {
     },
   });
 
-  await refreshStaleMetadata(userId, subscriptions);
+  // Refreshing provider metadata is N external calls + writes — do it AFTER the
+  // response streams, not on the request's critical path. This load serves
+  // slightly stale track counts; the next one is fresh.
+  scheduleStaleMetadataRefresh(userId, subscriptions);
   await attachSyncRunLog(subscriptions);
 
   return subscriptions;
@@ -41,7 +45,7 @@ export async function getManagedPlaylistsForUser(userId: string) {
 
 type WithSubs = Awaited<ReturnType<typeof getManagedPlaylistsForUser>>;
 
-async function refreshStaleMetadata(userId: string, subscriptions: WithSubs) {
+function scheduleStaleMetadataRefresh(userId: string, subscriptions: WithSubs) {
   const now = Date.now();
   const toUpdate = new Map<string, any>();
   const seenSources = new Set<string>();
@@ -77,41 +81,49 @@ async function refreshStaleMetadata(userId: string, subscriptions: WithSubs) {
   }
 
   if (toUpdate.size === 0) return;
+  const targets = Array.from(toUpdate.values());
 
-  // Apple-only users have no Spotify token — the refresh simply doesn't run.
-  let token: string | undefined;
-  try {
-    token = (await getClerkOAuthToken(userId)).token;
-  } catch {
-    return;
-  }
-  if (!token) return;
+  const run = async () => {
+    // Apple-only users have no Spotify token — the refresh simply doesn't run.
+    let token: string | undefined;
+    try {
+      token = (await getClerkOAuthToken(userId)).token;
+    } catch {
+      return;
+    }
+    if (!token) return;
 
-  await Promise.all(
-    Array.from(toUpdate.values()).map(async ({ spotifyId, playlist, id, type }) => {
-      try {
-        const res = await fetch(
-          `https://api.spotify.com/v1/playlists/${spotifyId}?fields=tracks.total`,
-          { headers: { Authorization: `Bearer ${token}` } },
-        );
-        if (!res.ok) return;
-        const data = await res.json();
-        const updateData = {
-          trackCount: data.tracks.total,
-          lastMetadataRefreshAt: new Date(),
-        };
-        if (type === "managed") {
-          await prisma.managedPlaylist.update({ where: { id }, data: updateData });
-        } else {
-          await prisma.sourcePlaylist.update({ where: { id }, data: updateData });
+    await Promise.all(
+      targets.map(async ({ spotifyId, id, type }) => {
+        try {
+          const res = await fetch(
+            `https://api.spotify.com/v1/playlists/${spotifyId}?fields=tracks.total`,
+            { headers: { Authorization: `Bearer ${token}` } },
+          );
+          if (!res.ok) return;
+          const data = await res.json();
+          const updateData = {
+            trackCount: data.tracks.total,
+            lastMetadataRefreshAt: new Date(),
+          };
+          if (type === "managed") {
+            await prisma.managedPlaylist.update({ where: { id }, data: updateData });
+          } else {
+            await prisma.sourcePlaylist.update({ where: { id }, data: updateData });
+          }
+        } catch (error) {
+          console.error(`Failed to refresh ${type} playlist ${id}:`, error);
         }
-        playlist.trackCount = data.tracks.total;
-        playlist.lastMetadataRefreshAt = new Date();
-      } catch (error) {
-        console.error(`Failed to refresh ${type} playlist ${id}:`, error);
-      }
-    }),
-  );
+      }),
+    );
+  };
+
+  try {
+    after(run);
+  } catch {
+    // `after` throws if we're somehow outside a request scope — just skip the
+    // refresh rather than blocking on it here.
+  }
 }
 
 async function attachSyncRunLog(subscriptions: WithSubs) {

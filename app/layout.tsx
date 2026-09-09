@@ -19,7 +19,8 @@ import StoreResetOnSignOut from "./components/StoreResetOnSignOut";
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  // 500 + 600 only — nothing uses `font-bold` with the display face.
+  weight: ["500", "600"],
   display: "swap",
 });
 

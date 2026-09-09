@@ -8,6 +8,16 @@ const nextConfig = {
     "local-origin.dev",
     "*.local-origin.dev",
   ],
+  images: {
+    formats: ["image/avif", "image/webp"],
+    // Cover art hosts, so <Image> can be used for the grids later without a
+    // config change.
+    remotePatterns: [
+      { protocol: "https", hostname: "**.scdn.co" },
+      { protocol: "https", hostname: "**.spotifycdn.com" },
+      { protocol: "https", hostname: "**.mzstatic.com" },
+    ],
+  },
   webpack: (config) => {
     config.resolve.extensionAlias = {
       ".js": [".ts", ".tsx", ".js", ".jsx"],

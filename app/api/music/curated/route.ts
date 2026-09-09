@@ -86,7 +86,18 @@ export async function GET(request: NextRequest) {
       if (!addedThisRound) break;
     }
 
-    return NextResponse.json({ provider, category, playlists });
+    return NextResponse.json(
+      { provider, category, playlists },
+      {
+        // The result only depends on provider + category, and curated grids
+        // change slowly — let the browser reuse it across category toggles and
+        // back-navigation instead of re-running a dozen Spotify searches.
+        headers: {
+          "Cache-Control":
+            "private, max-age=300, stale-while-revalidate=1800",
+        },
+      },
+    );
   } catch (error: any) {
     console.error(`Curated browse failed on ${provider}:`, error.message);
 
