@@ -38,10 +38,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      provider,
-      playlists: await client.searchPlaylists(query, limit, offset),
-    });
+    const playlists = await client.searchPlaylists(query, limit, offset);
+
+    // A provider (Spotify especially) pads its result array with nulls for
+    // playlists it won't serve, so a "full" page can come back short after the
+    // adapter drops them — `playlists.length < limit` is NOT a reliable
+    // end-of-results signal. Keep paging while anything comes back, up to a
+    // sane ceiling.
+    const hasMore = playlists.length > 0 && offset + limit < 500;
+
+    return NextResponse.json({ provider, playlists, hasMore });
   } catch (error: any) {
     console.error(`Search failed on ${provider}:`, error.message);
 

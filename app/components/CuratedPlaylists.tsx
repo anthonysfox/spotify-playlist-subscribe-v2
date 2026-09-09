@@ -76,8 +76,11 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
             )}&limit=${PAGE}&offset=${offset}`,
           );
           if (!res.ok) throw new Error("search failed");
-          page = ((await res.json()).playlists ?? []) as PlaylistSummary[];
-          more = page.length >= PAGE;
+          const json = await res.json();
+          page = (json.playlists ?? []) as PlaylistSummary[];
+          // Providers null-pad short pages, so trust the server's signal, not
+          // the filtered length.
+          more = Boolean(json.hasMore);
         } else {
           const res = await fetch(
             `/api/music/curated?provider=${provider}&category=${activeSubOption}&offset=${offset}`,
