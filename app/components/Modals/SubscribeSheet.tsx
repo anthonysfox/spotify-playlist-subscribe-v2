@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   X,
   Check,
@@ -184,10 +185,43 @@ export function SubscribeSheet({
     return names;
   }, [selectedDestIds, destPlaylists, newPlaylistName]);
 
+  // Split the selection into destinations that already have rules (managed) and
+  // ones that will adopt the rules below (new, or not-managed-yet → becomes
+  // managed). The subscribe endpoint ignores rule fields for the former.
+  const selectedManaged = useMemo(
+    () =>
+      [...selectedDestIds]
+        .map((id) => destPlaylists.find((p) => p.id === id))
+        .filter(Boolean)
+        .map((p) => ({
+          playlist: p!,
+          managed: managedByExternalId.get(p!.id) ?? null,
+        })),
+    [selectedDestIds, destPlaylists, managedByExternalId],
+  );
+  const existingManaged = selectedManaged.filter((d) => d.managed);
+  const adoptingRulesCount =
+    selectedManaged.filter((d) => !d.managed).length +
+    (newPlaylistName.trim() ? 1 : 0);
+  const rulesApply = adoptingRulesCount > 0 || destCount === 0;
+
   const sentence = useMemo(() => {
-    const word = FREQ_WORD[syncFrequency] ?? "run";
     const srcLabel =
       sources.length === 1 ? sources[0].name : `${sources.length} sources`;
+
+    // Every selected destination already has its own rules — describe those,
+    // not the (inert) controls.
+    if (!rulesApply && existingManaged.length > 0) {
+      if (existingManaged.length === 1) {
+        const m = existingManaged[0].managed!;
+        const word = FREQ_WORD[m.syncInterval] ?? "run";
+        const verb = m.syncMode === "REPLACE" ? "rotate into" : "get added to";
+        return `Every ${word}, up to ${m.syncQuantityPerSource} new tracks from ${srcLabel} ${verb} ${existingManaged[0].playlist.name}, on its existing schedule.`;
+      }
+      return `${srcLabel} will feed ${existingManaged.length} playlists, each on its own existing schedule.`;
+    }
+
+    const word = FREQ_WORD[syncFrequency] ?? "run";
     const destLabel =
       selectedDestNames.length === 0
         ? "a new playlist"
@@ -213,6 +247,8 @@ export function SubscribeSheet({
     }
     return s;
   }, [
+    rulesApply,
+    existingManaged,
     syncFrequency,
     qty,
     syncMode,
@@ -251,18 +287,29 @@ export function SubscribeSheet({
 
     for (const source of sources) {
       for (const target of targets) {
+        // A destination that is already managed keeps its own rules — only send
+        // the link. New / not-yet-managed destinations adopt the rules below.
+        const adoptsRules =
+          target.kind === "new" ||
+          !managedByExternalId.get(target.dest.id);
+
         const body: SubscribeReqBody = {
           provider,
           sourcePlaylist: refOf(source),
-          syncFrequency,
           runImmediateSync,
-          syncQuantityPerSource: qty,
-          syncMode,
-          explicitContentFilter: explicitFilter,
-          trackAgeLimit,
-          vibePrompt: vibePrompt.trim() || undefined,
-          customDays: syncFrequency === "CUSTOM" ? customDays : undefined,
-        };
+          ...(adoptsRules
+            ? {
+                syncFrequency,
+                syncQuantityPerSource: qty,
+                syncMode,
+                explicitContentFilter: explicitFilter,
+                trackAgeLimit,
+                vibePrompt: vibePrompt.trim() || undefined,
+                customDays:
+                  syncFrequency === "CUSTOM" ? customDays : undefined,
+              }
+            : {}),
+        } as SubscribeReqBody;
 
         if (target.kind === "new") {
           if (createdRef) body.managedPlaylist = createdRef;
@@ -431,12 +478,6 @@ export function SubscribeSheet({
         )}
       </div>
 
-      {selectedDestNames.length > 1 && (
-        <div className="rounded-xl bg-ground-alt px-3 py-2.5 text-[12px] leading-relaxed text-ink-70">
-          Rules below apply to destinations that aren&apos;t managed yet.
-          Already-managed playlists keep their own schedule.
-        </div>
-      )}
     </div>
   );
 
@@ -618,6 +659,73 @@ export function SubscribeSheet({
     </div>
   );
 
+  // Shown instead of the editable rules when every selected destination is
+  // already managed — its rules live on its own settings page.
+  const managedSummary = (
+    <div className="flex flex-col gap-3">
+      <p className="text-[12.5px] leading-relaxed text-ink-70">
+        {existingManaged.length === 1
+          ? "This playlist is already managed. Adding this source uses its existing rules — tweak them in its settings."
+          : "These playlists are already managed. Adding this source uses each one's existing rules."}
+      </p>
+      {existingManaged.map(({ playlist, managed }) => (
+        <div key={playlist.id} className="rounded-xl border border-line p-3">
+          <div className="flex items-center gap-2">
+            {playlist.imageUrl ? (
+              <img
+                src={playlist.imageUrl}
+                alt=""
+                className="h-8 w-8 shrink-0 rounded-md object-cover"
+              />
+            ) : (
+              <span className="art-placeholder h-8 w-8 shrink-0 rounded-md" />
+            )}
+            <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-ink">
+              {playlist.name}
+            </span>
+            <Link
+              href={`/library/${managed!.id}/settings`}
+              className="shrink-0 text-[12px] font-medium text-brand-deep hover:text-brand"
+            >
+              Change in settings
+            </Link>
+          </div>
+          <div className="mt-1.5 font-mono text-[11.5px] text-ink-50">
+            {managed!.syncInterval.toLowerCase()} ·{" "}
+            {managed!.syncQuantityPerSource} per source ·{" "}
+            {managed!.syncMode.toLowerCase()}
+          </div>
+        </div>
+      ))}
+      <div className="flex items-center justify-between border-t border-line pt-3">
+        <span className="text-[13px] text-ink">Pull from this source now</span>
+        <Toggle
+          on={runImmediateSync}
+          onChange={setRunImmediateSync}
+          label="Pull from this source now"
+        />
+      </div>
+    </div>
+  );
+
+  const rulesArea = rulesApply ? (
+    <div className="flex flex-col gap-4">
+      {existingManaged.length > 0 && (
+        <div className="rounded-xl bg-ground-alt px-3 py-2.5 text-[12px] leading-relaxed text-ink-70">
+          These rules set up the{" "}
+          {adoptingRulesCount === 1
+            ? "new managed playlist"
+            : `${adoptingRulesCount} new managed playlists`}
+          . Playlists that are already managed keep their own — change those in
+          their settings.
+        </div>
+      )}
+      {rulesForm}
+    </div>
+  ) : (
+    managedSummary
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-ink/40">
       <button
@@ -706,13 +814,13 @@ export function SubscribeSheet({
                 {destinationList}
               </div>
               <div className="overflow-y-auto p-5 min-[720px]:flex-1">
-                {rulesForm}
+                {rulesArea}
               </div>
             </>
           ) : (
             <div className="flex h-full flex-col gap-5 overflow-y-auto p-5">
               {destinationList}
-              {rulesForm}
+              {rulesArea}
             </div>
           )}
         </div>
