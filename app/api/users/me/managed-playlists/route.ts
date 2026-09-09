@@ -125,6 +125,10 @@ export async function GET(request: Request) {
 
     // Attach the per-run sync log so Library rows / the detail page can show
     // real status, and per-source contribution over the last 30 days.
+    //
+    // Wrapped on its own: before the sync_runs migration is applied these
+    // queries throw, and a missing log must not take down the Library.
+    try {
     const playlistIds = subscriptions.map((p) => p.id);
     if (playlistIds.length) {
       const [latestRuns, contribRuns] = await Promise.all([
@@ -176,6 +180,9 @@ export async function GET(request: Request) {
         (p as any).contributions =
           contributionsByPlaylist.get(p.id) ?? {};
       });
+    }
+    } catch (runErr) {
+      console.warn("sync-run enrichment skipped:", runErr);
     }
 
     return NextResponse.json(subscriptions);
