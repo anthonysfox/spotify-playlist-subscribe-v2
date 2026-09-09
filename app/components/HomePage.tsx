@@ -297,23 +297,6 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* ---- Services strip ---- */}
-      <section id="services" className="scroll-mt-20 bg-ground">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-2 px-5 py-10 text-[13px] text-ink-50 sm:px-10">
-          <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-ink-35">
-            Available today on
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Dot className="bg-spotify" />
-            Spotify
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Dot className="bg-apple" />
-            Apple Music
-          </span>
-        </div>
-      </section>
-
       {/* ---- Footer ---- */}
       <footer className="border-t border-line bg-ground">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-8 text-[12.5px] text-ink-35 sm:flex-row sm:px-10">
