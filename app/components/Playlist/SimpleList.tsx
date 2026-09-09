@@ -316,6 +316,14 @@ export const SimplePlaylistList = ({
         playlist={selectedPlaylistForModal}
         tracks={previewTracks}
         loading={loadingTracks !== null}
+        onSubscribe={
+          selectedPlaylistForModal
+            ? () => {
+                onSubscribe([selectedPlaylistForModal]);
+                handleTrackModalClose();
+              }
+            : undefined
+        }
       />
     </div>
   );

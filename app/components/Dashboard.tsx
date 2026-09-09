@@ -27,12 +27,12 @@ const Dashboard = () => {
   const hasNone = connections !== null && connected.length === 0;
 
   return (
-    <div className="flex h-full min-h-0 flex-col px-4 py-5 min-[900px]:px-6 min-[900px]:py-6">
+    <div className="flex w-full h-full min-h-0 flex-col px-4 py-5 min-[900px]:px-6 min-[900px]:py-6">
       {/* Mounted here (not inside the grid) so it persists while the sheet
           opens and closes. */}
       <SearchAssistant />
 
-      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-5 w-full flex flex-wrap items-end justify-between gap-3">
         <h1 className="font-display text-[30px] font-semibold leading-tight tracking-[-0.025em] text-ink">
           Find a playlist worth subscribing to.
         </h1>

@@ -4,7 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { Compass, Library, Activity, PlugZap, AppleIcon, Coins } from "lucide-react";
+import {
+  Compass,
+  Library,
+  Activity,
+  PlugZap,
+  AppleIcon,
+  Coins,
+} from "lucide-react";
 import {
   useMusicStore,
   connectedProviders,
@@ -33,7 +40,12 @@ const NAV: {
 }[] = [
   { href: "/", label: "Discover", shortLabel: "Discover", icon: Compass },
   { href: "/library", label: "Library", shortLabel: "Library", icon: Library },
-  { href: "/activity", label: "Activity", shortLabel: "Activity", icon: Activity },
+  {
+    href: "/activity",
+    label: "Activity",
+    shortLabel: "Activity",
+    icon: Activity,
+  },
   {
     href: "/settings/connections",
     label: "Connections",
@@ -58,7 +70,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const connected = connectedProviders(connections);
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-ground min-[900px]:flex-row">
+    <div className="flex h-full w-full min-h-0 flex-col bg-ground min-[900px]:flex-row">
       {/* ---- Left rail (desktop) ---- */}
       <aside className="hidden w-[216px] shrink-0 flex-col border-r border-line bg-surface px-3 py-5 min-[900px]:flex">
         <Link href="/" className="mb-6 flex items-center gap-2.5 px-2">
@@ -147,7 +159,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ---- Content ---- */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+        {children}
+      </div>
 
       {/* ---- Bottom tab bar (mobile) ---- */}
       <nav className="flex shrink-0 items-stretch border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] min-[900px]:hidden">
