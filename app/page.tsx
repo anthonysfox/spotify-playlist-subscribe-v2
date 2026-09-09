@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import Dashboard from "./components/Dashboard";
 import { HomePage } from "./components/HomePage";
 import { AppFrame } from "./components/Navigation/AppFrame";
@@ -6,15 +6,14 @@ import { AppFrame } from "./components/Navigation/AppFrame";
 /**
  * Server Component: auth branch point.
  *
- * Signed-out visitors get the marketing landing, which flows like a normal
- * website. Signed-in users get the Discover screen inside the app shell
- * (AppFrame resolves auth again — cheap, Clerk memoizes it per request — and
- * pre-fetches the rail's data).
+ * Only needs "is anyone signed in" here — `auth()` is a session-cookie check,
+ * no Clerk Backend API call. `AppFrame` does the one `currentUser()` fetch when
+ * it needs the full user object.
  */
 export default async function Home() {
-  const user = await currentUser();
+  const { userId } = await auth();
 
-  if (!user) {
+  if (!userId) {
     return <HomePage />;
   }
 

@@ -199,14 +199,19 @@ export const Subscriptions = () => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    async function fetchSubscriptions() {
-      setIsLoading(true);
-      const res = await fetch(`/api/users/me/managed-playlists`);
-      const data = await res.json();
-      setManagedPlaylists([...data]);
-      setIsLoading(false);
-    }
-    fetchSubscriptions();
+    // AppFrame already seeded the store server-side. Only show the skeleton
+    // when there's genuinely nothing (a hard load with a cold store); otherwise
+    // revalidate quietly in the background so the list never flashes empty.
+    const cold = managedPlaylists.length === 0;
+    if (cold) setIsLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(`/api/users/me/managed-playlists`);
+        if (res.ok) setManagedPlaylists(await res.json());
+      } finally {
+        if (cold) setIsLoading(false);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
