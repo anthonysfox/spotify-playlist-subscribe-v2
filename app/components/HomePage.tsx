@@ -318,23 +318,12 @@ export const HomePage = () => {
       <footer className="border-t border-line bg-ground">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-8 text-[12.5px] text-ink-35 sm:flex-row sm:px-10">
           <span>PlaylistFox — playlists that keep up with themselves.</span>
-          <div className="flex items-center gap-5">
-            <a href="#" className="transition-colors hover:text-ink-50">
-              Privacy
-            </a>
-            <a href="#" className="transition-colors hover:text-ink-50">
-              Terms
-            </a>
-            <a href="#" className="transition-colors hover:text-ink-50">
-              Status
-            </a>
-            <a
-              href="mailto:anthonysfox1@gmail.com"
-              className="transition-colors hover:text-ink-50"
-            >
-              Contact
-            </a>
-          </div>
+          <a
+            href="mailto:anthonysfox1@gmail.com"
+            className="transition-colors hover:text-ink-50"
+          >
+            Contact
+          </a>
         </div>
       </footer>
     </div>
