@@ -176,7 +176,7 @@ function PlaylistPreviewCard({
   };
 
   return (
-    <div className="w-28 shrink-0 [perspective:800px]">
+    <div className="w-[132px] shrink-0 [perspective:800px]">
       <div
         className="relative aspect-square w-full transition-transform duration-500 ease-out"
         style={{
@@ -189,7 +189,7 @@ function PlaylistPreviewCard({
           type="button"
           onClick={flipToBack}
           style={{ backfaceVisibility: "hidden" }}
-          className="absolute inset-0 overflow-hidden rounded-lg border border-gray-200 text-left"
+          className="absolute inset-0 overflow-hidden rounded-lg border border-line text-left"
           aria-label={`Preview ${playlist.name}`}
         >
           {playlist.imageUrl ? (
@@ -199,8 +199,8 @@ function PlaylistPreviewCard({
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gray-100">
-              <Music2 className="h-6 w-6 text-gray-400" />
+            <div className="flex h-full w-full items-center justify-center bg-ground-alt">
+              <Music2 className="h-6 w-6 text-ink-35" />
             </div>
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-1.5 pb-1 pt-4">
@@ -219,26 +219,26 @@ function PlaylistPreviewCard({
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
           }}
-          className="absolute inset-0 flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white p-1"
+          className="absolute inset-0 flex flex-col overflow-hidden rounded-lg border border-line bg-white p-1"
         >
           <div className="flex items-center justify-between px-0.5 pb-0.5">
-            <span className="text-[9px] font-medium text-gray-400">
+            <span className="text-[9px] font-medium text-ink-35">
               Preview
             </span>
             <button
               type="button"
               onClick={flipToFront}
-              className="text-gray-400 hover:text-[#CC5500]"
+              className="text-ink-35 hover:text-brand"
               aria-label="Back to results"
             >
               <ChevronLeft className="h-3 w-3" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto text-[10px] text-gray-600">
-            {loading && <span className="text-gray-400">Loading…</span>}
-            {error && <span className="text-red-500">{error}</span>}
+          <div className="flex-1 overflow-y-auto text-[10px] text-ink-70">
+            {loading && <span className="text-ink-35">Loading…</span>}
+            {error && <span className="text-warn-text">{error}</span>}
             {tracks && tracks.length === 0 && (
-              <span className="text-gray-400">No tracks found</span>
+              <span className="text-ink-35">No tracks found</span>
             )}
             {tracks && tracks.length > 0 && (
               <ul className="space-y-0.5">
@@ -250,14 +250,14 @@ function PlaylistPreviewCard({
                       <button
                         type="button"
                         onClick={() => onTogglePlay(track)}
-                        className="flex w-full items-center gap-1 rounded text-left hover:text-[#CC5500]"
+                        className="flex w-full items-center gap-1 rounded text-left hover:text-brand"
                       >
                         {isLoading ? (
-                          <Loader2 className="h-2.5 w-2.5 shrink-0 animate-spin text-[#CC5500]" />
+                          <Loader2 className="h-2.5 w-2.5 shrink-0 animate-spin text-brand" />
                         ) : isPlaying ? (
-                          <Pause className="h-2.5 w-2.5 shrink-0 text-[#CC5500]" />
+                          <Pause className="h-2.5 w-2.5 shrink-0 text-brand" />
                         ) : (
-                          <Play className="h-2.5 w-2.5 shrink-0 text-gray-400" />
+                          <Play className="h-2.5 w-2.5 shrink-0 text-ink-35" />
                         )}
                         <span className="truncate">{track.name}</span>
                       </button>

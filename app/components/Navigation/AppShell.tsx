@@ -14,6 +14,7 @@ import {
 import { useUserStore } from "store/useUserStore";
 import type { MusicProvider } from "@/lib/music/types";
 import { ACTIVITY_SEEN_KEY } from "../ActivityFeed";
+import { SearchAssistant } from "../SearchAssistant";
 
 /**
  * Signed-in chrome for the redesign (artboards 1a / 5c).
@@ -169,6 +170,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         {children}
       </div>
+
+      {/* Reachable from every signed-in screen (portals to body). */}
+      <SearchAssistant />
 
       {/* ---- Bottom tab bar (mobile) ---- */}
       <nav className="flex shrink-0 items-stretch border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] min-[900px]:hidden">
