@@ -5,14 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import {
-  Compass,
-  Library,
-  Activity,
-  PlugZap,
-  AppleIcon,
-  Coins,
-} from "lucide-react";
+import { Compass, Library, Activity, PlugZap } from "lucide-react";
 import {
   useMusicStore,
   connectedProviders,
@@ -21,8 +14,6 @@ import {
 import { useUserStore } from "store/useUserStore";
 import type { MusicProvider } from "@/lib/music/types";
 import { ACTIVITY_SEEN_KEY } from "../ActivityFeed";
-import { AppleMusicConnect } from "../AppleMusicConnect";
-import { McpTokens } from "../McpTokens";
 
 /**
  * Signed-in chrome for the redesign (artboards 1a / 5c).
@@ -164,24 +155,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
 
           <div className="flex items-center gap-2 px-2">
+            {/* Apple Music + MCP tokens moved to /settings/connections, so the
+                account menu is just Clerk's own pages now. */}
             <UserButton
               appearance={{ elements: { userButtonAvatarBox: "h-7 w-7" } }}
-            >
-              <UserButton.UserProfilePage
-                label="Connect Apple Music"
-                url="profile"
-                labelIcon={<AppleIcon className="h-4 w-4 text-ink" />}
-              >
-                <AppleMusicConnect />
-              </UserButton.UserProfilePage>
-              <UserButton.UserProfilePage
-                label="MCP Tokens"
-                url="mcp"
-                labelIcon={<Coins className="h-4 w-4 text-ink" />}
-              >
-                <McpTokens />
-              </UserButton.UserProfilePage>
-            </UserButton>
+            />
             <span className="truncate text-[12.5px] text-ink-50">Account</span>
           </div>
         </div>

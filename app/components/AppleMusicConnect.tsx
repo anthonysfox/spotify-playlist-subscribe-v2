@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import toast from "react-hot-toast";
+import { formatRelativeTime } from "utils/formatRelativeTime";
 
 const MUSICKIT_SRC = "https://js-cdn.music.apple.com/musickit/v3/musickit.js";
 
@@ -93,9 +94,6 @@ export const AppleMusicConnect = () => {
     });
 
     if (!response.ok) {
-      // Pass the server's reason through. A bare "Failed to save Apple Music
-      // token" says nothing, and the actual cause (a user row that didn't exist
-      // yet) was invisible from the browser.
       const body = await response.json().catch(() => null);
 
       throw new Error(
@@ -137,10 +135,7 @@ export const AppleMusicConnect = () => {
     try {
       const music = await getMusicKit(status.developerToken);
 
-      // Opens Apple's sign-in prompt and returns the Music User Token.
       const userToken = await music.authorize();
-
-      // MusicKit can resolve without a token if the user backs out of the sheet.
       if (!userToken) throw new Error("AUTHORIZATION_CANCELLED");
 
       await storeUserToken(userToken);
@@ -148,10 +143,6 @@ export const AppleMusicConnect = () => {
 
       toast.success("Apple Music connected");
     } catch (error: any) {
-      // Apple Music tokens are only issued to active subscribers. A non-subscriber
-      // gets shown a "Try now / Not right now" upsell instead, and declining it
-      // surfaces here as a bare "unauthorized" — which tells the user nothing about
-      // what actually went wrong or how to fix it.
       const raw = String(error?.message ?? error ?? "");
       const cancelled = /cancel|unauthorized|denied/i.test(raw);
 
@@ -171,8 +162,6 @@ export const AppleMusicConnect = () => {
     setBusy(true);
 
     try {
-      // Revoke on Apple's side too, not just in our database — otherwise the
-      // browser stays authorised and "connect" would silently reuse it.
       try {
         const music = await getMusicKit(status.developerToken);
         if (music.isAuthorized) await music.unauthorize();
@@ -193,6 +182,10 @@ export const AppleMusicConnect = () => {
 
   if (unavailable) return null;
 
+  const connected = Boolean(status?.connected);
+  const needsRefresh = Boolean(status?.needsRefresh);
+  const since = status?.issuedAt ? formatRelativeTime(status.issuedAt) : null;
+
   return (
     <>
       <Script
@@ -202,38 +195,60 @@ export const AppleMusicConnect = () => {
         onError={() => setUnavailable(true)}
       />
 
-      <div className="flex items-center justify-between gap-4 p-4 bg-white rounded-lg border border-gray-200">
-        <div>
-          <h3 className="font-medium text-gray-800">Apple Music</h3>
-          <p className="text-sm text-gray-500">
-            {status?.connected
-              ? "Connected — PlaylistFox can sync your Apple Music playlists."
-              : // Say it up front. Apple only issues a user token to an active
-                // subscriber, and a non-subscriber otherwise discovers this via a
-                // "Try now / Not right now" upsell followed by a bare
-                // "unauthorized" — with no hint that a subscription is the issue.
-                "Connect to sync playlists in Apple Music. Requires an active Apple Music subscription."}
-          </p>
-        </div>
+      <div className="rounded-2xl border border-line bg-surface p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-apple" />
+              <span className="font-display text-[15px] font-semibold text-ink">
+                Apple Music
+              </span>
+              <span
+                className={`text-[11.5px] font-medium ${
+                  needsRefresh
+                    ? "text-warn-text"
+                    : connected
+                      ? "text-ok-text"
+                      : "text-ink-50"
+                }`}
+              >
+                {needsRefresh
+                  ? "Reconnect needed"
+                  : connected
+                    ? "Connected"
+                    : "Not connected"}
+              </span>
+            </div>
+            <p className="mt-1 max-w-[52ch] text-[12.5px] leading-relaxed text-ink-50">
+              {connected
+                ? `Lets PlaylistFox read and update your Apple Music playlists.${
+                    since ? ` Connected ${since}.` : ""
+                  }`
+                : "Connect to sync playlists in Apple Music. Needs an active Apple Music subscription."}
+            </p>
+          </div>
 
-        <button
-          type="button"
-          onClick={status?.connected ? disconnect : connect}
-          disabled={busy || !scriptReady || !status}
-          className={`px-4 py-2 text-sm rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-            status?.connected
-              ? "text-gray-600 border border-gray-300 hover:bg-gray-50"
-              : "bg-[#CC5500] text-white hover:bg-[#B04A00]"
-          }`}
-        >
-          {busy
-            ? "Working…"
-            : !scriptReady
-              ? "Loading…"
-              : status?.connected
-                ? "Disconnect"
-                : "Connect Apple Music"}
-        </button>
+          <button
+            type="button"
+            onClick={connected && !needsRefresh ? disconnect : connect}
+            disabled={busy || !scriptReady || !status}
+            className={`shrink-0 rounded-full px-4 py-2 text-[12.5px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              connected && !needsRefresh
+                ? "border border-line-strong text-ink-70 hover:border-brand/40 hover:text-brand"
+                : "bg-brand text-surface hover:bg-brand-deep"
+            }`}
+          >
+            {busy
+              ? "Working…"
+              : !scriptReady
+                ? "Loading…"
+                : needsRefresh
+                  ? "Reconnect"
+                  : connected
+                    ? "Disconnect"
+                    : "Connect"}
+          </button>
+        </div>
       </div>
     </>
   );

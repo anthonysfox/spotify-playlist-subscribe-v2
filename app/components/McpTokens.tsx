@@ -84,13 +84,15 @@ export const McpTokens = () => {
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg border border-gray-200">
+    <div className="rounded-2xl border border-line bg-surface p-4">
       <div className="mb-3">
-        <h3 className="font-medium text-gray-800">MCP access tokens</h3>
-        <p className="text-sm text-gray-500">
-          Connect PlaylistFox to an MCP client like Claude Desktop. Paste a
-          token as a{" "}
-          <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
+        <h3 className="font-display text-[15px] font-semibold text-ink">
+          MCP access tokens
+        </h3>
+        <p className="mt-1 max-w-[60ch] text-[12.5px] leading-relaxed text-ink-50">
+          Connect PlaylistFox to an MCP client like Claude Desktop. Paste a token
+          as an{" "}
+          <code className="rounded bg-ground-alt px-1 py-0.5 font-mono text-[11px]">
             Authorization: Bearer
           </code>{" "}
           header. Tokens act as you and can be revoked anytime.
@@ -99,25 +101,25 @@ export const McpTokens = () => {
 
       {/* Freshly created token — the one and only time it's shown */}
       {freshToken && (
-        <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 p-3">
-          <p className="mb-2 text-xs font-medium text-[#CC5500]">
+        <div className="mb-4 rounded-xl border border-brand/25 bg-brand-tint p-3">
+          <p className="mb-2 text-[11.5px] font-medium text-brand-deep">
             Copy this now — you won&apos;t be able to see it again.
           </p>
           <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 truncate rounded bg-white px-2 py-1.5 font-mono text-xs text-gray-800 ring-1 ring-gray-200">
+            <code className="min-w-0 flex-1 truncate rounded-md bg-surface px-2 py-1.5 font-mono text-[11px] text-ink ring-1 ring-line-strong">
               {freshToken}
             </code>
             <button
               type="button"
               onClick={() => copy(freshToken)}
-              className="shrink-0 rounded bg-[#CC5500] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#B04A00]"
+              className="shrink-0 rounded-full bg-brand px-3 py-1.5 text-[11.5px] font-medium text-surface hover:bg-brand-deep"
             >
               Copy
             </button>
             <button
               type="button"
               onClick={() => setFreshToken(null)}
-              className="shrink-0 rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+              className="shrink-0 rounded-full border border-line-strong px-3 py-1.5 text-[11.5px] text-ink-70 hover:border-line"
             >
               Done
             </button>
@@ -132,13 +134,13 @@ export const McpTokens = () => {
           onChange={(e) => setName(e.target.value)}
           placeholder="Token name (optional), e.g. Claude Desktop"
           maxLength={120}
-          className="min-w-0 flex-1 rounded border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-[#CC5500] focus:outline-hidden focus:ring-2 focus:ring-[#CC5500]"
+          className="min-w-0 flex-1 rounded-full border border-line-strong bg-surface px-3.5 py-2 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
         />
         <button
           type="button"
           onClick={createToken}
           disabled={busy}
-          className="shrink-0 rounded bg-[#CC5500] px-4 py-2 text-sm text-white hover:bg-[#B04A00] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="shrink-0 rounded-full bg-brand px-4 py-2 text-[12.5px] font-medium text-surface hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50"
         >
           Generate
         </button>
@@ -146,26 +148,26 @@ export const McpTokens = () => {
 
       {/* List */}
       {tokens.length === 0 ? (
-        <p className="text-sm text-gray-400">No tokens yet.</p>
+        <p className="text-[12.5px] text-ink-35">No tokens yet.</p>
       ) : (
-        <ul className="divide-y divide-gray-100">
+        <ul className="flex flex-col">
           {tokens.map((t) => (
             <li
               key={t.id}
-              className="flex items-center justify-between gap-3 py-2.5"
+              className="flex items-center justify-between gap-3 border-b border-line py-2.5 last:border-b-0"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm text-gray-800">
+                  <span className="font-mono text-[12.5px] text-ink">
                     {t.prefix}…
                   </span>
                   {t.name && (
-                    <span className="truncate text-sm text-gray-500">
+                    <span className="truncate text-[12.5px] text-ink-50">
                       {t.name}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-400">
+                <p className="text-[11px] text-ink-35">
                   Created {formatDate(t.createdAt)}
                   {t.lastUsedAt
                     ? ` · Last used ${formatDate(t.lastUsedAt)}`
@@ -176,7 +178,7 @@ export const McpTokens = () => {
                 type="button"
                 onClick={() => revoke(t.id)}
                 disabled={busy}
-                className="shrink-0 rounded border border-gray-300 px-3 py-1.5 text-xs text-gray-600 hover:border-red-300 hover:text-red-600 disabled:opacity-60"
+                className="shrink-0 rounded-full border border-line-strong px-3 py-1.5 text-[11.5px] font-medium text-ink-70 transition-colors hover:border-warn/40 hover:text-warn-text disabled:opacity-50"
               >
                 Revoke
               </button>
