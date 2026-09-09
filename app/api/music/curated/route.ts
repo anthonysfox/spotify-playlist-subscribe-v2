@@ -13,8 +13,13 @@ import { curatedCategoryTerms } from "constants/categories";
 // "chart toppers" returns one workout playlist — so the terms that DO land have
 // to carry the grid. Over-fetching per term and then capping fills it out on
 // Apple without changing what Spotify shows.
-const TARGET_COUNT = 24;
-const PER_TERM_LIMIT = 12;
+// One response page. The full ordered pool below is deterministic per
+// (provider, category), so paging is a stable slice of it.
+const PAGE_SIZE = 24;
+// How deep the pool goes — a few pages' worth. Bounded by the category's
+// term list (~5 terms), so this is a ceiling, not a promise.
+const MAX_POOL = 96;
+const PER_TERM_LIMIT = 24;
 
 /**
  * Browse playlists by category, on either service.
@@ -37,6 +42,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const provider = (searchParams.get("provider") ?? "SPOTIFY") as MusicProvider;
   const category = searchParams.get("category") ?? "popular";
+  const offset = Math.max(0, Number(searchParams.get("offset") ?? 0) || 0);
 
   const terms = curatedCategoryTerms[category] ?? curatedCategoryTerms.popular;
 
@@ -62,9 +68,9 @@ export async function GET(request: NextRequest) {
     // Round-robin keeps the category varied.
     const byTerm = results.map((r) => (r.status === "fulfilled" ? r.value : []));
     const seen = new Set<string>();
-    const playlists: PlaylistSummary[] = [];
+    const pool: PlaylistSummary[] = [];
 
-    for (let i = 0; playlists.length < TARGET_COUNT; i++) {
+    for (let i = 0; pool.length < MAX_POOL; i++) {
       let addedThisRound = false;
 
       for (const termResults of byTerm) {
@@ -77,16 +83,30 @@ export async function GET(request: NextRequest) {
         if (seen.has(playlist.id)) continue;
 
         seen.add(playlist.id);
-        playlists.push(playlist);
+        pool.push(playlist);
 
-        if (playlists.length >= TARGET_COUNT) break;
+        if (pool.length >= MAX_POOL) break;
       }
 
       // Every term is exhausted.
       if (!addedThisRound) break;
     }
 
-    return NextResponse.json({ provider, category, playlists });
+    const playlists = pool.slice(offset, offset + PAGE_SIZE);
+    const hasMore = offset + PAGE_SIZE < pool.length;
+
+    return NextResponse.json(
+      { provider, category, playlists, hasMore },
+      {
+        // The result only depends on provider + category, and curated grids
+        // change slowly — let the browser reuse it across category toggles and
+        // back-navigation instead of re-running a dozen Spotify searches.
+        headers: {
+          "Cache-Control":
+            "private, max-age=300, stale-while-revalidate=1800",
+        },
+      },
+    );
   } catch (error: any) {
     console.error(`Curated browse failed on ${provider}:`, error.message);
 

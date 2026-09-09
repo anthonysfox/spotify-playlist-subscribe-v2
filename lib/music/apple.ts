@@ -299,11 +299,12 @@ class AppleMusicClient implements MusicClient {
   async searchPlaylists(
     query: string,
     limit = 20,
+    offset = 0,
   ): Promise<PlaylistSummary[]> {
     const storefront = await this.getStorefront();
 
     const response = await this.request(
-      `/v1/catalog/${storefront}/search?term=${encodeURIComponent(query)}&types=playlists&limit=${limit}`,
+      `/v1/catalog/${storefront}/search?term=${encodeURIComponent(query)}&types=playlists&limit=${limit}&offset=${offset}`,
     );
 
     if (!response.ok) return [];

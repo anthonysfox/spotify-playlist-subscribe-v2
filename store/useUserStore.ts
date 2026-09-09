@@ -12,6 +12,23 @@ import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
 import toast from "react-hot-toast";
 
+/** A source removal that is shown as gone in the UI but has an ~8s window
+ *  before the DELETE actually commits, so it can be undone with no server
+ *  round trip. Keyed by `${managedPlaylistId}:${sourcePlaylistId}`. */
+export type PendingSourceRemoval = {
+  managedPlaylistId: string;
+  sourcePlaylistId: string;
+  sourceName: string;
+  timeoutId: ReturnType<typeof setTimeout>;
+};
+
+export const UNDO_WINDOW_MS = 8000;
+
+export const pendingRemovalKey = (
+  managedPlaylistId: string,
+  sourcePlaylistId: string
+) => `${managedPlaylistId}:${sourcePlaylistId}`;
+
 export type UserStoreState = {
   userPlaylists: PlaylistSummary[];
   managedPlaylists: ManagedPlaylistWithSubscriptions[];
@@ -19,6 +36,7 @@ export type UserStoreState = {
   isLoading: boolean;
   loadedAllPlaylists: boolean;
   offset: number;
+  pendingSourceRemovals: Record<string, PendingSourceRemoval>;
 };
 
 export type UserStoreActions = {
@@ -46,6 +64,15 @@ export type UserStoreActions = {
     sourcePlaylistId: string,
     managedPlaylistId: string
   ) => Promise<void>;
+  /** Optimistically remove a source with an undo window. The row disappears
+   *  immediately; the DELETE only fires after UNDO_WINDOW_MS unless undone. */
+  removeSourceWithUndo: (
+    managedPlaylistId: string,
+    sourcePlaylistId: string,
+    sourceName: string
+  ) => void;
+  /** Cancel a pending removal (key from `pendingRemovalKey`). */
+  undoSourceRemoval: (key: string) => void;
 };
 
 export type UserStore = UserStoreState & UserStoreActions;
@@ -60,6 +87,7 @@ export const useUserStore = create<UserStore>()(
         isLoading: false,
         loadedAllPlaylists: false,
         offset: 0,
+        pendingSourceRemovals: {},
         setOffset: (offset) => set({ offset }),
         setLoading: (loading) => set({ isLoading: loading }),
         setLoadedAllPlaylists: (loaded) => set({ loadedAllPlaylists: loaded }),
@@ -167,6 +195,65 @@ export const useUserStore = create<UserStore>()(
             toast.error(error.message || "Failed to unsubscribe");
             throw error;
           }
+        },
+        removeSourceWithUndo: (
+          managedPlaylistId,
+          sourcePlaylistId,
+          sourceName
+        ) => {
+          const key = pendingRemovalKey(managedPlaylistId, sourcePlaylistId);
+          // Already pending — ignore the repeat click.
+          if (get().pendingSourceRemovals[key]) return;
+
+          const commit = async () => {
+            try {
+              const response = await fetch(
+                `/api/users/me/managed-playlists/${managedPlaylistId}/subscriptions/${sourcePlaylistId}`,
+                { method: "DELETE" }
+              );
+              const { success, data } = await response.json();
+              if (!success) {
+                throw new Error(data?.error || "Failed to unsubscribe");
+              }
+              get().removeSubscriptionFromManagedPlaylist(
+                data.managedPlaylistId,
+                data.subscriptionId
+              );
+            } catch (error: any) {
+              console.error("Error unsubscribing:", error?.message || error);
+              toast.error(error?.message || "Failed to remove source");
+            } finally {
+              set((state) => {
+                const next = { ...state.pendingSourceRemovals };
+                delete next[key];
+                return { pendingSourceRemovals: next };
+              });
+            }
+          };
+
+          const timeoutId = setTimeout(commit, UNDO_WINDOW_MS);
+
+          set((state) => ({
+            pendingSourceRemovals: {
+              ...state.pendingSourceRemovals,
+              [key]: {
+                managedPlaylistId,
+                sourcePlaylistId,
+                sourceName,
+                timeoutId,
+              },
+            },
+          }));
+        },
+        undoSourceRemoval: (key) => {
+          const pending = get().pendingSourceRemovals[key];
+          if (!pending) return;
+          clearTimeout(pending.timeoutId);
+          set((state) => {
+            const next = { ...state.pendingSourceRemovals };
+            delete next[key];
+            return { pendingSourceRemovals: next };
+          });
         },
       }),
       {

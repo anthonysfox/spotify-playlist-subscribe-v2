@@ -35,12 +35,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
-      tracks: await client.getPlaylistTracks(
-        playlistId,
-        Number.isFinite(limit) ? limit : undefined,
-      ),
-    });
+    return NextResponse.json(
+      {
+        tracks: await client.getPlaylistTracks(
+          playlistId,
+          Number.isFinite(limit) ? limit : undefined,
+        ),
+      },
+      {
+        // A playlist's track list changes slowly; the preview drawer and the
+        // assistant flip-tiles re-request the same ones a lot.
+        headers: {
+          "Cache-Control":
+            "private, max-age=300, stale-while-revalidate=1800",
+        },
+      },
+    );
   } catch (error: any) {
     console.error(`Failed to read tracks on ${provider}:`, error.message);
 
