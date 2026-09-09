@@ -414,9 +414,30 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
           )}
 
           {!loading && !playlists.length && !error && (
-            <p className="py-12 text-center text-[13px] text-ink-50">
-              No playlists found
-            </p>
+            <div className="mx-auto my-10 max-w-md rounded-2xl border border-dashed border-line-strong p-8 text-center">
+              {searchText ? (
+                <>
+                  <p className="text-[13.5px] text-ink-70">
+                    Nothing came back for{" "}
+                    <span className="font-medium text-ink">
+                      &ldquo;{searchText}&rdquo;
+                    </span>
+                    .
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openAssistantWithMessage(searchText)}
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand-tint px-4 py-2 text-[13px] font-medium text-brand-deep transition-colors hover:bg-brand-tint-soft"
+                  >
+                    Ask the fox instead
+                  </button>
+                </>
+              ) : (
+                <p className="text-[13.5px] text-ink-50">
+                  No playlists in this category right now.
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
