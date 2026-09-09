@@ -46,20 +46,70 @@ function CoverArt({
   return <div className={`${className} art-placeholder`} aria-label={alt} />;
 }
 
+const SKIP_HINT: Record<string, string> = {
+  PROVIDER_NOT_CONNECTED: "Reconnect your music service",
+  REPLACE_UNSUPPORTED: "Replace mode isn't supported here",
+  NO_SUBSCRIPTIONS: "No sources yet",
+};
+
 /**
- * Sync status for one managed playlist (README "Library" > status block).
- *
- * Only the "ok" and "never" states are derivable from data the app persists
- * today. "running" and "failed" need per-run results from the sync engine —
- * they render here but are unreachable until that backend pass lands.
+ * Sync status for one managed playlist (README "Library" > status block), from
+ * the per-run log (`playlist.lastRun`) with the old `lastSyncCompletedAt` as a
+ * fallback for playlists that ran before the log existed.
  */
-function deriveStatus(playlist: ManagedPlaylistWithSubscriptions): {
-  tone: "ok" | "none";
+export function deriveStatus(playlist: ManagedPlaylistWithSubscriptions): {
+  tone: "ok" | "warn" | "running" | "none";
   dot: string;
+  pulse?: boolean;
   label: string;
   detail: string;
 } {
   const nextIn = formatRelativeTime(playlist.nextSyncTime);
+  const run = playlist.lastRun;
+  const nSources = playlist.subscriptions.length;
+
+  if (run?.status === "running") {
+    return {
+      tone: "running",
+      dot: "bg-brand",
+      pulse: true,
+      label: "Syncing now…",
+      detail: `Pulling from ${nSources} source${nSources === 1 ? "" : "s"}`,
+    };
+  }
+  if (run?.status === "failed" || run?.status === "stale") {
+    return {
+      tone: "warn",
+      dot: "bg-warn",
+      label: "Last run failed",
+      detail: run.errorMessage
+        ? run.errorMessage.slice(0, 64)
+        : "check the run log",
+    };
+  }
+  if (run?.status === "skipped") {
+    return {
+      tone: "warn",
+      dot: "bg-warn",
+      label: "Last run skipped",
+      detail: SKIP_HINT[run.skipReason ?? ""] ?? "skipped",
+    };
+  }
+  if (run?.status === "success") {
+    const ago = formatRelativeTime(run.finishedAt);
+    return {
+      tone: "ok",
+      dot: "bg-ok",
+      label:
+        run.tracksAdded > 0
+          ? `Synced · +${run.tracksAdded} track${run.tracksAdded === 1 ? "" : "s"}`
+          : "Synced · no new tracks",
+      detail: [ago, nextIn ? `next ${nextIn}` : null]
+        .filter(Boolean)
+        .join(" · "),
+    };
+  }
+
   if (playlist.lastSyncCompletedAt) {
     const ago = formatRelativeTime(playlist.lastSyncCompletedAt);
     return {
@@ -79,6 +129,13 @@ function deriveStatus(playlist: ManagedPlaylistWithSubscriptions): {
   };
 }
 
+const TONE_TEXT: Record<string, string> = {
+  ok: "text-ok-text",
+  warn: "text-warn-text",
+  running: "text-ink-70",
+  none: "text-ink-50",
+};
+
 function StatusBlock({
   playlist,
 }: {
@@ -88,11 +145,13 @@ function StatusBlock({
   return (
     <div className="min-w-0 text-right">
       <div
-        className={`flex items-center justify-end gap-1.5 text-[12.5px] font-medium ${
-          s.tone === "ok" ? "text-ok-text" : "text-ink-50"
-        }`}
+        className={`flex items-center justify-end gap-1.5 text-[12.5px] font-medium ${TONE_TEXT[s.tone]}`}
       >
-        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot}`} />
+        <span
+          className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot} ${
+            s.pulse ? "animate-softpulse" : ""
+          }`}
+        />
         {s.label}
       </div>
       {s.detail && (
@@ -442,7 +501,10 @@ export const Subscriptions = () => {
                     <div className="border-t border-line bg-surface-sunk px-3.5 py-3">
                       <div className="mb-2 flex items-center justify-between">
                         <span className="font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
-                          Sources
+                          {playlist.contributions &&
+                          Object.keys(playlist.contributions).length
+                            ? "Sources · contribution last 30 days"
+                            : "Sources"}
                         </span>
                         <Link
                           href="/"
@@ -482,10 +544,21 @@ export const Subscriptions = () => {
                               </div>
                             );
                           }
+                          const contrib =
+                            playlist.contributions?.[sub.sourcePlaylist.id] ??
+                            null;
+                          const maxContrib = playlist.contributions
+                            ? Math.max(
+                                1,
+                                ...Object.values(playlist.contributions),
+                              )
+                            : 1;
                           return (
                             <div
                               key={sub.sourcePlaylist.id}
-                              className="flex items-center gap-3 border-b border-line py-2 last:border-b-0"
+                              className={`flex items-center gap-3 border-b border-line py-2 last:border-b-0 ${
+                                contrib === 0 ? "opacity-60" : ""
+                              }`}
                             >
                               <CoverArt
                                 src={sub.sourcePlaylist.imageUrl}
@@ -495,9 +568,25 @@ export const Subscriptions = () => {
                               <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink-70">
                                 {sub.sourcePlaylist.name}
                               </span>
-                              <span className="shrink-0 font-mono text-[11px] text-ink-35">
-                                {sub.sourcePlaylist.trackCount} trks
-                              </span>
+                              {contrib !== null ? (
+                                <span className="flex w-24 shrink-0 items-center gap-2">
+                                  <span className="h-[5px] flex-1 overflow-hidden rounded-full bg-ground-chip">
+                                    <span
+                                      className="block h-full rounded-full bg-brand"
+                                      style={{
+                                        width: `${(contrib / maxContrib) * 100}%`,
+                                      }}
+                                    />
+                                  </span>
+                                  <span className="font-mono text-[11px] text-ink-35">
+                                    {contrib}
+                                  </span>
+                                </span>
+                              ) : (
+                                <span className="shrink-0 font-mono text-[11px] text-ink-35">
+                                  {sub.sourcePlaylist.trackCount} trks
+                                </span>
+                              )}
                               <button
                                 type="button"
                                 onClick={() =>

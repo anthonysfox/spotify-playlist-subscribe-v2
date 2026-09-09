@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -17,7 +18,9 @@ import {
   connectedProviders,
   PROVIDER_LABELS,
 } from "store/useMusicStore";
+import { useUserStore } from "store/useUserStore";
 import type { MusicProvider } from "@/lib/music/types";
+import { ACTIVITY_SEEN_KEY } from "../ActivityFeed";
 import { AppleMusicConnect } from "../AppleMusicConnect";
 import { McpTokens } from "../McpTokens";
 
@@ -68,6 +71,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const connections = useMusicStore((s) => s.connections);
   const connected = connectedProviders(connections);
+  const managedPlaylists = useUserStore((s) => s.managedPlaylists);
+
+  // Red dot on Activity for a failed run the user hasn't looked at yet.
+  const [activitySeen, setActivitySeen] = useState<string | null>(null);
+  useEffect(() => {
+    const read = () => {
+      try {
+        setActivitySeen(localStorage.getItem(ACTIVITY_SEEN_KEY));
+      } catch {
+        /* ignore */
+      }
+    };
+    read();
+    window.addEventListener("pf:activity-seen", read);
+    return () => window.removeEventListener("pf:activity-seen", read);
+  }, []);
+  const hasUnseenFailure = managedPlaylists.some((p) => {
+    const r = p.lastRun;
+    if (!r || (r.status !== "failed" && r.status !== "stale")) return false;
+    return !activitySeen || new Date(r.startedAt) > new Date(activitySeen);
+  });
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col bg-ground min-[900px]:flex-row">
@@ -102,10 +126,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     : "text-ink-50 hover:bg-ground-alt hover:text-ink-70"
                 }`}
               >
-                <Icon
-                  className={`h-[18px] w-[18px] ${active ? "text-brand" : "text-ink-35"}`}
-                  strokeWidth={active ? 2.25 : 2}
-                />
+                <span className="relative">
+                  <Icon
+                    className={`h-[18px] w-[18px] ${active ? "text-brand" : "text-ink-35"}`}
+                    strokeWidth={active ? 2.25 : 2}
+                  />
+                  {href === "/activity" && hasUnseenFailure && (
+                    <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-warn" />
+                  )}
+                </span>
                 {label}
               </Link>
             );
@@ -176,10 +205,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 active ? "text-brand" : "text-ink-35"
               }`}
             >
-              <Icon
-                className="h-[20px] w-[20px]"
-                strokeWidth={active ? 2.25 : 2}
-              />
+              <span className="relative">
+                <Icon
+                  className="h-[20px] w-[20px]"
+                  strokeWidth={active ? 2.25 : 2}
+                />
+                {href === "/activity" && hasUnseenFailure && (
+                  <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-warn" />
+                )}
+              </span>
               {shortLabel}
             </Link>
           );

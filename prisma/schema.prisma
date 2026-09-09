@@ -43,11 +43,11 @@ enum AuditAction {
 }
 
 model User {
-  id               String            @id @default(uuid())
-  clerkUserId      String            @unique
-  spotifyRefreshToken String?        @map("spotify_refresh_token")
-  spotifyAccessToken  String?        @map("spotify_access_token")
-  spotifyTokenExpiresAt DateTime?    @map("spotify_token_expires_at")
+  id                    String    @id @default(uuid())
+  clerkUserId           String    @unique
+  spotifyRefreshToken   String?   @map("spotify_refresh_token")
+  spotifyAccessToken    String?   @map("spotify_access_token")
+  spotifyTokenExpiresAt DateTime? @map("spotify_token_expires_at")
 
   // Apple Music's per-user token, minted client-side by MusicKit.
   //
@@ -55,18 +55,18 @@ model User {
   // expires (~6 months) and only the user, in a front end, can mint a new one.
   // The issued-at date is stored so the app can quietly re-mint it on any normal
   // visit well before it lapses, rather than discovering it's dead mid-sync.
-  appleMusicUserToken       String?   @map("apple_music_user_token")
-  appleMusicTokenIssuedAt   DateTime? @map("apple_music_token_issued_at")
-  email            String
-  name             String?
-  imageUrl         String?
-  timezone         String?           @db.VarChar(64)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  deletedAt        DateTime?        // Soft delete field
-  deletedBy        String?          // Optional user ID who deleted this user
-  managedPlaylists ManagedPlaylist[]
-  mcpTokens        McpAccessToken[]
+  appleMusicUserToken     String?           @map("apple_music_user_token")
+  appleMusicTokenIssuedAt DateTime?         @map("apple_music_token_issued_at")
+  email                   String
+  name                    String?
+  imageUrl                String?
+  timezone                String?           @db.VarChar(64)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+  deletedAt               DateTime? // Soft delete field
+  deletedBy               String? // Optional user ID who deleted this user
+  managedPlaylists        ManagedPlaylist[]
+  mcpTokens               McpAccessToken[]
 
   // Email can be unique only for non-deleted users
   @@unique([email, deletedAt])
@@ -130,9 +130,9 @@ model ManagedPlaylist {
   syncQuantityPerSource Int @default(5)
 
   // Advanced settings
-  syncMode SyncMode @default(APPEND)
-  explicitContentFilter Boolean @default(false)
-  trackAgeLimit Int @default(0)
+  syncMode              SyncMode @default(APPEND)
+  explicitContentFilter Boolean  @default(false)
+  trackAgeLimit         Int      @default(0)
 
   // Optional natural-language description of what belongs on this playlist, e.g.
   // "upbeat indie, nothing sad". When set, the sync engine asks a model to pick
@@ -161,6 +161,10 @@ model ManagedPlaylist {
 
   // Links to the source playlists this managed playlist subscribes from
   subscriptions ManagedPlaylistSourceSubscription[]
+
+  // One row per sync attempt for this playlist (the per-run log surfaced on the
+  // Library rows, the playlist detail page and Activity).
+  syncRuns SyncRun[]
 
   // A playlist ID is only unique *within* a provider, so the provider is part of
   // the key — a Spotify and an Apple playlist could otherwise collide.
@@ -262,30 +266,88 @@ model ManagedPlaylistSourceSubscription {
 // Audit log for tracking all changes to subscriptions and playlists
 model AuditLog {
   id String @id @default(cuid())
-  
+
   // What action was performed
   action AuditAction
-  
+
   // Which table/entity was affected
   entityType String // "ManagedPlaylist", "SourcePlaylist", "Subscription", etc.
-  entityId String   // The ID of the affected record
-  
+  entityId   String // The ID of the affected record
+
   // Who performed the action
   userId String? // Clerk user ID who made the change
-  
+
   // When it happened
   timestamp DateTime @default(now())
-  
+
   // Details about the change
   oldValues Json? // Previous state (for updates/deletes)
   newValues Json? // New state (for creates/updates)
-  
+
   // Additional context
   metadata Json? // Extra info like IP address, user agent, etc.
-  
+
   @@index([entityType, entityId]) // Query by entity
   @@index([userId]) // Query by user
   @@index([timestamp]) // Query by time range
   @@index([action]) // Query by action type
   @@map("audit_logs")
+}
+
+// The outcome of a single sync attempt for one managed playlist.
+//
+// The sync engine already computes all of this per run (lib/sync.ts,
+// lib/track-filters.ts, lib/curator.ts) — it was just never persisted, which is
+// why sync results were invisible in the UI. One row is written per playlist per
+// run: RUNNING at the start, then updated to its terminal state.
+enum SyncRunStatus {
+  RUNNING
+  SUCCESS
+  FAILED
+  SKIPPED
+}
+
+enum SyncRunTrigger {
+  SCHEDULED // the cron
+  MANUAL // "Sync now" / an immediate sync after subscribing
+}
+
+model SyncRun {
+  id String @id @default(cuid())
+
+  managedPlaylistId String
+  managedPlaylist   ManagedPlaylist @relation(fields: [managedPlaylistId], references: [id], onDelete: Cascade)
+
+  // Denormalised for the Activity feed ("list every run by this user") without a
+  // join back through ManagedPlaylist. Clerk user id, like everywhere else.
+  userId String
+
+  status  SyncRunStatus  @default(RUNNING)
+  trigger SyncRunTrigger @default(SCHEDULED)
+
+  // What the run did. All zero for a SKIPPED or FAILED run.
+  tracksAdded           Int @default(0)
+  skippedAlreadyPresent Int @default(0)
+  skippedExplicit       Int @default(0)
+  skippedTooOld         Int @default(0)
+  skippedByVibe         Int @default(0)
+
+  // SKIPPED: the reason code (NO_SUBSCRIPTIONS | PROVIDER_NOT_CONNECTED |
+  // REPLACE_UNSUPPORTED). FAILED: a short code plus the message.
+  skipReason   String?
+  errorCode    String?
+  errorMessage String? @db.Text
+
+  // Per-source contribution for this run:
+  // [{ sourcePlaylistId, sourceName, added }]
+  sourceBreakdown Json?
+
+  durationMs Int       @default(0)
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+
+  @@index([managedPlaylistId, startedAt])
+  @@index([userId, startedAt])
+  @@index([status])
+  @@map("sync_runs")
 }

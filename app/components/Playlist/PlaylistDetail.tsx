@@ -10,7 +10,9 @@ import { useUserStore, pendingRemovalKey } from "store/useUserStore";
 import { PROVIDER_LABELS } from "store/useMusicStore";
 import { formatRelativeTime } from "utils/formatRelativeTime";
 import type { ManagedPlaylistWithSubscriptions } from "@/types";
+import { totalSkipped, type SyncRunSummary } from "@/lib/sync-runs";
 import { PlaylistSettingsForm } from "./PlaylistSettingsForm";
+import { SyncFailedCard } from "../States/SyncFailedCard";
 
 /**
  * Managed-playlist detail (README "Playlist detail", artboard 1c) — the one new
@@ -47,6 +49,49 @@ function CoverArt({
   return <span className={`${className} art-placeholder`} />;
 }
 
+const RUN_DOT: Record<string, string> = {
+  success: "bg-ok",
+  running: "bg-brand animate-softpulse",
+  failed: "bg-warn",
+  stale: "bg-warn",
+  skipped: "bg-ink-25",
+};
+
+function RunRow({ run }: { run: SyncRunSummary }) {
+  const when = formatRelativeTime(run.finishedAt ?? run.startedAt);
+  const skipped = totalSkipped(run);
+  let summary: string;
+  if (run.status === "success") {
+    summary =
+      run.tracksAdded > 0
+        ? `+${run.tracksAdded} added${skipped ? ` · ${skipped} skipped` : ""}`
+        : skipped
+          ? `${skipped} skipped, none added`
+          : "no changes";
+  } else if (run.status === "skipped") {
+    summary = run.skipReason ?? "skipped";
+  } else if (run.status === "running") {
+    summary = "in progress";
+  } else {
+    summary = run.errorMessage ?? "failed";
+  }
+
+  return (
+    <div className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0">
+      <span
+        className={`h-1.5 w-1.5 shrink-0 rounded-full ${RUN_DOT[run.status] ?? "bg-ink-25"}`}
+      />
+      <span className="w-14 shrink-0 text-[11px] font-medium uppercase tracking-wide text-ink-35">
+        {run.trigger === "MANUAL" ? "Manual" : "Scheduled"}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink-70">
+        {summary}
+      </span>
+      <span className="shrink-0 text-[11.5px] text-ink-35">{when}</span>
+    </div>
+  );
+}
+
 export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
   const router = useRouter();
   const managedPlaylists = useUserStore((s) => s.managedPlaylists);
@@ -57,11 +102,31 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
 
   const [loading, setLoading] = useState(managedPlaylists.length === 0);
   const [syncing, setSyncing] = useState(false);
+  const [runs, setRuns] = useState<SyncRunSummary[] | null>(null);
 
   const playlist = useMemo(
     () => managedPlaylists.find((p) => p.id === id) ?? null,
     [managedPlaylists, id],
   );
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/users/me/managed-playlists/${id}/runs`,
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setRuns(data.runs ?? []);
+      } catch {
+        /* leave null — the UI shows an empty state */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [id, syncing]);
 
   useEffect(() => {
     if (playlist || managedPlaylists.length > 0) {
@@ -129,6 +194,11 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
   const nextIn = formatRelativeTime(playlist.nextSyncTime);
   const sources = playlist.subscriptions;
 
+  const lastRun = playlist.lastRun ?? runs?.[0] ?? null;
+  // Oldest → newest, last 9, for the history bars.
+  const historyRuns = (runs ?? []).slice(0, 9).reverse();
+  const maxAdded = Math.max(1, ...historyRuns.map((r) => r.tracksAdded));
+
   return (
     <div className="flex h-full min-h-0 flex-col px-4 py-5 min-[900px]:px-6 min-[900px]:py-6">
       {/* Head */}
@@ -166,15 +236,39 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={handleSync}
-          disabled={syncing}
-          className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-[12.5px] font-medium text-surface transition-colors hover:bg-brand-deep disabled:opacity-50"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          {syncing ? "Syncing…" : "Sync now"}
-        </button>
+        <div className="flex items-center gap-2.5">
+          {lastRun && (
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11.5px] font-medium ${
+                lastRun.status === "success"
+                  ? "border-line text-ok-text"
+                  : lastRun.status === "running"
+                    ? "border-line text-ink-70"
+                    : "border-warn/25 text-warn-text"
+              }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${RUN_DOT[lastRun.status] ?? "bg-ink-25"}`}
+              />
+              {lastRun.status === "success"
+                ? `Synced${lastRun.tracksAdded ? ` · +${lastRun.tracksAdded}` : ""}`
+                : lastRun.status === "running"
+                  ? "Syncing…"
+                  : lastRun.status === "skipped"
+                    ? "Skipped"
+                    : "Failed"}
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={handleSync}
+            disabled={syncing}
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-[12.5px] font-medium text-surface transition-colors hover:bg-brand-deep disabled:opacity-50"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            {syncing ? "Syncing…" : "Sync now"}
+          </button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -281,34 +375,120 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                       {playlist.name}
                     </span>
                   </div>
-                  <div className="mt-2 text-[12px] text-ink-50">
-                    {synced
-                      ? `Last synced ${synced}`
-                      : "No runs recorded yet"}
-                    {nextIn ? ` · next ${nextIn}` : ""}
-                  </div>
+                  {lastRun && lastRun.status === "success" ? (
+                    <div className="mt-2 flex flex-col gap-0.5 text-[12px] text-ink-70">
+                      <span className="font-medium text-ink">
+                        {lastRun.tracksAdded > 0
+                          ? `${lastRun.tracksAdded} added ${formatRelativeTime(lastRun.finishedAt)}`
+                          : `No new tracks ${formatRelativeTime(lastRun.finishedAt)}`}
+                      </span>
+                      {lastRun.skippedAlreadyPresent > 0 && (
+                        <span>
+                          {lastRun.skippedAlreadyPresent} skipped — already
+                          present
+                        </span>
+                      )}
+                      {lastRun.skippedExplicit > 0 && (
+                        <span>{lastRun.skippedExplicit} skipped — explicit</span>
+                      )}
+                      {lastRun.skippedTooOld > 0 && (
+                        <span>{lastRun.skippedTooOld} skipped — too old</span>
+                      )}
+                      {lastRun.skippedByVibe > 0 && (
+                        <span>
+                          {lastRun.skippedByVibe} skipped — off the vibe
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-2 text-[12px] text-ink-50">
+                      {synced ? `Last synced ${synced}` : "No runs recorded yet"}
+                      {nextIn ? ` · next ${nextIn}` : ""}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Run history placeholder */}
+            {(lastRun?.status === "failed" || lastRun?.status === "stale") && (
+              <SyncFailedCard
+                playlistName={playlist.name}
+                cause={lastRun.errorMessage ?? undefined}
+                fixLabel="Reconnect"
+              />
+            )}
+
+            {/* Run history */}
             <div className="rounded-2xl border border-line bg-surface p-5">
               <div className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
                 Recent runs
               </div>
-              <div className="flex items-end gap-1.5">
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <span
-                    key={i}
-                    className="w-full rounded-t bg-ground-chip"
-                    style={{ height: 8 + ((i * 7) % 34) }}
-                  />
-                ))}
-              </div>
-              <p className="mt-3 text-[11.5px] text-ink-35">
-                Per-run results — added, skipped, failed — appear here once runs
-                are recorded.
-              </p>
+              {historyRuns.length === 0 ? (
+                <p className="text-[11.5px] text-ink-35">
+                  Per-run results — added, skipped, failed — appear here once
+                  runs are recorded.
+                </p>
+              ) : (
+                <>
+                  <div className="flex items-end gap-1.5" style={{ height: 44 }}>
+                    {historyRuns.map((r, i) => {
+                      const failed =
+                        r.status === "failed" ||
+                        r.status === "stale" ||
+                        r.status === "skipped";
+                      const h = failed
+                        ? 10
+                        : Math.max(
+                            6,
+                            (r.tracksAdded / maxAdded) * 44,
+                          );
+                      const newest = i === historyRuns.length - 1;
+                      return (
+                        <span
+                          key={r.id}
+                          title={
+                            failed
+                              ? r.errorMessage ?? r.skipReason ?? "failed"
+                              : `${r.tracksAdded} added`
+                          }
+                          className={`w-full rounded-t ${
+                            failed
+                              ? "bg-[#7C2D12]"
+                              : newest
+                                ? "bg-brand"
+                                : "bg-brand/40"
+                          }`}
+                          style={{ height: h }}
+                        />
+                      );
+                    })}
+                  </div>
+                  <div className="mt-2 flex justify-between text-[11px] text-ink-35">
+                    <span>
+                      {formatRelativeTime(historyRuns[0].startedAt)}
+                    </span>
+                    {historyRuns.some(
+                      (r) =>
+                        r.status === "failed" || r.status === "stale",
+                    ) && (
+                      <span className="text-warn-text">
+                        {
+                          historyRuns.filter(
+                            (r) =>
+                              r.status === "failed" || r.status === "stale",
+                          ).length
+                        }{" "}
+                        failed
+                      </span>
+                    )}
+                    <span>
+                      {formatRelativeTime(
+                        historyRuns[historyRuns.length - 1].startedAt,
+                      )}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Footer strip */}
@@ -418,17 +598,24 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
           </div>
         )}
 
-        {tab === "runs" && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong p-10 text-center">
-            <p className="font-display text-[15px] font-semibold text-ink">
-              No run history yet
-            </p>
-            <p className="mt-1 max-w-[42ch] text-[12.5px] leading-relaxed text-ink-50">
-              Once this playlist syncs, every run shows up here with what it
-              added and what it skipped, and why.
-            </p>
-          </div>
-        )}
+        {tab === "runs" &&
+          (runs && runs.length > 0 ? (
+            <div className="rounded-2xl border border-line bg-surface">
+              {runs.map((r) => (
+                <RunRow key={r.id} run={r} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong p-10 text-center">
+              <p className="font-display text-[15px] font-semibold text-ink">
+                No run history yet
+              </p>
+              <p className="mt-1 max-w-[42ch] text-[12.5px] leading-relaxed text-ink-50">
+                Once this playlist syncs, every run shows up here with what it
+                added and what it skipped, and why.
+              </p>
+            </div>
+          ))}
 
         {tab === "settings" && (
           <PlaylistSettingsForm

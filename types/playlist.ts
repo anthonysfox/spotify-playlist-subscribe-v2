@@ -4,16 +4,24 @@ import type {
   SourcePlaylist,
 } from "@/generated/prisma/client";
 import type { MusicProvider, PlaylistSummary } from "@/lib/music/types";
+import type { SyncRunSummary } from "@/lib/sync-runs";
 
 /**
  * A managed playlist with its source subscriptions eagerly loaded — the shape
  * the store holds and the UI renders. Extends the Prisma row rather than
  * redefining it, so schema changes flow through automatically.
+ *
+ * `lastRun` and `contributions` are attached by
+ * `GET /api/users/me/managed-playlists` from the sync-run log; they're absent
+ * on playlists that have never run.
  */
 export interface ManagedPlaylistWithSubscriptions extends ManagedPlaylist {
   subscriptions: (ManagedPlaylistSourceSubscription & {
     sourcePlaylist: SourcePlaylist;
   })[];
+  lastRun?: SyncRunSummary | null;
+  /** sourcePlaylistId → tracks that source contributed in the last 30 days. */
+  contributions?: Record<string, number>;
 }
 
 /**

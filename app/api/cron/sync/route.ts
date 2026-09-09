@@ -25,6 +25,13 @@ type SkipReason =
   | "PROVIDER_NOT_CONNECTED"
   | "REPLACE_UNSUPPORTED";
 
+/** Per-source contribution for one run, stored on SyncRun.sourceBreakdown. */
+interface SourceContribution {
+  sourcePlaylistId: string;
+  sourceName: string;
+  added: number;
+}
+
 interface SyncResult {
   playlistId: string;
   playlistName: string;
@@ -54,6 +61,10 @@ export async function GET(request: NextRequest) {
     const specificUserId = searchParams.get("userId") || "";
     const specificPlaylistId = searchParams.get("playlistId") || "";
     const specificSourceId = searchParams.get("sourceId") || "";
+
+    // A forced run is always something a person kicked off — "Sync now", or the
+    // immediate sync right after subscribing. The bare cron never forces.
+    const trigger: "SCHEDULED" | "MANUAL" = forceSync ? "MANUAL" : "SCHEDULED";
 
     console.log(`🔄 Starting sync job at ${new Date().toISOString()}`, {
       forceSync,
@@ -141,7 +152,7 @@ export async function GET(request: NextRequest) {
       const batch = playlistsToSync.slice(i, i + BATCH_SIZE);
 
       const batchResults = await Promise.allSettled(
-        batch.map((playlist) => syncSinglePlaylist(playlist)),
+        batch.map((playlist) => syncSinglePlaylist(playlist, trigger)),
       );
 
       batchResults.forEach((result, index) => {
@@ -254,29 +265,60 @@ type PlaylistToSync = Prisma.ManagedPlaylistGetPayload<{
 // Individual playlist sync with improved error handling
 async function syncSinglePlaylist(
   managedPlaylist: PlaylistToSync,
+  trigger: "SCHEDULED" | "MANUAL",
 ): Promise<SyncResult> {
   const syncStartTime = Date.now();
 
-  try {
-    const {
-      id,
-      name,
-      syncQuantityPerSource,
-      userId,
-      subscriptions,
-      provider,
-      externalPlaylistId,
-      syncMode,
-      explicitContentFilter,
-      trackAgeLimit,
-      vibePrompt,
-    } = managedPlaylist;
+  const {
+    id,
+    name,
+    syncQuantityPerSource,
+    userId,
+    subscriptions,
+    provider,
+    externalPlaylistId,
+    syncMode,
+    explicitContentFilter,
+    trackAgeLimit,
+    vibePrompt,
+  } = managedPlaylist;
 
+  // Open the run log now, as RUNNING, so an in-flight sync is visible as
+  // "Syncing now…" and doesn't only appear once it's finished. Best-effort —
+  // a logging failure must never take down the sync itself.
+  let syncRunId: string | null = null;
+  try {
+    const run = await prisma.syncRun.create({
+      data: { managedPlaylistId: id, userId, status: "RUNNING", trigger },
+    });
+    syncRunId = run.id;
+  } catch (e) {
+    console.warn("Could not open sync run log:", e);
+  }
+
+  const closeRun = async (data: Prisma.SyncRunUncheckedUpdateInput) => {
+    if (!syncRunId) return;
+    try {
+      await prisma.syncRun.update({
+        where: { id: syncRunId },
+        data: {
+          ...data,
+          finishedAt: new Date(),
+          durationMs: Date.now() - syncStartTime,
+        },
+      });
+    } catch (e) {
+      console.warn("Could not close sync run log:", e);
+    }
+  };
+
+  try {
     console.log(`🎵 Syncing: ${name} (${id})`);
 
     // Skip if no active subscriptions
     if (!subscriptions?.length) {
       console.log(`⚠️ Skipping ${name} - no active subscriptions`);
+      await closeRun({ status: "SKIPPED", skipReason: "NO_SUBSCRIPTIONS" });
       return {
         playlistId: id,
         playlistName: name,
@@ -305,6 +347,10 @@ async function syncSinglePlaylist(
         `⚠️ Skipping ${name} — ${userId} has no valid ${provider} connection (needs reconnect)`,
       );
 
+      await closeRun({
+        status: "SKIPPED",
+        skipReason: "PROVIDER_NOT_CONNECTED",
+      });
       return {
         playlistId: id,
         playlistName: name,
@@ -325,6 +371,7 @@ async function syncSinglePlaylist(
         `⚠️ Skipping ${name} — ${provider} cannot remove tracks, so REPLACE mode is unsupported`,
       );
 
+      await closeRun({ status: "SKIPPED", skipReason: "REPLACE_UNSUPPORTED" });
       return {
         playlistId: id,
         playlistName: name,
@@ -355,6 +402,12 @@ async function syncSinglePlaylist(
     );
 
     let totalTracksAdded = 0;
+    // Skip tallies for the run log — these were computed and thrown away before.
+    let skippedAlreadyPresent = 0;
+    let skippedExplicit = 0;
+    let skippedTooOld = 0;
+    let skippedByVibe = 0;
+    const sourceBreakdown: SourceContribution[] = [];
 
     // Process each subscription
     for (const subscription of subscriptions) {
@@ -387,14 +440,22 @@ async function syncSinglePlaylist(
         let candidates = sourceTracks.filter(
           (track) => !existingSongs.has(songIdentity(track)),
         );
+        skippedAlreadyPresent += sourceTracks.length - candidates.length;
 
         // Honour the two settings the UI has always offered but the sync engine
         // never actually read.
-        if (explicitContentFilter) candidates = withoutExplicit(candidates);
-        candidates = withinAgeLimit(candidates, trackAgeLimit ?? 0);
+        if (explicitContentFilter) {
+          const afterExplicit = withoutExplicit(candidates);
+          skippedExplicit += candidates.length - afterExplicit.length;
+          candidates = afterExplicit;
+        }
+        const afterAge = withinAgeLimit(candidates, trackAgeLimit ?? 0);
+        skippedTooOld += candidates.length - afterAge.length;
+        candidates = afterAge;
 
         // Collapse duplicates *within* the source playlist itself.
         const seenInSource = new Set<string>();
+        const beforeSelfDedupe = candidates.length;
         candidates = candidates.filter((track) => {
           const identity = songIdentity(track);
           if (seenInSource.has(identity)) return false;
@@ -402,6 +463,7 @@ async function syncSinglePlaylist(
           seenInSource.add(identity);
           return true;
         });
+        skippedAlreadyPresent += beforeSelfDedupe - candidates.length;
 
         // REPLACE mode rotates through the source instead of restarting from the
         // top every time.
@@ -428,9 +490,17 @@ async function syncSinglePlaylist(
 
         // With a vibe set, a model picks what genuinely fits. Without one, keep
         // the engine's original behaviour: whatever comes first in the playlist.
+        const wantedFromSource = Math.min(
+          candidates.length,
+          syncQuantityPerSource,
+        );
         const chosen = vibePrompt
           ? await selectByVibe(vibePrompt, candidates, syncQuantityPerSource)
           : candidates.slice(0, syncQuantityPerSource);
+        // With a vibe, anything we would have taken but the model rejected.
+        if (vibePrompt) {
+          skippedByVibe += Math.max(0, wantedFromSource - chosen.length);
+        }
 
         // Add tracks to managed playlist
         if (chosen.length > 0) {
@@ -452,6 +522,12 @@ async function syncSinglePlaylist(
               (vibePrompt ? " (vibe-matched)" : ""),
           );
         }
+
+        sourceBreakdown.push({
+          sourcePlaylistId: sourcePlaylist.id,
+          sourceName: sourcePlaylist.name,
+          added: chosen.length,
+        });
 
         // Update subscription sync timestamp
         await prisma.managedPlaylistSourceSubscription.update({
@@ -513,6 +589,16 @@ async function syncSinglePlaylist(
 
     console.log(`✅ ${name}: Added ${totalTracksAdded} songs`);
 
+    await closeRun({
+      status: "SUCCESS",
+      tracksAdded: totalTracksAdded,
+      skippedAlreadyPresent,
+      skippedExplicit,
+      skippedTooOld,
+      skippedByVibe,
+      sourceBreakdown: sourceBreakdown as unknown as Prisma.InputJsonValue,
+    });
+
     return {
       playlistId: id,
       playlistName: name,
@@ -522,6 +608,12 @@ async function syncSinglePlaylist(
     };
   } catch (error: any) {
     console.error(`❌ Failed to sync ${managedPlaylist.name}:`, error);
+    await closeRun({
+      status: "FAILED",
+      errorCode: "SYNC_ERROR",
+      errorMessage:
+        error instanceof Error ? error.message : String(error ?? "Unknown"),
+    });
     return {
       playlistId: managedPlaylist.id,
       playlistName: managedPlaylist.name,

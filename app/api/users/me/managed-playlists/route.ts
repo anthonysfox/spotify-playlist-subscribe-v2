@@ -3,6 +3,11 @@ import { auth } from "@clerk/nextjs/server";
 import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/prisma";
 import { getAppUrl } from "utils/config";
+import {
+  CONTRIBUTION_WINDOW_MS,
+  toSyncRunSummary,
+  type SourceContribution,
+} from "@/lib/sync-runs";
 
 // const staleThresholds = {
 //   managedPlaylist: 30 * 60 * 1000, // 30 minutes
@@ -116,6 +121,61 @@ export async function GET(request: Request) {
           }
         )
       );
+    }
+
+    // Attach the per-run sync log so Library rows / the detail page can show
+    // real status, and per-source contribution over the last 30 days.
+    const playlistIds = subscriptions.map((p) => p.id);
+    if (playlistIds.length) {
+      const [latestRuns, contribRuns] = await Promise.all([
+        Promise.all(
+          playlistIds.map((id) =>
+            prisma.syncRun.findFirst({
+              where: { managedPlaylistId: id },
+              orderBy: { startedAt: "desc" },
+            }),
+          ),
+        ),
+        prisma.syncRun.findMany({
+          where: {
+            managedPlaylistId: { in: playlistIds },
+            status: "SUCCESS",
+            startedAt: {
+              gte: new Date(Date.now() - CONTRIBUTION_WINDOW_MS),
+            },
+          },
+          select: { managedPlaylistId: true, sourceBreakdown: true },
+        }),
+      ]);
+
+      const lastRunByPlaylist = new Map(
+        latestRuns
+          .filter((r): r is NonNullable<typeof r> => Boolean(r))
+          .map((r) => [r.managedPlaylistId, toSyncRunSummary(r)]),
+      );
+
+      const contributionsByPlaylist = new Map<
+        string,
+        Record<string, number>
+      >();
+      for (const run of contribRuns) {
+        const rows = Array.isArray(run.sourceBreakdown)
+          ? (run.sourceBreakdown as unknown as SourceContribution[])
+          : [];
+        const acc =
+          contributionsByPlaylist.get(run.managedPlaylistId) ?? {};
+        for (const row of rows) {
+          acc[row.sourcePlaylistId] =
+            (acc[row.sourcePlaylistId] ?? 0) + (row.added ?? 0);
+        }
+        contributionsByPlaylist.set(run.managedPlaylistId, acc);
+      }
+
+      subscriptions.forEach((p) => {
+        (p as any).lastRun = lastRunByPlaylist.get(p.id) ?? null;
+        (p as any).contributions =
+          contributionsByPlaylist.get(p.id) ?? {};
+      });
     }
 
     return NextResponse.json(subscriptions);
