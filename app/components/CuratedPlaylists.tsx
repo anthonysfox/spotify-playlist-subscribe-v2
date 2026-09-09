@@ -239,7 +239,25 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
           className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar scrollbar-visible pr-1"
           ref={listRef}
         >
-          <SimplePlaylistList playlists={playlists} onSubscribe={onSubscribe} />
+          {/* Full-area load: a filter change or new search clears the grid, so
+              show a skeleton rather than a blank pane. */}
+          {loading && playlists.length === 0 ? (
+            <div
+              className="grid grid-cols-2 gap-[18px] sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              aria-busy="true"
+              aria-label="Loading playlists"
+            >
+              {Array.from({ length: 15 }).map((_, i) => (
+                <div key={i} className="flex animate-pulse flex-col gap-2">
+                  <div className="art-placeholder aspect-square w-full rounded-xl" />
+                  <div className="h-3 w-3/4 rounded bg-ground-chip" />
+                  <div className="h-2.5 w-1/2 rounded bg-ground-alt" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <SimplePlaylistList playlists={playlists} onSubscribe={onSubscribe} />
+          )}
 
           {loading && playlists.length > 0 && (
             <div className="flex justify-center py-6">
