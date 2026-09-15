@@ -423,13 +423,19 @@ const handler = createMcpHandler(
  * whoever's token was presented is who every tool then acts as.
  *
  * We only ever store the SHA-256, so a direct lookup by hash both authenticates
- * and resolves the user in one query. Revoked tokens (`revokedAt` set) don't match.
+ * and resolves the user in one query. Revoked tokens (`revokedAt` set) don't
+ * match, and neither do expired ones — `expiresAt: null` means the token
+ * predates expiry being mandatory, so those stay valid until revoked.
  */
 async function verifyToken(token?: string) {
   if (!token) return undefined;
 
   const record = await prisma.mcpAccessToken.findFirst({
-    where: { tokenHash: hashToken(token), revokedAt: null },
+    where: {
+      tokenHash: hashToken(token),
+      revokedAt: null,
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
     select: { id: true, userId: true },
   });
 

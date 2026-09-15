@@ -9,7 +9,10 @@ interface TokenSummary {
   prefix: string;
   createdAt: string;
   lastUsedAt: string | null;
+  expiresAt: string | null;
 }
+
+const EXPIRY_OPTIONS = [30, 60, 90] as const;
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, {
@@ -18,12 +21,29 @@ const formatDate = (iso: string) =>
     year: "numeric",
   });
 
+// `expiresAt: null` only happens on tokens created before expiry was
+// mandatory — everything generated from this form always has one.
+function expiryLabel(expiresAt: string | null): { text: string; warn: boolean } {
+  if (!expiresAt) return { text: "Never expires", warn: false };
+  const daysLeft = Math.ceil(
+    (new Date(expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000),
+  );
+  if (daysLeft <= 0) return { text: "Expired", warn: true };
+  if (daysLeft === 1) return { text: "Expires tomorrow", warn: true };
+  return { text: `Expires in ${daysLeft} days`, warn: daysLeft <= 7 };
+}
+
 export const McpTokens = () => {
   const [tokens, setTokens] = useState<TokenSummary[]>([]);
   const [name, setName] = useState("");
+  const [expiresInDays, setExpiresInDays] =
+    useState<(typeof EXPIRY_OPTIONS)[number]>(30);
   const [busy, setBusy] = useState(false);
   // The plaintext of a freshly created token — shown once, then dismissed.
   const [freshToken, setFreshToken] = useState<string | null>(null);
+  const [freshTokenExpiresAt, setFreshTokenExpiresAt] = useState<
+    string | null
+  >(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/users/me/mcp-tokens");
@@ -43,12 +63,16 @@ export const McpTokens = () => {
       const res = await fetch("/api/users/me/mcp-tokens", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() || undefined }),
+        body: JSON.stringify({
+          name: name.trim() || undefined,
+          expiresInDays,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Couldn't create token");
 
       setFreshToken(data.token);
+      setFreshTokenExpiresAt(data.expiresAt ?? null);
       setName("");
       await load();
     } catch (error: any) {
@@ -95,7 +119,8 @@ export const McpTokens = () => {
           <code className="rounded bg-ground-alt px-1 py-0.5 font-mono text-[11px]">
             Authorization: Bearer
           </code>{" "}
-          header. Tokens act as you and can be revoked anytime.
+          header. Tokens act as you, expire automatically, and can be revoked
+          anytime.
         </p>
       </div>
 
@@ -103,7 +128,8 @@ export const McpTokens = () => {
       {freshToken && (
         <div className="mb-4 rounded-xl border border-brand/25 bg-brand-tint p-3">
           <p className="mb-2 text-[11.5px] font-medium text-brand-deep">
-            Copy this now — you won&apos;t be able to see it again.
+            Copy this now — you won&apos;t be able to see it again.{" "}
+            {expiryLabel(freshTokenExpiresAt).text}.
           </p>
           <div className="flex items-center gap-2">
             <code className="min-w-0 flex-1 truncate rounded-md bg-surface px-2 py-1.5 font-mono text-[11px] text-ink ring-1 ring-line-strong">
@@ -118,7 +144,10 @@ export const McpTokens = () => {
             </button>
             <button
               type="button"
-              onClick={() => setFreshToken(null)}
+              onClick={() => {
+                setFreshToken(null);
+                setFreshTokenExpiresAt(null);
+              }}
               className="shrink-0 rounded-full border border-line-strong px-3 py-1.5 text-[11.5px] text-ink-70 hover:border-line"
             >
               Done
@@ -128,7 +157,7 @@ export const McpTokens = () => {
       )}
 
       {/* Create */}
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -136,6 +165,22 @@ export const McpTokens = () => {
           maxLength={120}
           className="min-w-0 flex-1 rounded-full border border-line-strong bg-surface px-3.5 py-2 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
         />
+        <select
+          value={expiresInDays}
+          onChange={(e) =>
+            setExpiresInDays(
+              Number(e.target.value) as (typeof EXPIRY_OPTIONS)[number],
+            )
+          }
+          aria-label="Token expiration"
+          className="shrink-0 rounded-full border border-line-strong bg-surface px-3 py-2 text-[12.5px] text-ink-70 focus:border-brand/40 focus:outline-none"
+        >
+          {EXPIRY_OPTIONS.map((days) => (
+            <option key={days} value={days}>
+              Expires in {days} days
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           onClick={createToken}
@@ -172,6 +217,16 @@ export const McpTokens = () => {
                   {t.lastUsedAt
                     ? ` · Last used ${formatDate(t.lastUsedAt)}`
                     : " · Never used"}
+                  {" · "}
+                  <span
+                    className={
+                      expiryLabel(t.expiresAt).warn
+                        ? "font-medium text-warn-text"
+                        : undefined
+                    }
+                  >
+                    {expiryLabel(t.expiresAt).text}
+                  </span>
                 </p>
               </div>
               <button

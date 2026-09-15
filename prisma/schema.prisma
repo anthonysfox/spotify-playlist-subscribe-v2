@@ -95,6 +95,7 @@ model McpAccessToken {
   createdAt  DateTime  @default(now())
   lastUsedAt DateTime?
   revokedAt  DateTime? // Soft revoke — verifyToken ignores tokens with this set.
+  expiresAt  DateTime? // Mandatory for new tokens (30/60/90 days); null on tokens created before expiry existed.
 
   @@index([userId])
   @@map("mcp_access_tokens")

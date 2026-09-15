@@ -12,7 +12,7 @@ import {
   type PlaylistTrack,
 } from "@/lib/track-filters";
 import { selectByVibe } from "@/lib/curator";
-import { randomUUID } from "crypto";
+import { randomUUID, timingSafeEqual } from "crypto";
 
 // How many served-song identities a REPLACE subscription remembers. This only
 // needs to cover one full rotation of a source playlist — it self-clears at that
@@ -43,15 +43,54 @@ interface SyncResult {
   duration: number;
 }
 
+/**
+ * Whether a request carries the cron secret.
+ *
+ * Fails closed when CRON_SECRET is unset. The previous check compared against
+ * the template literal `Bearer ${process.env.CRON_SECRET}` directly, which with
+ * no secret configured collapses to the string "Bearer undefined" — anyone
+ * sending exactly that header was authenticated, and this endpoint accepts
+ * `?userId=&playlistId=&force=true`, so that meant driving syncs against any
+ * account. Worse, `lib/subscribe.ts` interpolates the same unset value when it
+ * calls back in, so the app kept working normally and nothing ever surfaced the
+ * missing variable.
+ *
+ * The comparison is constant-time. That's belt-and-braces rather than a fix for
+ * a practical attack — remote timing analysis across a network is not how this
+ * secret would realistically fall — but it's the right way to compare one.
+ */
+function isAuthorizedCronRequest(authHeader: string | null): boolean {
+  const secret = process.env.CRON_SECRET;
+
+  if (!secret) {
+    // Loud in the logs, opaque to the caller: an operator needs to see this,
+    // but the response must not advertise that the server is misconfigured.
+    console.error(
+      "🔒 CRON_SECRET is not set — refusing every sync request. Syncs stay broken until it is configured.",
+    );
+    return false;
+  }
+
+  if (!authHeader) return false;
+
+  const presented = Buffer.from(authHeader);
+  const expected = Buffer.from(`Bearer ${secret}`);
+
+  // timingSafeEqual throws on a length mismatch, and a differing length is
+  // already a mismatch — the length of the header is not the secret.
+  return (
+    presented.length === expected.length &&
+    timingSafeEqual(presented, expected)
+  );
+}
+
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
   const entityId = randomUUID();
 
   try {
     // 1. Authentication - Verify cron request
-    const authHeader = request.headers.get("authorization");
-
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!isAuthorizedCronRequest(request.headers.get("authorization"))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
