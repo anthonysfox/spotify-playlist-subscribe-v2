@@ -8,6 +8,21 @@ const TOKEN_PREFIX = "plf_";
 // (`plf_9f3c…`). Enough to distinguish tokens, far too few to be useful to a thief.
 const DISPLAY_PREFIX_LENGTH = 12;
 
+// Every new token must pick one of these — no "never expires" option, so a
+// leaked token that nobody remembers to revoke ages out on its own. Existing
+// tokens created before this existed keep `expiresAt: null` (checked as
+// "never expires" by verifyToken) rather than being retroactively cut off.
+export const TOKEN_EXPIRY_DAYS = [30, 60, 90] as const;
+export type TokenExpiryDays = (typeof TOKEN_EXPIRY_DAYS)[number];
+
+export function isTokenExpiryDays(value: unknown): value is TokenExpiryDays {
+  return TOKEN_EXPIRY_DAYS.includes(value as TokenExpiryDays);
+}
+
+export function expiresAtFromDays(days: TokenExpiryDays): Date {
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+}
+
 export interface GeneratedToken {
   /** The full plaintext token — shown to the user exactly once, never stored. */
   token: string;

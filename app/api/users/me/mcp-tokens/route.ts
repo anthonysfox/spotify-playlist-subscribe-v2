@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
-import { generateToken } from "@/lib/mcp-tokens";
+import {
+  expiresAtFromDays,
+  generateToken,
+  isTokenExpiryDays,
+} from "@/lib/mcp-tokens";
 
 /**
  * GET — list the caller's MCP tokens. Metadata only: the plaintext token is
@@ -21,6 +25,7 @@ export async function GET() {
       prefix: true,
       createdAt: true,
       lastUsedAt: true,
+      expiresAt: true,
     },
   });
 
@@ -37,20 +42,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   let name: string | undefined;
+  let expiresInDays: number | undefined;
   try {
     const body = await request.json().catch(() => ({}));
     if (typeof body?.name === "string" && body.name.trim()) {
       name = body.name.trim().slice(0, 120);
     }
+    expiresInDays = body?.expiresInDays;
   } catch {
-    // Body is optional; a nameless token is fine.
+    // Body is optional aside from expiresInDays, which is required below.
+  }
+
+  // No "never expires" option — every token created from here on ages out on
+  // its own within 90 days at the longest.
+  if (!isTokenExpiryDays(expiresInDays)) {
+    return NextResponse.json(
+      { error: "expiresInDays must be 30, 60, or 90" },
+      { status: 400 },
+    );
   }
 
   const { token, tokenHash, prefix } = generateToken();
 
   const record = await prisma.mcpAccessToken.create({
-    data: { userId, name, tokenHash, prefix },
-    select: { id: true, name: true, prefix: true, createdAt: true },
+    data: {
+      userId,
+      name,
+      tokenHash,
+      prefix,
+      expiresAt: expiresAtFromDays(expiresInDays),
+    },
+    select: { id: true, name: true, prefix: true, createdAt: true, expiresAt: true },
   });
 
   // `token` is included here and NOWHERE else, ever.
