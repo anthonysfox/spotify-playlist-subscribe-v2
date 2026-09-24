@@ -26,8 +26,8 @@ export const SimplePlaylistList = ({
   const [previewTracks, setPreviewTracks] = useState<any[]>([]);
   const [loadingTracks, setLoadingTracks] = useState<string | null>(null);
 
-  const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const selectMode = selectedIds.size > 0;
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
 
@@ -64,12 +64,10 @@ export const SimplePlaylistList = ({
     );
 
   const exitSelect = () => {
-    setSelectMode(false);
     setSelectedIds(new Set());
   };
 
   const enterSelectWith = (id: string) => {
-    setSelectMode(true);
     setSelectedIds(new Set([id]));
   };
 
@@ -77,14 +75,10 @@ export const SimplePlaylistList = ({
     setSelectedIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
-      if (next.size === 0) setSelectMode(false);
       return next;
     });
 
-  const handleCoverClick = (
-    playlist: PlaylistSummary,
-    e: React.MouseEvent,
-  ) => {
+  const handleCoverClick = (playlist: PlaylistSummary, e: React.MouseEvent) => {
     if (longPressFired.current) {
       longPressFired.current = false;
       return;
@@ -201,7 +195,9 @@ export const SimplePlaylistList = ({
                           : "border-2 border-surface bg-ink/20"
                       }`}
                     >
-                      {picked && <Check className="h-3.5 w-3.5" strokeWidth={3} />}
+                      {picked && (
+                        <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                      )}
                     </span>
                   ) : subscribed ? (
                     <span className="absolute right-2 top-2 rounded-full bg-ink px-2 py-0.5 text-[10.5px] font-medium text-surface">
@@ -232,12 +228,13 @@ export const SimplePlaylistList = ({
                   {subscribed ? (
                     <div className="truncate text-[12px] text-brand">
                       →{" "}
-                      {feeds.map((m) => m.name).join(", ") || "managed playlist"}
+                      {feeds.map((m) => m.name).join(", ") ||
+                        "managed playlist"}
                     </div>
                   ) : (
                     <div className="truncate text-[12px] text-ink-35">
-                      {PROVIDER_LABELS[playlist.provider]} · {playlist.trackCount}{" "}
-                      tracks
+                      {PROVIDER_LABELS[playlist.provider]} ·{" "}
+                      {playlist.trackCount} tracks
                     </div>
                   )}
                 </div>

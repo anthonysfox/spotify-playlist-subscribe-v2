@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import getClerkOAuthToken from "utils/clerk";
+import { debugDetails } from "@/lib/api-errors";
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Error refreshing playlist metadata:", error);
     return NextResponse.json(
-      { error: "Failed to refresh metadata", details: error.message },
+      { error: "Failed to refresh metadata", ...debugDetails(error) },
       { status: 500 }
     );
   }

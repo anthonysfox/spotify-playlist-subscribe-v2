@@ -3,6 +3,7 @@ import { AuditLogger } from "@/lib/audit-logger";
 import { calculateNextSyncTime } from "utils/sync-schedule";
 import { getProvider, type MusicProvider } from "@/lib/music";
 import type { ManagedPlaylistWithSubscriptions } from "@/types";
+import { ensureUser } from "@/lib/user";
 
 /**
  * The minimal playlist shape the subscribe flow needs from a caller — an id, a
@@ -154,26 +155,7 @@ export async function subscribe(
   try {
     // Ensure the user row exists before creating a managed playlist (fallback for
     // webhook timing issues).
-    const user = await prisma.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-
-    if (!user) {
-      const clerkClient = (await import("@clerk/nextjs/server")).clerkClient;
-      const clerk = await clerkClient();
-      const clerkUser = await clerk.users.getUser(userId);
-
-      await prisma.user.create({
-        data: {
-          clerkUserId: userId,
-          email: clerkUser.emailAddresses?.[0]?.emailAddress || "",
-          name:
-            `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
-            "User",
-          imageUrl: clerkUser.imageUrl,
-        },
-      });
-    }
+    const user = await ensureUser(userId);
 
     // A transaction so the playlist lookups/creations and the subscription link
     // are atomic.

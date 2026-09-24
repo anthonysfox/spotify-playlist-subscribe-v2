@@ -111,7 +111,9 @@ export function SubscribeSheet({
   const [destPlaylists, setDestPlaylists] = useState<PlaylistSummary[]>([]);
   const [destLoading, setDestLoading] = useState(true);
   const [destFilter, setDestFilter] = useState("");
-  const [selectedDestIds, setSelectedDestIds] = useState<Set<string>>(new Set());
+  const [selectedDestIds, setSelectedDestIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [addingNew, setAddingNew] = useState(false);
 
@@ -270,9 +272,7 @@ export function SubscribeSheet({
     if (!canSubmit) return;
     setSubmitting(true);
 
-    type Target =
-      | { kind: "existing"; dest: PlaylistSummary }
-      | { kind: "new" };
+    type Target = { kind: "existing"; dest: PlaylistSummary } | { kind: "new" };
     const targets: Target[] = [
       ...[...selectedDestIds]
         .map((id) => destPlaylists.find((p) => p.id === id))
@@ -290,8 +290,7 @@ export function SubscribeSheet({
         // A destination that is already managed keeps its own rules — only send
         // the link. New / not-yet-managed destinations adopt the rules below.
         const adoptsRules =
-          target.kind === "new" ||
-          !managedByExternalId.get(target.dest.id);
+          target.kind === "new" || !managedByExternalId.get(target.dest.id);
 
         const body: SubscribeReqBody = {
           provider,
@@ -305,8 +304,7 @@ export function SubscribeSheet({
                 explicitContentFilter: explicitFilter,
                 trackAgeLimit,
                 vibePrompt: vibePrompt.trim() || undefined,
-                customDays:
-                  syncFrequency === "CUSTOM" ? customDays : undefined,
+                customDays: syncFrequency === "CUSTOM" ? customDays : undefined,
               }
             : {}),
         } as SubscribeReqBody;
@@ -402,9 +400,7 @@ export function SubscribeSheet({
               >
                 <span
                   className={`flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-md ${
-                    selected
-                      ? "bg-brand text-surface"
-                      : "border border-ink-25"
+                    selected ? "bg-brand text-surface" : "border border-ink-25"
                   }`}
                 >
                   {selected && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -477,7 +473,6 @@ export function SubscribeSheet({
           </button>
         )}
       </div>
-
     </div>
   );
 
@@ -772,7 +767,8 @@ export function SubscribeSheet({
           )}
           <div className="min-w-0 flex-1">
             <div className="font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
-              Subscribe to {sources.length === 1 ? "source" : `${sources.length} sources`}
+              Subscribe to{" "}
+              {sources.length === 1 ? "source" : `${sources.length} sources`}
             </div>
             <div className="truncate font-display text-[17px] font-semibold text-ink">
               {sources.length === 1

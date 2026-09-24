@@ -1,3 +1,28 @@
+/**
+ * Headers that apply to every response.
+ *
+ * Deliberately does NOT include Content-Security-Policy — see the note in
+ * README/TODO. CSP needs an allowlist derived from what the app actually loads
+ * (Clerk, MusicKit JS, Spotify's CDN, the embed iframes), and a wrong one fails
+ * closed by breaking the page rather than failing open. It's worth deriving
+ * from real report-only data rather than guessing.
+ */
+const securityHeaders = [
+  // Nothing here is meant to be framed. Blocks clickjacking outright.
+  { key: "X-Frame-Options", value: "DENY" },
+  // Stop browsers from MIME-sniffing a response into something executable.
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  // Send the origin to other sites, the full URL only to ourselves — playlist
+  // and user ids live in our paths and don't belong in third-party Referers.
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // Features this app never uses. Revoked so an injected script can't reach
+  // for them either.
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+  },
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Type errors now fail the build. They were suppressed, which is how a dead
@@ -18,6 +43,7 @@ const nextConfig = {
       { protocol: "https", hostname: "**.mzstatic.com" },
     ],
   },
+  headers: async () => [{ source: "/:path*", headers: securityHeaders }],
   webpack: (config) => {
     config.resolve.extensionAlias = {
       ".js": [".ts", ".tsx", ".js", ".jsx"],

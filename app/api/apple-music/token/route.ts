@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/prisma";
 import { getDeveloperToken } from "@/lib/music/apple";
+import { debugDetails } from "@/lib/api-errors";
+import { ensureUser } from "@/lib/user";
 
 /**
  * A Music User Token lasts about six months and cannot be renewed server-side.
@@ -22,7 +24,10 @@ export async function GET() {
   const { userId } = await auth();
 
   if (!userId) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
   }
 
   try {
@@ -73,7 +78,10 @@ export async function POST(request: NextRequest) {
   const { userId } = await auth();
 
   if (!userId) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
   }
 
   try {
@@ -86,30 +94,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upsert, not update. User rows are normally created by the Clerk webhook,
-    // but that can lag a first sign-in — and in local development it never
-    // arrives at all, because webhooks can't reach localhost. `update` throws on
-    // a missing row, which surfaced as "Failed to save Apple Music token" with no
-    // hint that the real problem was a user who didn't exist yet.
-    //
-    // The subscribe route already carries the same fallback for the same reason.
-    const clerkClient = (await import("@clerk/nextjs/server")).clerkClient;
-    const clerk = await clerkClient();
-    const clerkUser = await clerk.users.getUser(userId);
+    /**
+     * the clerk webhook can lag a first sign-in, and never reaches localhost.
+     * make sure the row exists before updating it
+     */
+    await ensureUser(userId);
 
-    await prisma.user.upsert({
+    await prisma.user.update({
       where: { clerkUserId: userId },
-      update: {
-        appleMusicUserToken: musicUserToken,
-        appleMusicTokenIssuedAt: new Date(),
-      },
-      create: {
-        clerkUserId: userId,
-        email: clerkUser.emailAddresses?.[0]?.emailAddress || "",
-        name:
-          `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim() ||
-          "User",
-        imageUrl: clerkUser.imageUrl,
+      data: {
         appleMusicUserToken: musicUserToken,
         appleMusicTokenIssuedAt: new Date(),
       },
@@ -120,7 +113,7 @@ export async function POST(request: NextRequest) {
     console.error("Failed to store Apple Music user token:", error.message);
 
     return NextResponse.json(
-      { error: "Failed to store Apple Music token", details: error.message },
+      { error: "Failed to store Apple Music token", ...debugDetails(error) },
       { status: 500 },
     );
   }
@@ -131,7 +124,10 @@ export async function DELETE() {
   const { userId } = await auth();
 
   if (!userId) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
   }
 
   // updateMany rather than update: disconnecting a user who has no row is a

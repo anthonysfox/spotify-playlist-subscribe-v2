@@ -10,16 +10,15 @@ const isProtectedRoute = createRouteMatcher([
   "/api/apple-music(.*)",
   "/api/music(.*)",
   "/profile(.*)",
-  "/dashboard(.*)",
   "/library(.*)",
   "/activity(.*)",
-  "/settings(.*)"
+  "/settings(.*)",
 ]);
 
 // Define public API routes that don't need auth
 const isPublicApiRoute = createRouteMatcher([
   "/api/webhooks(.*)",
-  "/api/cron(.*)"
+  "/api/cron(.*)",
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -27,7 +26,7 @@ export default clerkMiddleware(async (auth, req) => {
   if (isPublicApiRoute(req)) {
     return;
   }
-  
+
   // Protect other routes that need authentication
   if (isProtectedRoute(req)) {
     await auth.protect();

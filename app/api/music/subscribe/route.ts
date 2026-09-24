@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { subscribe, SubscribeError } from "@/lib/subscribe";
+import { debugDetails } from "@/lib/api-errors";
 
 const playlistRef = z.object({
   id: z.string().min(1),
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
 
     console.error("Error handling subscribe request:", error);
     return NextResponse.json(
-      { error: "Internal Server Error", details: error.message },
+      { error: "Internal Server Error", ...debugDetails(error) },
       { status: 500 },
     );
   }
