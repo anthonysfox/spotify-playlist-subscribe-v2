@@ -170,7 +170,7 @@ export const SimplePlaylistList = ({
                     }
                     className={`block w-full overflow-hidden rounded-xl ${
                       picked
-                        ? "outline outline-[2.5px] outline-offset-2 outline-brand"
+                        ? "outline-brand outline outline-[2.5px] outline-offset-2"
                         : ""
                     }`}
                   >
@@ -189,10 +189,10 @@ export const SimplePlaylistList = ({
 
                   {selectMode ? (
                     <span
-                      className={`absolute left-2 top-2 flex h-[26px] w-[26px] items-center justify-center rounded-lg ${
+                      className={`absolute top-2 left-2 flex h-[26px] w-[26px] items-center justify-center rounded-lg ${
                         picked
                           ? "bg-brand text-surface"
-                          : "border-2 border-surface bg-ink/20"
+                          : "border-surface bg-ink/20 border-2"
                       }`}
                     >
                       {picked && (
@@ -200,7 +200,7 @@ export const SimplePlaylistList = ({
                       )}
                     </span>
                   ) : subscribed ? (
-                    <span className="absolute right-2 top-2 rounded-full bg-ink px-2 py-0.5 text-[10.5px] font-medium text-surface">
+                    <span className="bg-ink text-surface absolute top-2 right-2 rounded-full px-2 py-0.5 text-[10.5px] font-medium">
                       Subscribed
                     </span>
                   ) : (
@@ -208,31 +208,31 @@ export const SimplePlaylistList = ({
                       type="button"
                       onClick={() => onSubscribe([playlist])}
                       aria-label={`Subscribe to ${playlist.name}`}
-                      className="absolute right-2 top-2 flex h-[26px] w-[26px] items-center justify-center rounded-full bg-surface text-brand opacity-0 shadow-[0_1px_3px_rgba(26,21,18,0.15)] transition-opacity hover:bg-brand-tint-soft focus:opacity-100 group-hover:opacity-100"
+                      className="bg-surface text-brand hover:bg-brand-tint-soft absolute top-2 right-2 flex h-[26px] w-[26px] items-center justify-center rounded-full opacity-0 shadow-[0_1px_3px_rgba(26,21,18,0.15)] transition-opacity group-hover:opacity-100 focus:opacity-100"
                     >
                       <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                     </button>
                   )}
 
                   {loadingTracks === playlist.id && (
-                    <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-ink/10">
-                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-surface border-t-transparent" />
+                    <span className="bg-ink/10 absolute inset-0 flex items-center justify-center rounded-xl">
+                      <span className="border-surface h-5 w-5 animate-spin rounded-full border-2 border-t-transparent" />
                     </span>
                   )}
                 </div>
 
                 <div className="min-w-0">
-                  <div className="truncate text-[13.5px] font-medium text-ink">
+                  <div className="text-ink truncate text-[13.5px] font-medium">
                     {playlist.name}
                   </div>
                   {subscribed ? (
-                    <div className="truncate text-[12px] text-brand">
+                    <div className="text-brand truncate text-[12px]">
                       →{" "}
                       {feeds.map((m) => m.name).join(", ") ||
                         "managed playlist"}
                     </div>
                   ) : (
-                    <div className="truncate text-[12px] text-ink-35">
+                    <div className="text-ink-35 truncate text-[12px]">
                       {PROVIDER_LABELS[playlist.provider]} ·{" "}
                       {playlist.trackCount} tracks
                     </div>
@@ -244,13 +244,13 @@ export const SimplePlaylistList = ({
       </div>
 
       {selectMode && (
-        <div className="fixed bottom-4 left-1/2 z-40 flex w-[min(92vw,420px)] -translate-x-1/2 flex-col gap-3 rounded-2xl bg-ink p-3.5 text-surface shadow-[0_8px_24px_rgba(26,21,18,0.28)]">
+        <div className="bg-ink text-surface fixed bottom-4 left-1/2 z-40 flex w-[min(92vw,420px)] -translate-x-1/2 flex-col gap-3 rounded-2xl p-3.5 shadow-[0_8px_24px_rgba(26,21,18,0.28)]">
           <div className="flex items-center gap-3">
             <span className="flex shrink-0">
               {selectedList.slice(0, 3).map((s, i) => (
                 <span
                   key={s.id}
-                  className="h-8 w-8 overflow-hidden rounded-md border-2 border-ink bg-ink-70"
+                  className="border-ink bg-ink-70 h-8 w-8 overflow-hidden rounded-md border-2"
                   style={{ marginLeft: i === 0 ? 0 : -10 }}
                 >
                   {s.imageUrl && (
@@ -268,7 +268,7 @@ export const SimplePlaylistList = ({
                 {selectedList.length} source
                 {selectedList.length === 1 ? "" : "s"} selected
               </div>
-              <div className="truncate text-[11.5px] text-ink-25">
+              <div className="text-ink-25 truncate text-[11.5px]">
                 {selectedList.map((s) => s.name).join(", ")}
               </div>
             </div>
@@ -276,7 +276,7 @@ export const SimplePlaylistList = ({
               type="button"
               onClick={exitSelect}
               aria-label="Done"
-              className="shrink-0 rounded-md p-1 text-ink-25 hover:text-surface"
+              className="text-ink-25 hover:text-surface shrink-0 rounded-md p-1"
             >
               <X className="h-4 w-4" />
             </button>
@@ -288,7 +288,7 @@ export const SimplePlaylistList = ({
               onSubscribe(selectedList);
               exitSelect();
             }}
-            className="w-full rounded-xl bg-brand py-3 text-[14px] font-medium text-surface transition-colors hover:bg-brand-deep disabled:opacity-50"
+            className="bg-brand text-surface hover:bg-brand-deep w-full rounded-xl py-3 text-[14px] font-medium transition-colors disabled:opacity-50"
           >
             Subscribe all {selectedList.length}
           </button>

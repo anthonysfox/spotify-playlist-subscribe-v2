@@ -83,10 +83,10 @@ function Toggle({
       aria-label={label}
       onClick={() => onChange(!on)}
       className={`flex h-[22px] w-[38px] shrink-0 items-center rounded-full p-[2px] transition-colors ${
-        on ? "justify-end bg-brand" : "justify-start bg-ink-25"
+        on ? "bg-brand justify-end" : "bg-ink-25 justify-start"
       }`}
     >
-      <span className="h-[17px] w-[17px] rounded-full bg-surface" />
+      <span className="bg-surface h-[17px] w-[17px] rounded-full" />
     </button>
   );
 }
@@ -359,11 +359,11 @@ export function SubscribeSheet({
   const destinationList = (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
+        <span className="text-ink-35 font-mono text-[10px] font-medium tracking-[0.08em] uppercase">
           Add to
         </span>
         {destCount > 0 && (
-          <span className="font-mono text-[11px] text-brand">
+          <span className="text-brand font-mono text-[11px]">
             {destCount} selected
           </span>
         )}
@@ -373,12 +373,12 @@ export function SubscribeSheet({
         value={destFilter}
         onChange={(e) => setDestFilter(e.target.value)}
         placeholder="Filter your playlists"
-        className="rounded-full border border-line-strong bg-surface px-3.5 py-2 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
+        className="border-line-strong bg-surface text-ink placeholder:text-ink-50 focus:border-brand/40 rounded-full border px-3.5 py-2 text-[13px] focus:outline-none"
       />
 
       <div className="flex flex-col gap-1.5">
         {destLoading && (
-          <p className="py-4 text-center text-[12px] text-ink-35">
+          <p className="text-ink-35 py-4 text-center text-[12px]">
             Loading your playlists…
           </p>
         )}
@@ -400,7 +400,7 @@ export function SubscribeSheet({
               >
                 <span
                   className={`flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-md ${
-                    selected ? "bg-brand text-surface" : "border border-ink-25"
+                    selected ? "bg-brand text-surface" : "border-ink-25 border"
                   }`}
                 >
                   {selected && <Check className="h-3 w-3" strokeWidth={3} />}
@@ -415,7 +415,7 @@ export function SubscribeSheet({
                   <span className="art-placeholder h-8 w-8 shrink-0 rounded-md" />
                 )}
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13.5px] font-medium text-ink">
+                  <span className="text-ink block truncate text-[13.5px] font-medium">
                     {p.name}
                   </span>
                   <span
@@ -436,8 +436,8 @@ export function SubscribeSheet({
 
         {/* New managed playlist */}
         {addingNew ? (
-          <div className="flex items-center gap-2.5 rounded-xl border border-dashed border-line-strong px-3 py-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-tint text-brand">
+          <div className="border-line-strong flex items-center gap-2.5 rounded-xl border border-dashed px-3 py-2.5">
+            <span className="bg-brand-tint text-brand flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
               <Plus className="h-4 w-4" />
             </span>
             <input
@@ -445,7 +445,7 @@ export function SubscribeSheet({
               value={newPlaylistName}
               onChange={(e) => setNewPlaylistName(e.target.value)}
               placeholder="New playlist name"
-              className="min-w-0 flex-1 bg-transparent text-[13.5px] text-ink placeholder:text-ink-50 focus:outline-none"
+              className="text-ink placeholder:text-ink-50 min-w-0 flex-1 bg-transparent text-[13.5px] focus:outline-none"
             />
             <button
               type="button"
@@ -462,12 +462,12 @@ export function SubscribeSheet({
           <button
             type="button"
             onClick={() => setAddingNew(true)}
-            className="flex items-center gap-2.5 rounded-xl border border-dashed border-line-strong px-3 py-2.5 text-left"
+            className="border-line-strong flex items-center gap-2.5 rounded-xl border border-dashed px-3 py-2.5 text-left"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-tint text-brand">
+            <span className="bg-brand-tint text-brand flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
               <Plus className="h-4 w-4" />
             </span>
-            <span className="text-[13.5px] font-medium text-brand">
+            <span className="text-brand text-[13.5px] font-medium">
               New managed playlist
             </span>
           </button>
@@ -480,8 +480,8 @@ export function SubscribeSheet({
     <div className="flex flex-col gap-5">
       {/* How often */}
       <div>
-        <div className="mb-2 text-[13px] font-medium text-ink">How often</div>
-        <div className="flex rounded-xl bg-ground-chip p-[3px]">
+        <div className="text-ink mb-2 text-[13px] font-medium">How often</div>
+        <div className="bg-ground-chip flex rounded-xl p-[3px]">
           {FREQUENCIES.map((f) => (
             <button
               key={f.value}
@@ -489,7 +489,7 @@ export function SubscribeSheet({
               onClick={() => setSyncFrequency(f.value)}
               className={`flex-1 rounded-[9px] py-2 text-[12.5px] transition-colors ${
                 syncFrequency === f.value
-                  ? "bg-ink font-medium text-surface"
+                  ? "bg-ink text-surface font-medium"
                   : "text-ink-70 hover:text-ink"
               }`}
             >
@@ -529,10 +529,10 @@ export function SubscribeSheet({
       {/* Tracks per run + Each run */}
       <div className="flex flex-wrap gap-4">
         <div className="min-w-[140px] flex-1">
-          <div className="mb-2 text-[13px] font-medium text-ink">
+          <div className="text-ink mb-2 text-[13px] font-medium">
             Tracks per run
           </div>
-          <div className="flex items-center justify-between rounded-[10px] border border-line-strong px-3 py-2">
+          <div className="border-line-strong flex items-center justify-between rounded-[10px] border px-3 py-2">
             <button
               type="button"
               aria-label="Fewer"
@@ -541,7 +541,7 @@ export function SubscribeSheet({
             >
               <Minus className="h-4 w-4" />
             </button>
-            <span className="text-[13.5px] font-medium text-ink">{qty}</span>
+            <span className="text-ink text-[13.5px] font-medium">{qty}</span>
             <button
               type="button"
               aria-label="More"
@@ -554,7 +554,7 @@ export function SubscribeSheet({
         </div>
 
         <div className="min-w-[160px] flex-1">
-          <div className="mb-2 text-[13px] font-medium text-ink">Each run</div>
+          <div className="text-ink mb-2 text-[13px] font-medium">Each run</div>
           <div className="flex gap-1.5">
             {(["APPEND", "REPLACE"] as const).map((m) => {
               const disabled = m === "REPLACE" && isApple;
@@ -585,12 +585,12 @@ export function SubscribeSheet({
       </div>
 
       {/* Skip older than */}
-      <div className="flex items-center justify-between border-t border-line pt-3">
-        <span className="text-[13px] text-ink">Skip tracks older than</span>
+      <div className="border-line flex items-center justify-between border-t pt-3">
+        <span className="text-ink text-[13px]">Skip tracks older than</span>
         <select
           value={trackAgeLimit}
           onChange={(e) => setTrackAgeLimit(Number(e.target.value))}
-          className="rounded-md border border-line-strong bg-surface px-2 py-1 text-[12.5px] text-ink-70 focus:outline-none"
+          className="border-line-strong bg-surface text-ink-70 rounded-md border px-2 py-1 text-[12.5px] focus:outline-none"
         >
           {AGE_LIMITS.map((a) => (
             <option key={a.value} value={a.value}>
@@ -601,8 +601,8 @@ export function SubscribeSheet({
       </div>
 
       {/* Explicit filter */}
-      <div className="flex items-center justify-between border-t border-line pt-3">
-        <span className="text-[13px] text-ink">Filter explicit tracks</span>
+      <div className="border-line flex items-center justify-between border-t pt-3">
+        <span className="text-ink text-[13px]">Filter explicit tracks</span>
         <Toggle
           on={explicitFilter}
           onChange={setExplicitFilter}
@@ -611,8 +611,8 @@ export function SubscribeSheet({
       </div>
 
       {/* Run first sync now */}
-      <div className="flex items-center justify-between border-t border-line pt-3">
-        <span className="text-[13px] text-ink">Run the first sync now</span>
+      <div className="border-line flex items-center justify-between border-t pt-3">
+        <span className="text-ink text-[13px]">Run the first sync now</span>
         <Toggle
           on={runImmediateSync}
           onChange={setRunImmediateSync}
@@ -621,9 +621,9 @@ export function SubscribeSheet({
       </div>
 
       {/* Vibe */}
-      <div className="rounded-xl border border-line p-3">
+      <div className="border-line rounded-xl border p-3">
         <div className="mb-1.5 flex items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-surface shadow-[0_0_0_1px_var(--color-line)]">
+          <span className="bg-surface flex h-5 w-5 items-center justify-center overflow-hidden rounded-full shadow-[0_0_0_1px_var(--color-line)]">
             <Image
               src="/logo.png"
               alt=""
@@ -632,10 +632,10 @@ export function SubscribeSheet({
               className="h-[22px] w-[22px] object-cover"
             />
           </span>
-          <span className="text-[13px] font-medium text-ink">
+          <span className="text-ink text-[13px] font-medium">
             Curate with a vibe
           </span>
-          <span className="text-[11px] text-ink-35">optional</span>
+          <span className="text-ink-35 text-[11px]">optional</span>
         </div>
         <textarea
           rows={2}
@@ -643,9 +643,9 @@ export function SubscribeSheet({
           value={vibePrompt}
           onChange={(e) => setVibePrompt(e.target.value)}
           placeholder="e.g. upbeat indie and synth-pop, nothing slow or sad"
-          className="w-full resize-none rounded-lg border border-line-strong bg-surface p-2.5 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
+          className="border-line-strong bg-surface text-ink placeholder:text-ink-50 focus:border-brand/40 w-full resize-none rounded-lg border p-2.5 text-[13px] focus:outline-none"
         />
-        <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink-35">
+        <p className="text-ink-35 mt-1.5 text-[11.5px] leading-relaxed">
           {vibePrompt.trim()
             ? "The fox reads the candidates and picks the ones that fit."
             : `Without this the run takes the newest ${qty}. With it, the fox reads the candidates and picks the ${qty} that fit.`}
@@ -658,13 +658,13 @@ export function SubscribeSheet({
   // already managed — its rules live on its own settings page.
   const managedSummary = (
     <div className="flex flex-col gap-3">
-      <p className="text-[12.5px] leading-relaxed text-ink-70">
+      <p className="text-ink-70 text-[12.5px] leading-relaxed">
         {existingManaged.length === 1
           ? "This playlist is already managed. Adding this source uses its existing rules — tweak them in its settings."
           : "These playlists are already managed. Adding this source uses each one's existing rules."}
       </p>
       {existingManaged.map(({ playlist, managed }) => (
-        <div key={playlist.id} className="rounded-xl border border-line p-3">
+        <div key={playlist.id} className="border-line rounded-xl border p-3">
           <div className="flex items-center gap-2">
             {playlist.imageUrl ? (
               <img
@@ -675,25 +675,25 @@ export function SubscribeSheet({
             ) : (
               <span className="art-placeholder h-8 w-8 shrink-0 rounded-md" />
             )}
-            <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-ink">
+            <span className="text-ink min-w-0 flex-1 truncate text-[13.5px] font-medium">
               {playlist.name}
             </span>
             <Link
               href={`/library/${managed!.id}/settings`}
-              className="shrink-0 text-[12px] font-medium text-brand-deep hover:text-brand"
+              className="text-brand-deep hover:text-brand shrink-0 text-[12px] font-medium"
             >
               Change in settings
             </Link>
           </div>
-          <div className="mt-1.5 font-mono text-[11.5px] text-ink-50">
+          <div className="text-ink-50 mt-1.5 font-mono text-[11.5px]">
             {managed!.syncInterval.toLowerCase()} ·{" "}
             {managed!.syncQuantityPerSource} per source ·{" "}
             {managed!.syncMode.toLowerCase()}
           </div>
         </div>
       ))}
-      <div className="flex items-center justify-between border-t border-line pt-3">
-        <span className="text-[13px] text-ink">Pull from this source now</span>
+      <div className="border-line flex items-center justify-between border-t pt-3">
+        <span className="text-ink text-[13px]">Pull from this source now</span>
         <Toggle
           on={runImmediateSync}
           onChange={setRunImmediateSync}
@@ -706,7 +706,7 @@ export function SubscribeSheet({
   const rulesArea = rulesApply ? (
     <div className="flex flex-col gap-4">
       {existingManaged.length > 0 && (
-        <div className="rounded-xl bg-ground-alt px-3 py-2.5 text-[12px] leading-relaxed text-ink-70">
+        <div className="bg-ground-alt text-ink-70 rounded-xl px-3 py-2.5 text-[12px] leading-relaxed">
           These rules set up the{" "}
           {adoptingRulesCount === 1
             ? "new managed playlist"
@@ -722,7 +722,7 @@ export function SubscribeSheet({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-ink/40">
+    <div className="bg-ink/40 fixed inset-0 z-50 flex justify-end">
       <button
         type="button"
         aria-label="Close"
@@ -730,12 +730,12 @@ export function SubscribeSheet({
         className="flex-1 cursor-default"
       />
       <div
-        className={`flex max-h-full w-full flex-col bg-surface shadow-[-16px_0_50px_rgba(26,21,18,0.3)] min-[720px]:max-w-[424px] ${
+        className={`bg-surface flex max-h-full w-full flex-col shadow-[-16px_0_50px_rgba(26,21,18,0.3)] min-[720px]:max-w-[424px] ${
           expanded ? "min-[720px]:max-w-[812px]" : ""
         } max-[719px]:mt-auto max-[719px]:max-h-[92vh] max-[719px]:rounded-t-[26px]`}
       >
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-line px-5 py-4">
+        <div className="border-line flex items-center gap-3 border-b px-5 py-4">
           {sources.length === 1 ? (
             sources[0].imageUrl ? (
               <img
@@ -751,7 +751,7 @@ export function SubscribeSheet({
               {sources.slice(0, 3).map((s, i) => (
                 <span
                   key={s.id}
-                  className="h-8 w-8 rounded-md border-2 border-surface bg-ground-alt"
+                  className="border-surface bg-ground-alt h-8 w-8 rounded-md border-2"
                   style={{ marginLeft: i === 0 ? 0 : -10 }}
                 >
                   {s.imageUrl && (
@@ -766,11 +766,11 @@ export function SubscribeSheet({
             </span>
           )}
           <div className="min-w-0 flex-1">
-            <div className="font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
+            <div className="text-ink-35 font-mono text-[10px] font-medium tracking-[0.08em] uppercase">
               Subscribe to{" "}
               {sources.length === 1 ? "source" : `${sources.length} sources`}
             </div>
-            <div className="truncate font-display text-[17px] font-semibold text-ink">
+            <div className="font-display text-ink truncate text-[17px] font-semibold">
               {sources.length === 1
                 ? sources[0].name
                 : sources.map((s) => s.name).join(", ")}
@@ -780,7 +780,7 @@ export function SubscribeSheet({
             type="button"
             onClick={() => setExpanded((v) => !v)}
             aria-label={expanded ? "Collapse" : "Expand"}
-            className="hidden shrink-0 rounded-full border border-line-strong p-1.5 text-ink-50 hover:text-ink-70 min-[720px]:block"
+            className="border-line-strong text-ink-50 hover:text-ink-70 hidden shrink-0 rounded-full border p-1.5 min-[720px]:block"
           >
             {expanded ? (
               <PanelRightClose className="h-4 w-4" />
@@ -792,7 +792,7 @@ export function SubscribeSheet({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="shrink-0 text-ink-35 hover:text-ink-70"
+            className="text-ink-35 hover:text-ink-70 shrink-0"
           >
             <X className="h-5 w-5" />
           </button>
@@ -806,7 +806,7 @@ export function SubscribeSheet({
         >
           {expanded ? (
             <>
-              <div className="overflow-y-auto border-b border-line p-5 min-[720px]:w-[336px] min-[720px]:shrink-0 min-[720px]:border-b-0 min-[720px]:border-r">
+              <div className="border-line overflow-y-auto border-b p-5 min-[720px]:w-[336px] min-[720px]:shrink-0 min-[720px]:border-r min-[720px]:border-b-0">
                 {destinationList}
               </div>
               <div className="overflow-y-auto p-5 min-[720px]:flex-1">
@@ -822,15 +822,15 @@ export function SubscribeSheet({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-line bg-ground px-5 py-4">
-          <p className="mb-3 text-[12.5px] leading-relaxed text-ink-70">
+        <div className="border-line bg-ground border-t px-5 py-4">
+          <p className="text-ink-70 mb-3 text-[12.5px] leading-relaxed">
             {sentence}
           </p>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full px-4 py-2.5 text-[13px] font-medium text-ink-50 hover:text-ink-70"
+              className="text-ink-50 hover:text-ink-70 rounded-full px-4 py-2.5 text-[13px] font-medium"
             >
               Cancel
             </button>
@@ -838,7 +838,7 @@ export function SubscribeSheet({
               type="button"
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="flex-1 rounded-full bg-brand py-2.5 text-[14px] font-medium text-surface transition-colors hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50"
+              className="bg-brand text-surface hover:bg-brand-deep flex-1 rounded-full py-2.5 text-[14px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
             >
               {submitLabel}
             </button>

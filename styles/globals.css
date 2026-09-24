@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@config '../tailwind.config.js';
+@config "../tailwind.config.js";
 
 /*
   PlaylistFox redesign tokens (see design_handoff_playlistfox_redesign/README.md

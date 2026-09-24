@@ -49,18 +49,18 @@ export default function InstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto">
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4">
+    <div className="fixed right-4 bottom-4 left-4 z-50 mx-auto max-w-sm">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
               <img
                 src="/logo.png"
                 alt="PlaylistFox"
-                className="w-10 h-10 rounded-lg"
+                className="h-10 w-10 rounded-lg"
               />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <h3 className="text-sm font-medium text-gray-900">
                 Install PlaylistFox
               </h3>
@@ -71,7 +71,7 @@ export default function InstallPrompt() {
           </div>
           <button
             onClick={handleDismiss}
-            className="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600"
+            className="ml-2 flex-shrink-0 text-gray-400 hover:text-gray-600"
           >
             <X size={16} />
           </button>
@@ -79,14 +79,14 @@ export default function InstallPrompt() {
         <div className="mt-4 flex space-x-2">
           <button
             onClick={handleInstall}
-            className="flex-1 bg-[#CC5500] text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-[#B04A00] transition-colors flex items-center justify-center space-x-1"
+            className="flex flex-1 items-center justify-center space-x-1 rounded-lg bg-[#CC5500] px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-[#B04A00]"
           >
             <Download size={16} />
             <span>Install</span>
           </button>
           <button
             onClick={handleDismiss}
-            className="px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+            className="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-gray-800"
           >
             Not now
           </button>

@@ -186,14 +186,14 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
           const q = searchQuery.trim();
           if (q) setSearchText(q);
         }}
-        className="flex items-center gap-2 rounded-full border border-line-strong bg-surface py-2 pl-4 pr-2"
+        className="border-line-strong bg-surface flex items-center gap-2 rounded-full border py-2 pr-2 pl-4"
       >
-        <Search className="h-4 w-4 shrink-0 text-ink-25" />
+        <Search className="text-ink-25 h-4 w-4 shrink-0" />
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search playlists — or describe a vibe"
-          className="min-w-0 flex-1 bg-transparent py-1.5 text-[14px] text-ink placeholder:text-ink-50 focus:outline-none"
+          className="text-ink placeholder:text-ink-50 min-w-0 flex-1 bg-transparent py-1.5 text-[14px] focus:outline-none"
         />
         {searchText && (
           <button
@@ -204,7 +204,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
               setIsSearchMode(false);
             }}
             aria-label="Clear search"
-            className="px-1 text-ink-35 hover:text-ink-70"
+            className="text-ink-35 hover:text-ink-70 px-1"
           >
             ✕
           </button>
@@ -212,9 +212,9 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
         <button
           type="button"
           onClick={() => openAssistantWithMessage(searchQuery)}
-          className="flex shrink-0 items-center gap-1.5 rounded-full border border-brand/25 bg-brand-tint px-3.5 py-2 text-[13px] font-medium text-brand-deep transition-colors hover:bg-brand-tint-soft"
+          className="border-brand/25 bg-brand-tint text-brand-deep hover:bg-brand-tint-soft flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13px] font-medium transition-colors"
         >
-          <span className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-surface">
+          <span className="bg-surface flex h-5 w-5 items-center justify-center overflow-hidden rounded-full">
             <Image
               src="/logo.png"
               alt=""
@@ -239,7 +239,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
       {/* Grid */}
       <div className="flex min-h-0 grow flex-col overflow-hidden">
         <div
-          className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar scrollbar-visible pr-1"
+          className="custom-scrollbar scrollbar-visible min-h-0 flex-1 overflow-x-hidden overflow-y-auto pr-1"
           ref={listRef}
         >
           {/* Full-area load: a filter change or new search clears the grid, so
@@ -253,8 +253,8 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
               {Array.from({ length: 15 }).map((_, i) => (
                 <div key={i} className="flex animate-pulse flex-col gap-2">
                   <div className="art-placeholder aspect-square w-full rounded-xl" />
-                  <div className="h-3 w-3/4 rounded bg-ground-chip" />
-                  <div className="h-2.5 w-1/2 rounded bg-ground-alt" />
+                  <div className="bg-ground-chip h-3 w-3/4 rounded" />
+                  <div className="bg-ground-alt h-2.5 w-1/2 rounded" />
                 </div>
               ))}
             </div>
@@ -267,7 +267,7 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
 
           {loading && playlists.length > 0 && (
             <div className="flex justify-center py-6">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+              <div className="border-brand h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
             </div>
           )}
 
@@ -279,24 +279,24 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
           )}
 
           {loadedAll && playlists.length > 0 && (
-            <p className="py-6 text-center text-[13px] text-ink-35">
+            <p className="text-ink-35 py-6 text-center text-[13px]">
               That&apos;s everything
             </p>
           )}
 
           {error && (
-            <p className="py-6 text-center text-[13px] text-warn-text">
+            <p className="text-warn-text py-6 text-center text-[13px]">
               {error}
             </p>
           )}
 
           {!loading && !playlists.length && !error && (
-            <div className="mx-auto my-10 max-w-md rounded-2xl border border-dashed border-line-strong p-8 text-center">
+            <div className="border-line-strong mx-auto my-10 max-w-md rounded-2xl border border-dashed p-8 text-center">
               {searchText ? (
                 <>
-                  <p className="text-[13.5px] text-ink-70">
+                  <p className="text-ink-70 text-[13.5px]">
                     Nothing came back for{" "}
-                    <span className="font-medium text-ink">
+                    <span className="text-ink font-medium">
                       &ldquo;{searchText}&rdquo;
                     </span>
                     .
@@ -304,13 +304,13 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
                   <button
                     type="button"
                     onClick={() => openAssistantWithMessage(searchText)}
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-brand/25 bg-brand-tint px-4 py-2 text-[13px] font-medium text-brand-deep transition-colors hover:bg-brand-tint-soft"
+                    className="border-brand/25 bg-brand-tint text-brand-deep hover:bg-brand-tint-soft mt-4 inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[13px] font-medium transition-colors"
                   >
                     Ask the fox instead
                   </button>
                 </>
               ) : (
-                <p className="text-[13.5px] text-ink-50">
+                <p className="text-ink-50 text-[13.5px]">
                   No playlists in this category right now.
                 </p>
               )}

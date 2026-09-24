@@ -86,11 +86,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
 
   return (
-    <div className="flex h-full w-full min-h-0 flex-col bg-ground min-[900px]:flex-row">
+    <div className="bg-ground flex h-full min-h-0 w-full flex-col min-[900px]:flex-row">
       {/* ---- Left rail (desktop) ---- */}
-      <aside className="hidden w-[216px] shrink-0 flex-col border-r border-line bg-surface px-3 py-5 min-[900px]:flex">
+      <aside className="border-line bg-surface hidden w-[216px] shrink-0 flex-col border-r px-3 py-5 min-[900px]:flex">
         <Link href="/" className="mb-6 flex items-center gap-2.5 px-2">
-          <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-surface shadow-[0_0_0_1px_var(--color-line)]">
+          <span className="bg-surface flex h-7 w-7 items-center justify-center overflow-hidden rounded-full shadow-[0_0_0_1px_var(--color-line)]">
             <Image
               src="/logo.png"
               alt="PlaylistFox"
@@ -99,7 +99,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="h-[34px] w-[34px] object-cover"
             />
           </span>
-          <span className="font-display text-[17px] font-semibold tracking-[-0.02em] text-ink">
+          <span className="font-display text-ink text-[17px] font-semibold tracking-[-0.02em]">
             Playlist<span className="text-brand">Fox</span>
           </span>
         </Link>
@@ -124,7 +124,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     strokeWidth={active ? 2.25 : 2}
                   />
                   {href === "/activity" && hasUnseenFailure && (
-                    <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-warn" />
+                    <span className="bg-warn absolute -top-0.5 -right-1 h-1.5 w-1.5 rounded-full" />
                   )}
                 </span>
                 {label}
@@ -135,15 +135,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="mt-auto flex flex-col gap-3 pt-4">
           {connected.length > 0 && (
-            <div className="rounded-xl border border-line px-3 py-2.5">
-              <div className="mb-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
+            <div className="border-line rounded-xl border px-3 py-2.5">
+              <div className="text-ink-35 mb-1.5 font-mono text-[10px] font-medium tracking-[0.08em] uppercase">
                 Services
               </div>
               <ul className="flex flex-col gap-1.5">
                 {connected.map((provider) => (
                   <li
                     key={provider}
-                    className="flex items-center gap-2 text-[12.5px] text-ink-70"
+                    className="text-ink-70 flex items-center gap-2 text-[12.5px]"
                   >
                     <span
                       className={`h-[7px] w-[7px] shrink-0 rounded-full ${PROVIDER_DOT[provider]}`}
@@ -162,12 +162,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <UserButton
                 appearance={{ elements: { userButtonAvatarBox: "h-7 w-7" } }}
               />
-              <span className="truncate text-[12.5px] text-ink-50">
+              <span className="text-ink-50 truncate text-[12.5px]">
                 Account
               </span>
             </div>
             <SignOutButton redirectUrl="/">
-              <button className="shrink-0 text-[12px] font-medium text-ink-50 transition-colors hover:text-warn-text">
+              <button className="text-ink-50 hover:text-warn-text shrink-0 text-[12px] font-medium transition-colors">
                 Sign out
               </button>
             </SignOutButton>
@@ -184,7 +184,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <SearchAssistant />
 
       {/* ---- Bottom tab bar (mobile) ---- */}
-      <nav className="flex shrink-0 items-stretch border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] min-[900px]:hidden">
+      <nav className="border-line bg-surface flex shrink-0 items-stretch border-t pb-[env(safe-area-inset-bottom)] min-[900px]:hidden">
         {NAV.map(({ href, shortLabel, icon: Icon }) => {
           const active = itemIsActive(pathname, href);
           return (
@@ -202,7 +202,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   strokeWidth={active ? 2.25 : 2}
                 />
                 {href === "/activity" && hasUnseenFailure && (
-                  <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-warn" />
+                  <span className="bg-warn absolute -top-0.5 -right-1 h-1.5 w-1.5 rounded-full" />
                 )}
               </span>
               {shortLabel}

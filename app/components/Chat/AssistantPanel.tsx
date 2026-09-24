@@ -142,7 +142,7 @@ export function AssistantPanel() {
         >
           <div
             onClick={close}
-            className={`absolute inset-0 bg-ink/40 transition-opacity duration-200 ${
+            className={`bg-ink/40 absolute inset-0 transition-opacity duration-200 ${
               open ? "opacity-100" : "opacity-0"
             }`}
           />
@@ -152,14 +152,14 @@ export function AssistantPanel() {
             role="dialog"
             aria-modal="true"
             aria-label="Ask the fox"
-            className={`relative flex h-full w-full max-w-[380px] flex-col bg-ground shadow-[-16px_0_50px_rgba(26,21,18,0.3)] transition-transform duration-200 ease-out ${
+            className={`bg-ground relative flex h-full w-full max-w-[380px] flex-col shadow-[-16px_0_50px_rgba(26,21,18,0.3)] transition-transform duration-200 ease-out ${
               open ? "translate-x-0" : "translate-x-full"
             }`}
           >
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-line bg-surface px-4 py-3">
+            <div className="border-line bg-surface flex items-center justify-between border-b px-4 py-3">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-surface shadow-[0_0_0_1px_var(--color-line)]">
+                <span className="bg-surface flex h-8 w-8 items-center justify-center overflow-hidden rounded-full shadow-[0_0_0_1px_var(--color-line)]">
                   <Image
                     src="/logo.png"
                     alt=""
@@ -169,10 +169,10 @@ export function AssistantPanel() {
                   />
                 </span>
                 <div>
-                  <div className="font-display text-[14px] font-semibold text-ink">
+                  <div className="font-display text-ink text-[14px] font-semibold">
                     Ask the fox
                   </div>
-                  <div className="text-[11px] text-ink-35">
+                  <div className="text-ink-35 text-[11px]">
                     Sees your library · asks before changing it
                   </div>
                 </div>
@@ -184,7 +184,7 @@ export function AssistantPanel() {
                     onClick={newChat}
                     aria-label="New chat"
                     title="New chat"
-                    className="rounded-full p-1.5 text-ink-35 transition-colors hover:bg-ground-alt hover:text-ink-70"
+                    className="text-ink-35 hover:bg-ground-alt hover:text-ink-70 rounded-full p-1.5 transition-colors"
                   >
                     <RotateCcw className="h-4 w-4" />
                   </button>
@@ -193,7 +193,7 @@ export function AssistantPanel() {
                   type="button"
                   onClick={close}
                   aria-label="Close"
-                  className="rounded-full p-1.5 text-ink-35 transition-colors hover:bg-ground-alt hover:text-ink-70"
+                  className="text-ink-35 hover:bg-ground-alt hover:text-ink-70 rounded-full p-1.5 transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -207,7 +207,7 @@ export function AssistantPanel() {
             >
               {messages.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center gap-4 text-center">
-                  <p className="max-w-xs text-[13px] text-ink-50">
+                  <p className="text-ink-50 max-w-xs text-[13px]">
                     Discover playlists, manage subscriptions, or curate by vibe.
                   </p>
                   <div className="flex flex-wrap justify-center gap-2">
@@ -216,7 +216,7 @@ export function AssistantPanel() {
                         key={s}
                         type="button"
                         onClick={() => ask(s)}
-                        className="rounded-full border border-line-strong bg-surface px-3 py-1.5 text-[12px] text-ink-70 transition-colors hover:border-brand/40 hover:text-brand"
+                        className="border-line-strong bg-surface text-ink-70 hover:border-brand/40 hover:text-brand rounded-full border px-3 py-1.5 text-[12px] transition-colors"
                       >
                         {s}
                       </button>
@@ -236,20 +236,20 @@ export function AssistantPanel() {
             {/* Input */}
             <form
               onSubmit={submit}
-              className="flex items-center gap-2 border-t border-line bg-surface p-2 pl-4"
+              className="border-line bg-surface flex items-center gap-2 border-t p-2 pl-4"
             >
               <input
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask anything about your playlists…"
-                className="min-w-0 flex-1 rounded-full bg-transparent py-2.5 text-[13px] text-ink placeholder:text-ink-50 focus:outline-none"
+                className="text-ink placeholder:text-ink-50 min-w-0 flex-1 rounded-full bg-transparent py-2.5 text-[13px] focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || busy}
                 aria-label="Send"
-                className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-ink text-surface transition-opacity disabled:opacity-40"
+                className="bg-ink text-surface flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full transition-opacity disabled:opacity-40"
               >
                 {busy ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />

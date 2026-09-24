@@ -96,32 +96,32 @@ export function ActivityFeed() {
 
   return (
     <div className="flex h-full min-h-0 flex-col px-4 py-5 min-[900px]:px-6 min-[900px]:py-6">
-      <h1 className="mb-1 font-display text-[24px] font-semibold tracking-[-0.02em] text-ink">
+      <h1 className="font-display text-ink mb-1 text-[24px] font-semibold tracking-[-0.02em]">
         Activity
       </h1>
-      <p className="mb-6 text-[13px] text-ink-50">
+      <p className="text-ink-50 mb-6 text-[13px]">
         Every sync run across your playlists, newest first.
       </p>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {loading ? (
-          <p className="py-10 text-center text-[13px] text-ink-50">Loading…</p>
+          <p className="text-ink-50 py-10 text-center text-[13px]">Loading…</p>
         ) : rows.length === 0 ? (
-          <div className="flex grow flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong p-10 text-center">
-            <p className="font-display text-[17px] font-semibold text-ink">
+          <div className="border-line-strong flex grow flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center">
+            <p className="font-display text-ink text-[17px] font-semibold">
               No sync activity yet
             </p>
-            <p className="mt-1 max-w-[42ch] text-[13px] leading-relaxed text-ink-50">
+            <p className="text-ink-50 mt-1 max-w-[42ch] text-[13px] leading-relaxed">
               Once your playlists start syncing, each run shows up here with
               what it added and what it skipped.
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-line bg-surface">
+          <div className="border-line bg-surface overflow-hidden rounded-2xl border">
             {rows.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0"
+                className="border-line flex items-center gap-3 border-b px-4 py-3 last:border-b-0"
               >
                 <span
                   className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[r.status] ?? "bg-ink-25"}`}
@@ -129,22 +129,22 @@ export function ActivityFeed() {
                 {r.playlist ? (
                   <Link
                     href={`/library/${r.playlist.id}`}
-                    className="shrink-0 max-w-[40%] truncate text-[13px] font-medium text-ink hover:text-brand-deep"
+                    className="text-ink hover:text-brand-deep max-w-[40%] shrink-0 truncate text-[13px] font-medium"
                   >
                     {r.playlist.name}
                   </Link>
                 ) : (
-                  <span className="text-[13px] font-medium text-ink-50">
+                  <span className="text-ink-50 text-[13px] font-medium">
                     (deleted playlist)
                   </span>
                 )}
-                <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink-70">
+                <span className="text-ink-70 min-w-0 flex-1 truncate text-[12.5px]">
                   {summarise(r)}
                 </span>
-                <span className="shrink-0 text-[11px] font-medium uppercase tracking-wide text-ink-35">
+                <span className="text-ink-35 shrink-0 text-[11px] font-medium tracking-wide uppercase">
                   {r.trigger === "MANUAL" ? "Manual" : "Scheduled"}
                 </span>
-                <span className="shrink-0 text-[11.5px] text-ink-35">
+                <span className="text-ink-35 shrink-0 text-[11.5px]">
                   {formatRelativeTime(r.finishedAt ?? r.startedAt)}
                 </span>
               </div>
@@ -157,7 +157,7 @@ export function ActivityFeed() {
             type="button"
             onClick={more}
             disabled={loadingMore}
-            className="mx-auto mt-4 block rounded-full border border-line-strong px-4 py-2 text-[12.5px] font-medium text-ink-70 hover:border-brand/40 hover:text-brand disabled:opacity-50"
+            className="border-line-strong text-ink-70 hover:border-brand/40 hover:text-brand mx-auto mt-4 block rounded-full border px-4 py-2 text-[12.5px] font-medium disabled:opacity-50"
           >
             {loadingMore ? "Loading…" : "Load more"}
           </button>

@@ -273,16 +273,16 @@ export function PlaylistSettingsForm({
   } feeding this playlist.`;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-line bg-surface">
+    <div className="border-line bg-surface flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border">
       <div className="flex min-h-0 flex-1 flex-col min-[720px]:flex-row">
         {/* Section nav — horizontal strip on mobile, sidebar on desktop */}
-        <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-line p-2 min-[720px]:w-[176px] min-[720px]:flex-col min-[720px]:gap-0.5 min-[720px]:border-b-0 min-[720px]:border-r min-[720px]:p-3">
+        <div className="border-line flex shrink-0 gap-1 overflow-x-auto border-b p-2 min-[720px]:w-[176px] min-[720px]:flex-col min-[720px]:gap-0.5 min-[720px]:border-r min-[720px]:border-b-0 min-[720px]:p-3">
           {SECTIONS.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => setSection(s.id)}
-              className={`whitespace-nowrap rounded-[9px] px-3 py-2 text-left text-[13px] font-medium transition-colors ${
+              className={`rounded-[9px] px-3 py-2 text-left text-[13px] font-medium whitespace-nowrap transition-colors ${
                 section === s.id
                   ? "bg-brand-tint text-brand-deep"
                   : "text-ink-70 hover:bg-ground-alt"
@@ -294,7 +294,7 @@ export function PlaylistSettingsForm({
           <button
             type="button"
             onClick={() => setSection("stop")}
-            className={`whitespace-nowrap rounded-[9px] px-3 py-2 text-left text-[13px] font-medium transition-colors min-[720px]:mt-auto ${
+            className={`rounded-[9px] px-3 py-2 text-left text-[13px] font-medium whitespace-nowrap transition-colors min-[720px]:mt-auto ${
               section === "stop"
                 ? "bg-warn/10 text-warn-text"
                 : "text-warn-text hover:bg-warn/10"
@@ -308,13 +308,13 @@ export function PlaylistSettingsForm({
         <div className="min-w-0 flex-1 overflow-y-auto p-4 min-[720px]:p-6">
           {section === "schedule" && (
             <div>
-              <h3 className="font-display text-[15px] font-semibold text-ink">
+              <h3 className="font-display text-ink text-[15px] font-semibold">
                 Schedule
               </h3>
-              <p className="mb-3 mt-0.5 text-[12.5px] text-ink-50">
+              <p className="text-ink-50 mt-0.5 mb-3 text-[12.5px]">
                 {scopeLine}
               </p>
-              <div className="mb-3 flex rounded-[10px] bg-ground-chip p-[3px]">
+              <div className="bg-ground-chip mb-3 flex rounded-[10px] p-[3px]">
                 {FREQ.map((f) => (
                   <button
                     key={f.value}
@@ -322,7 +322,7 @@ export function PlaylistSettingsForm({
                     onClick={() => set("syncInterval", f.value)}
                     className={`flex-1 rounded-lg py-2 text-[13px] transition-colors ${
                       form.syncInterval === f.value
-                        ? "bg-ink font-medium text-surface"
+                        ? "bg-ink text-surface font-medium"
                         : "text-ink-70 hover:text-ink"
                     }`}
                   >
@@ -350,7 +350,7 @@ export function PlaylistSettingsForm({
                           className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
                             on
                               ? "bg-brand text-surface"
-                              : "border border-line-strong bg-surface text-ink-70"
+                              : "border-line-strong bg-surface text-ink-70 border"
                           }`}
                         >
                           {label}
@@ -358,7 +358,7 @@ export function PlaylistSettingsForm({
                       );
                     })}
                   </div>
-                  <p className="text-[11.5px] text-ink-35">
+                  <p className="text-ink-35 text-[11.5px]">
                     Runs at 6am in your timezone.
                   </p>
                 </>
@@ -368,14 +368,14 @@ export function PlaylistSettingsForm({
 
           {section === "pulls" && (
             <div>
-              <h3 className="mb-3 font-display text-[15px] font-semibold text-ink">
+              <h3 className="font-display text-ink mb-3 text-[15px] font-semibold">
                 What each run pulls
               </h3>
               <div className="mb-1 flex items-baseline justify-between">
-                <span className="text-[13px] font-medium text-ink">
+                <span className="text-ink text-[13px] font-medium">
                   Tracks per source
                 </span>
-                <span className="font-mono text-[12.5px] text-brand">
+                <span className="text-brand font-mono text-[12.5px]">
                   {form.syncQuantityPerSource}
                 </span>
               </div>
@@ -387,16 +387,16 @@ export function PlaylistSettingsForm({
                 onChange={(e) =>
                   set("syncQuantityPerSource", Number(e.target.value))
                 }
-                className="w-full accent-brand"
+                className="accent-brand w-full"
               />
-              <p className="mt-2 text-[11.5px] text-ink-35">
+              <p className="text-ink-35 mt-2 text-[11.5px]">
                 Up to {sourceCount * form.syncQuantityPerSource} candidates per
                 run across {sourceCount} source
                 {sourceCount === 1 ? "" : "s"}, before filters.
               </p>
 
-              <div className="mt-5 border-t border-line pt-4">
-                <div className="mb-2 text-[13px] font-medium text-ink">
+              <div className="border-line mt-5 border-t pt-4">
+                <div className="text-ink mb-2 text-[13px] font-medium">
                   Each run
                 </div>
                 <div className="flex flex-col gap-2">
@@ -409,10 +409,10 @@ export function PlaylistSettingsForm({
                         : "border-line"
                     }`}
                   >
-                    <div className="text-[13px] font-medium text-ink">
+                    <div className="text-ink text-[13px] font-medium">
                       Add new songs
                     </div>
-                    <div className="text-[11.5px] text-ink-50">
+                    <div className="text-ink-50 text-[11.5px]">
                       Keep existing, append new
                     </div>
                   </button>
@@ -426,17 +426,17 @@ export function PlaylistSettingsForm({
                           : "border-line"
                       }`}
                     >
-                      <div className="text-[13px] font-medium text-ink">
+                      <div className="text-ink text-[13px] font-medium">
                         Replace all songs
                       </div>
-                      <div className="text-[11.5px] text-ink-50">
+                      <div className="text-ink-50 text-[11.5px]">
                         Clear and refill, rotating deeper
                       </div>
                     </button>
                   )}
                 </div>
                 {isApple && (
-                  <p className="mt-2 text-[11.5px] text-ink-35">
+                  <p className="text-ink-35 mt-2 text-[11.5px]">
                     Replace isn&apos;t available on Apple Music — its API
                     can&apos;t remove tracks from a playlist.
                   </p>
@@ -447,14 +447,14 @@ export function PlaylistSettingsForm({
 
           {section === "filters" && (
             <div>
-              <h3 className="font-display text-[15px] font-semibold text-ink">
+              <h3 className="font-display text-ink text-[15px] font-semibold">
                 Filters
               </h3>
-              <p className="mb-3 mt-0.5 text-[12.5px] text-ink-50">
+              <p className="text-ink-50 mt-0.5 mb-3 text-[12.5px]">
                 {scopeLine}
               </p>
-              <label className="flex items-center justify-between border-b border-line py-3">
-                <span className="text-[13px] text-ink">
+              <label className="border-line flex items-center justify-between border-b py-3">
+                <span className="text-ink text-[13px]">
                   Filter explicit tracks
                 </span>
                 <input
@@ -463,11 +463,11 @@ export function PlaylistSettingsForm({
                   onChange={(e) =>
                     set("explicitContentFilter", e.target.checked)
                   }
-                  className="h-4 w-4 accent-brand"
+                  className="accent-brand h-4 w-4"
                 />
               </label>
               <div className="pt-3">
-                <div className="mb-2 text-[13px] text-ink">
+                <div className="text-ink mb-2 text-[13px]">
                   Skip tracks older than
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -479,7 +479,7 @@ export function PlaylistSettingsForm({
                       className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
                         form.trackAgeLimit === a.value
                           ? "bg-brand-tint text-brand-deep"
-                          : "border border-line-strong bg-surface text-ink-70"
+                          : "border-line-strong bg-surface text-ink-70 border"
                       }`}
                     >
                       {a.label}
@@ -492,13 +492,13 @@ export function PlaylistSettingsForm({
 
           {section === "vibe" && (
             <div>
-              <h3 className="font-display text-[15px] font-semibold text-ink">
+              <h3 className="font-display text-ink text-[15px] font-semibold">
                 Vibe{" "}
-                <span className="text-[11px] font-normal text-ink-35">
+                <span className="text-ink-35 text-[11px] font-normal">
                   optional
                 </span>
               </h3>
-              <p className="mb-2 mt-0.5 text-[12.5px] text-ink-50">
+              <p className="text-ink-50 mt-0.5 mb-2 text-[12.5px]">
                 Describe what belongs on this playlist.
               </p>
               <textarea
@@ -507,9 +507,9 @@ export function PlaylistSettingsForm({
                 value={form.vibePrompt}
                 onChange={(e) => set("vibePrompt", e.target.value)}
                 placeholder="e.g. upbeat indie and synth-pop, nothing slow or sad"
-                className="w-full resize-none rounded-lg border border-line-strong bg-surface p-3 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
+                className="border-line-strong bg-surface text-ink placeholder:text-ink-50 focus:border-brand/40 w-full resize-none rounded-lg border p-3 text-[13px] focus:outline-none"
               />
-              <div className="mt-1 flex justify-between text-[11.5px] text-ink-35">
+              <div className="text-ink-35 mt-1 flex justify-between text-[11.5px]">
                 <span>
                   {form.vibePrompt.trim()
                     ? "The fox reads the candidates and picks the ones that fit."
@@ -522,18 +522,18 @@ export function PlaylistSettingsForm({
 
           {section === "cover" && (
             <div>
-              <h3 className="font-display text-[15px] font-semibold text-ink">
+              <h3 className="font-display text-ink text-[15px] font-semibold">
                 Cover art
               </h3>
               {!canGenerateCover ? (
-                <p className="mt-2 text-[12.5px] text-ink-50">
+                <p className="text-ink-50 mt-2 text-[12.5px]">
                   {isApple
                     ? "Cover art generation is Spotify-only."
                     : "Cover art generation isn't available for this account."}
                 </p>
               ) : (
                 <>
-                  <p className="mb-3 mt-0.5 text-[12.5px] text-ink-50">
+                  <p className="text-ink-50 mt-0.5 mb-3 text-[12.5px]">
                     Generate artwork from this playlist&apos;s vibe and tracks,
                     then set it as the Spotify cover. Nothing changes on Spotify
                     until you apply it.
@@ -549,21 +549,21 @@ export function PlaylistSettingsForm({
                       ) : (
                         <span className="art-placeholder h-[104px] w-[104px] rounded-xl" />
                       )}
-                      <span className="text-[10.5px] text-ink-35">Current</span>
+                      <span className="text-ink-35 text-[10.5px]">Current</span>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       {coverPreview ? (
                         <img
                           src={coverPreview}
                           alt="Generated cover"
-                          className="h-[104px] w-[104px] rounded-xl object-cover outline outline-2 outline-brand"
+                          className="outline-brand h-[104px] w-[104px] rounded-xl object-cover outline outline-2"
                         />
                       ) : (
-                        <span className="flex h-[104px] w-[104px] items-center justify-center rounded-xl border border-dashed border-line-strong text-[10.5px] text-ink-35">
+                        <span className="border-line-strong text-ink-35 flex h-[104px] w-[104px] items-center justify-center rounded-xl border border-dashed text-[10.5px]">
                           none yet
                         </span>
                       )}
-                      <span className="text-[10.5px] text-ink-35">
+                      <span className="text-ink-35 text-[10.5px]">
                         Generated
                       </span>
                     </div>
@@ -573,7 +573,7 @@ export function PlaylistSettingsForm({
                       type="button"
                       onClick={generateCover}
                       disabled={coverBusy !== "idle"}
-                      className="rounded-full border border-line-strong px-4 py-2 text-[12.5px] font-medium text-ink-70 disabled:opacity-50"
+                      className="border-line-strong text-ink-70 rounded-full border px-4 py-2 text-[12.5px] font-medium disabled:opacity-50"
                     >
                       {coverBusy === "generating"
                         ? "Generating…"
@@ -586,7 +586,7 @@ export function PlaylistSettingsForm({
                         type="button"
                         onClick={applyCover}
                         disabled={coverBusy !== "idle"}
-                        className="rounded-full bg-brand px-4 py-2 text-[12.5px] font-medium text-surface disabled:opacity-50"
+                        className="bg-brand text-surface rounded-full px-4 py-2 text-[12.5px] font-medium disabled:opacity-50"
                       >
                         {coverBusy === "applying"
                           ? "Applying…"
@@ -601,10 +601,10 @@ export function PlaylistSettingsForm({
 
           {section === "stop" && (
             <div>
-              <h3 className="font-display text-[15px] font-semibold text-warn-text">
+              <h3 className="font-display text-warn-text text-[15px] font-semibold">
                 Stop managing this playlist
               </h3>
-              <p className="mt-2 max-w-[46ch] text-[12.5px] leading-relaxed text-ink-70">
+              <p className="text-ink-70 mt-2 max-w-[46ch] text-[12.5px] leading-relaxed">
                 This removes all {sourceCount} source
                 {sourceCount === 1 ? "" : "s"} and stops syncing.{" "}
                 <b className="font-semibold">{playlist.name}</b> and its tracks
@@ -615,14 +615,14 @@ export function PlaylistSettingsForm({
                   type="button"
                   onClick={handleStopManaging}
                   disabled={stopping}
-                  className="rounded-full bg-warn px-4 py-2 text-[13px] font-medium text-surface disabled:opacity-50"
+                  className="bg-warn text-surface rounded-full px-4 py-2 text-[13px] font-medium disabled:opacity-50"
                 >
                   {stopping ? "Stopping…" : "Stop managing"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setSection("schedule")}
-                  className="rounded-full px-4 py-2 text-[13px] font-medium text-ink-50 hover:text-ink-70"
+                  className="text-ink-50 hover:text-ink-70 rounded-full px-4 py-2 text-[13px] font-medium"
                 >
                   Cancel
                 </button>
@@ -633,14 +633,14 @@ export function PlaylistSettingsForm({
       </div>
 
       {/* Diff footer — summary stacks above the buttons on mobile */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-line px-4 py-3 min-[720px]:flex-nowrap min-[720px]:px-6 min-[720px]:py-3.5">
-        <div className="flex basis-full items-center gap-2 min-[720px]:basis-auto min-[720px]:flex-1">
+      <div className="border-line flex flex-wrap items-center gap-x-3 gap-y-2 border-t px-4 py-3 min-[720px]:flex-nowrap min-[720px]:px-6 min-[720px]:py-3.5">
+        <div className="flex basis-full items-center gap-2 min-[720px]:flex-1 min-[720px]:basis-auto">
           <span
             className={`h-[7px] w-[7px] shrink-0 rounded-full ${
               dirty ? "bg-brand" : "bg-ink-25"
             }`}
           />
-          <span className="text-[12.5px] leading-snug text-ink-70">
+          <span className="text-ink-70 text-[12.5px] leading-snug">
             {dirty ? (
               <>
                 <b className="font-semibold">
@@ -658,7 +658,7 @@ export function PlaylistSettingsForm({
           <button
             type="button"
             onClick={() => setForm({ ...baseline })}
-            className="px-2 py-2 text-[13px] text-ink-50 hover:text-ink-70"
+            className="text-ink-50 hover:text-ink-70 px-2 py-2 text-[13px]"
           >
             Revert
           </button>
@@ -667,7 +667,7 @@ export function PlaylistSettingsForm({
           type="button"
           onClick={handleSave}
           disabled={!dirty || saving}
-          className="rounded-full bg-brand px-6 py-2.5 text-[13.5px] font-medium text-surface transition-colors hover:bg-brand-deep disabled:opacity-50"
+          className="bg-brand text-surface hover:bg-brand-deep rounded-full px-6 py-2.5 text-[13.5px] font-medium transition-colors disabled:opacity-50"
         >
           {saving ? "Saving…" : "Save settings"}
         </button>

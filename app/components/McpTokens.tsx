@@ -111,15 +111,15 @@ export const McpTokens = () => {
   };
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-4">
+    <div className="border-line bg-surface rounded-2xl border p-4">
       <div className="mb-3">
-        <h3 className="font-display text-[15px] font-semibold text-ink">
+        <h3 className="font-display text-ink text-[15px] font-semibold">
           MCP access tokens
         </h3>
-        <p className="mt-1 max-w-[60ch] text-[12.5px] leading-relaxed text-ink-50">
+        <p className="text-ink-50 mt-1 max-w-[60ch] text-[12.5px] leading-relaxed">
           Connect PlaylistFox to an MCP client like Claude Desktop. Paste a
           token as an{" "}
-          <code className="rounded bg-ground-alt px-1 py-0.5 font-mono text-[11px]">
+          <code className="bg-ground-alt rounded px-1 py-0.5 font-mono text-[11px]">
             Authorization: Bearer
           </code>{" "}
           header. Tokens act as you, expire automatically, and can be revoked
@@ -129,19 +129,19 @@ export const McpTokens = () => {
 
       {/* Freshly created token — the one and only time it's shown */}
       {freshToken && (
-        <div className="mb-4 rounded-xl border border-brand/25 bg-brand-tint p-3">
-          <p className="mb-2 text-[11.5px] font-medium text-brand-deep">
+        <div className="border-brand/25 bg-brand-tint mb-4 rounded-xl border p-3">
+          <p className="text-brand-deep mb-2 text-[11.5px] font-medium">
             Copy this now — you won&apos;t be able to see it again.{" "}
             {expiryLabel(freshTokenExpiresAt).text}.
           </p>
           <div className="flex items-center gap-2">
-            <code className="min-w-0 flex-1 truncate rounded-md bg-surface px-2 py-1.5 font-mono text-[11px] text-ink ring-1 ring-line-strong">
+            <code className="bg-surface text-ink ring-line-strong min-w-0 flex-1 truncate rounded-md px-2 py-1.5 font-mono text-[11px] ring-1">
               {freshToken}
             </code>
             <button
               type="button"
               onClick={() => copy(freshToken)}
-              className="shrink-0 rounded-full bg-brand px-3 py-1.5 text-[11.5px] font-medium text-surface hover:bg-brand-deep"
+              className="bg-brand text-surface hover:bg-brand-deep shrink-0 rounded-full px-3 py-1.5 text-[11.5px] font-medium"
             >
               Copy
             </button>
@@ -151,7 +151,7 @@ export const McpTokens = () => {
                 setFreshToken(null);
                 setFreshTokenExpiresAt(null);
               }}
-              className="shrink-0 rounded-full border border-line-strong px-3 py-1.5 text-[11.5px] text-ink-70 hover:border-line"
+              className="border-line-strong text-ink-70 hover:border-line shrink-0 rounded-full border px-3 py-1.5 text-[11.5px]"
             >
               Done
             </button>
@@ -166,7 +166,7 @@ export const McpTokens = () => {
           onChange={(e) => setName(e.target.value)}
           placeholder="Token name (optional), e.g. Claude Desktop"
           maxLength={120}
-          className="min-w-0 flex-1 rounded-full border border-line-strong bg-surface px-3.5 py-2 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
+          className="border-line-strong bg-surface text-ink placeholder:text-ink-50 focus:border-brand/40 min-w-0 flex-1 rounded-full border px-3.5 py-2 text-[13px] focus:outline-none"
         />
         <select
           value={expiresInDays}
@@ -176,7 +176,7 @@ export const McpTokens = () => {
             )
           }
           aria-label="Token expiration"
-          className="shrink-0 rounded-full border border-line-strong bg-surface px-3 py-2 text-[12.5px] text-ink-70 focus:border-brand/40 focus:outline-none"
+          className="border-line-strong bg-surface text-ink-70 focus:border-brand/40 shrink-0 rounded-full border px-3 py-2 text-[12.5px] focus:outline-none"
         >
           {EXPIRY_OPTIONS.map((days) => (
             <option key={days} value={days}>
@@ -188,7 +188,7 @@ export const McpTokens = () => {
           type="button"
           onClick={createToken}
           disabled={busy}
-          className="shrink-0 rounded-full bg-brand px-4 py-2 text-[12.5px] font-medium text-surface hover:bg-brand-deep disabled:cursor-not-allowed disabled:opacity-50"
+          className="bg-brand text-surface hover:bg-brand-deep shrink-0 rounded-full px-4 py-2 text-[12.5px] font-medium disabled:cursor-not-allowed disabled:opacity-50"
         >
           Generate
         </button>
@@ -196,26 +196,26 @@ export const McpTokens = () => {
 
       {/* List */}
       {tokens.length === 0 ? (
-        <p className="text-[12.5px] text-ink-35">No tokens yet.</p>
+        <p className="text-ink-35 text-[12.5px]">No tokens yet.</p>
       ) : (
         <ul className="flex flex-col">
           {tokens.map((t) => (
             <li
               key={t.id}
-              className="flex items-center justify-between gap-3 border-b border-line py-2.5 last:border-b-0"
+              className="border-line flex items-center justify-between gap-3 border-b py-2.5 last:border-b-0"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[12.5px] text-ink">
+                  <span className="text-ink font-mono text-[12.5px]">
                     {t.prefix}…
                   </span>
                   {t.name && (
-                    <span className="truncate text-[12.5px] text-ink-50">
+                    <span className="text-ink-50 truncate text-[12.5px]">
                       {t.name}
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-ink-35">
+                <p className="text-ink-35 text-[11px]">
                   Created {formatDate(t.createdAt)}
                   {t.lastUsedAt
                     ? ` · Last used ${formatDate(t.lastUsedAt)}`
@@ -224,7 +224,7 @@ export const McpTokens = () => {
                   <span
                     className={
                       expiryLabel(t.expiresAt).warn
-                        ? "font-medium text-warn-text"
+                        ? "text-warn-text font-medium"
                         : undefined
                     }
                   >
@@ -236,7 +236,7 @@ export const McpTokens = () => {
                 type="button"
                 onClick={() => revoke(t.id)}
                 disabled={busy}
-                className="shrink-0 rounded-full border border-line-strong px-3 py-1.5 text-[11.5px] font-medium text-ink-70 transition-colors hover:border-warn/40 hover:text-warn-text disabled:opacity-50"
+                className="border-line-strong text-ink-70 hover:border-warn/40 hover:text-warn-text shrink-0 rounded-full border px-3 py-1.5 text-[11.5px] font-medium transition-colors disabled:opacity-50"
               >
                 Revoke
               </button>

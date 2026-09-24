@@ -189,7 +189,7 @@ function PlaylistPreviewCard({
           type="button"
           onClick={flipToBack}
           style={{ backfaceVisibility: "hidden" }}
-          className="absolute inset-0 overflow-hidden rounded-lg border border-line text-left"
+          className="border-line absolute inset-0 overflow-hidden rounded-lg border text-left"
           aria-label={`Preview ${playlist.name}`}
         >
           {playlist.imageUrl ? (
@@ -199,11 +199,11 @@ function PlaylistPreviewCard({
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-ground-alt">
-              <Music2 className="h-6 w-6 text-ink-35" />
+            <div className="bg-ground-alt flex h-full w-full items-center justify-center">
+              <Music2 className="text-ink-35 h-6 w-6" />
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-1.5 pb-1 pt-4">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-1.5 pt-4 pb-1">
             <p className="truncate text-[10px] font-medium text-white">
               {playlist.name}
             </p>
@@ -219,10 +219,10 @@ function PlaylistPreviewCard({
             backfaceVisibility: "hidden",
             transform: "rotateY(180deg)",
           }}
-          className="absolute inset-0 flex flex-col overflow-hidden rounded-lg border border-line bg-white p-1"
+          className="border-line absolute inset-0 flex flex-col overflow-hidden rounded-lg border bg-white p-1"
         >
           <div className="flex items-center justify-between px-0.5 pb-0.5">
-            <span className="text-[9px] font-medium text-ink-35">Preview</span>
+            <span className="text-ink-35 text-[9px] font-medium">Preview</span>
             <button
               type="button"
               onClick={flipToFront}
@@ -232,7 +232,7 @@ function PlaylistPreviewCard({
               <ChevronLeft className="h-3 w-3" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto text-[10px] text-ink-70">
+          <div className="text-ink-70 flex-1 overflow-y-auto text-[10px]">
             {loading && <span className="text-ink-35">Loading…</span>}
             {error && <span className="text-warn-text">{error}</span>}
             {tracks && tracks.length === 0 && (
@@ -248,14 +248,14 @@ function PlaylistPreviewCard({
                       <button
                         type="button"
                         onClick={() => onTogglePlay(track)}
-                        className="flex w-full items-center gap-1 rounded text-left hover:text-brand"
+                        className="hover:text-brand flex w-full items-center gap-1 rounded text-left"
                       >
                         {isLoading ? (
-                          <Loader2 className="h-2.5 w-2.5 shrink-0 animate-spin text-brand" />
+                          <Loader2 className="text-brand h-2.5 w-2.5 shrink-0 animate-spin" />
                         ) : isPlaying ? (
-                          <Pause className="h-2.5 w-2.5 shrink-0 text-brand" />
+                          <Pause className="text-brand h-2.5 w-2.5 shrink-0" />
                         ) : (
-                          <Play className="h-2.5 w-2.5 shrink-0 text-ink-35" />
+                          <Play className="text-ink-35 h-2.5 w-2.5 shrink-0" />
                         )}
                         <span className="truncate">{track.name}</span>
                       </button>

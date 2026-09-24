@@ -86,17 +86,17 @@ function RunRow({ run }: { run: SyncRunSummary }) {
   }
 
   return (
-    <div className="flex items-center gap-3 border-b border-line px-4 py-3 last:border-b-0">
+    <div className="border-line flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
       <span
         className={`h-1.5 w-1.5 shrink-0 rounded-full ${RUN_DOT[run.status] ?? "bg-ink-25"}`}
       />
-      <span className="w-14 shrink-0 text-[11px] font-medium uppercase tracking-wide text-ink-35">
+      <span className="text-ink-35 w-14 shrink-0 text-[11px] font-medium tracking-wide uppercase">
         {run.trigger === "MANUAL" ? "Manual" : "Scheduled"}
       </span>
-      <span className="min-w-0 flex-1 truncate text-[12.5px] text-ink-70">
+      <span className="text-ink-70 min-w-0 flex-1 truncate text-[12.5px]">
         {summary}
       </span>
-      <span className="shrink-0 text-[11.5px] text-ink-35">{when}</span>
+      <span className="text-ink-35 shrink-0 text-[11.5px]">{when}</span>
     </div>
   );
 }
@@ -175,7 +175,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-8 text-[13px] text-ink-50">
+      <div className="text-ink-50 flex h-full items-center justify-center p-8 text-[13px]">
         Loading…
       </div>
     );
@@ -184,12 +184,12 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
   if (!playlist) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-        <p className="font-display text-[17px] font-semibold text-ink">
+        <p className="font-display text-ink text-[17px] font-semibold">
           Playlist not found
         </p>
         <Link
           href="/library"
-          className="rounded-full border border-line-strong px-4 py-2 text-[13px] font-medium text-ink-70 hover:border-brand/40 hover:text-brand"
+          className="border-line-strong text-ink-70 hover:border-brand/40 hover:text-brand rounded-full border px-4 py-2 text-[13px] font-medium"
         >
           Back to Library
         </Link>
@@ -211,7 +211,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
       {/* Head */}
       <Link
         href="/library"
-        className="mb-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-ink-50 hover:text-ink-70"
+        className="text-ink-50 hover:text-ink-70 mb-3 inline-flex items-center gap-1 text-[12.5px] font-medium"
       >
         <ChevronLeft className="h-3.5 w-3.5" />
         Library
@@ -224,13 +224,13 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
             className="h-[60px] w-[60px] shrink-0 rounded-xl"
           />
           <div>
-            <div className="font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-35">
+            <div className="text-ink-35 font-mono text-[10.5px] font-medium tracking-[0.08em] uppercase">
               Managed playlist
             </div>
-            <h1 className="font-display text-[27px] font-semibold leading-tight tracking-[-0.02em] text-ink">
+            <h1 className="font-display text-ink text-[27px] leading-tight font-semibold tracking-[-0.02em]">
               {playlist.name}
             </h1>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-ink-50">
+            <div className="text-ink-50 mt-0.5 flex items-center gap-1.5 text-[12.5px]">
               <span
                 className={`h-1.5 w-1.5 rounded-full ${
                   playlist.provider === "APPLE_MUSIC"
@@ -270,7 +270,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
             type="button"
             onClick={handleSync}
             disabled={syncing}
-            className="inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-[12.5px] font-medium text-surface transition-colors hover:bg-brand-deep disabled:opacity-50"
+            className="bg-brand text-surface hover:bg-brand-deep inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12.5px] font-medium transition-colors disabled:opacity-50"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             {syncing ? "Syncing…" : "Sync now"}
@@ -279,7 +279,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
       </div>
 
       {/* Tabs */}
-      <div className="mt-5 flex gap-1 overflow-x-auto border-b border-line">
+      <div className="border-line mt-5 flex gap-1 overflow-x-auto border-b">
         {TABS.map((t) => (
           <Link
             key={t.id}
@@ -287,7 +287,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
             className={`-mb-px border-b-2 px-3 py-2.5 text-[13px] font-medium transition-colors ${
               tab === t.id
                 ? "border-brand text-ink"
-                : "border-transparent text-ink-50 hover:text-ink-70"
+                : "text-ink-50 hover:text-ink-70 border-transparent"
             }`}
           >
             {t.label}
@@ -299,8 +299,8 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
         {tab === "overview" && (
           <div className="flex flex-col gap-5">
             {/* Sync line — mechanism */}
-            <div className="rounded-2xl border border-line bg-surface p-5">
-              <div className="mb-4 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
+            <div className="border-line bg-surface rounded-2xl border p-5">
+              <div className="text-ink-35 mb-4 font-mono text-[10px] font-medium tracking-[0.08em] uppercase">
                 How a run flows
               </div>
               <div className="flex items-center gap-4 overflow-x-auto pb-1">
@@ -308,24 +308,24 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                   {sources.slice(0, 3).map((s) => (
                     <div
                       key={s.sourcePlaylist.id}
-                      className="flex items-center gap-2 rounded-lg border border-line px-2.5 py-1.5"
+                      className="border-line flex items-center gap-2 rounded-lg border px-2.5 py-1.5"
                     >
                       <CoverArt
                         src={s.sourcePlaylist.imageUrl}
                         className="h-6 w-6 shrink-0 rounded"
                       />
-                      <span className="max-w-[140px] truncate text-[12px] font-medium text-ink-70">
+                      <span className="text-ink-70 max-w-[140px] truncate text-[12px] font-medium">
                         {s.sourcePlaylist.name}
                       </span>
                     </div>
                   ))}
                   {sources.length > 3 && (
-                    <span className="pl-1 text-[11.5px] text-ink-35">
+                    <span className="text-ink-35 pl-1 text-[11.5px]">
                       +{sources.length - 3} more
                     </span>
                   )}
                   {sources.length === 0 && (
-                    <span className="text-[12px] text-ink-35">No sources</span>
+                    <span className="text-ink-35 text-[12px]">No sources</span>
                   )}
                 </div>
 
@@ -349,7 +349,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                   ))}
                 </svg>
 
-                <span className="shrink-0 rounded-full bg-ground-alt px-3 py-1.5 font-mono text-[10.5px] text-ink-50">
+                <span className="bg-ground-alt text-ink-50 shrink-0 rounded-full px-3 py-1.5 font-mono text-[10.5px]">
                   dedupe · filters · vibe
                 </span>
 
@@ -372,19 +372,19 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                   />
                 </svg>
 
-                <div className="min-w-[180px] flex-1 rounded-xl border border-line bg-brand-tint-soft p-3">
+                <div className="border-line bg-brand-tint-soft min-w-[180px] flex-1 rounded-xl border p-3">
                   <div className="flex items-center gap-2">
                     <CoverArt
                       src={playlist.imageUrl}
                       className="h-8 w-8 shrink-0 rounded-md"
                     />
-                    <span className="truncate text-[13px] font-medium text-ink">
+                    <span className="text-ink truncate text-[13px] font-medium">
                       {playlist.name}
                     </span>
                   </div>
                   {lastRun && lastRun.status === "success" ? (
-                    <div className="mt-2 flex flex-col gap-0.5 text-[12px] text-ink-70">
-                      <span className="font-medium text-ink">
+                    <div className="text-ink-70 mt-2 flex flex-col gap-0.5 text-[12px]">
+                      <span className="text-ink font-medium">
                         {lastRun.tracksAdded > 0
                           ? `${lastRun.tracksAdded} added ${formatRelativeTime(lastRun.finishedAt)}`
                           : `No new tracks ${formatRelativeTime(lastRun.finishedAt)}`}
@@ -410,7 +410,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                       )}
                     </div>
                   ) : (
-                    <div className="mt-2 text-[12px] text-ink-50">
+                    <div className="text-ink-50 mt-2 text-[12px]">
                       {synced
                         ? `Last synced ${synced}`
                         : "No runs recorded yet"}
@@ -430,12 +430,12 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
             )}
 
             {/* Run history */}
-            <div className="rounded-2xl border border-line bg-surface p-5">
-              <div className="mb-3 font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
+            <div className="border-line bg-surface rounded-2xl border p-5">
+              <div className="text-ink-35 mb-3 font-mono text-[10px] font-medium tracking-[0.08em] uppercase">
                 Recent runs
               </div>
               {historyRuns.length === 0 ? (
-                <p className="text-[11.5px] text-ink-35">
+                <p className="text-ink-35 text-[11.5px]">
                   Per-run results — added, skipped, failed — appear here once
                   runs are recorded.
                 </p>
@@ -474,7 +474,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                       );
                     })}
                   </div>
-                  <div className="mt-2 flex justify-between text-[11px] text-ink-35">
+                  <div className="text-ink-35 mt-2 flex justify-between text-[11px]">
                     <span>{formatRelativeTime(historyRuns[0].startedAt)}</span>
                     {historyRuns.some(
                       (r) => r.status === "failed" || r.status === "stale",
@@ -500,8 +500,8 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
             </div>
 
             {/* Footer strip */}
-            <div className="flex items-center gap-3 rounded-2xl bg-ground-alt px-4 py-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface shadow-[0_0_0_1px_var(--color-line)]">
+            <div className="bg-ground-alt flex items-center gap-3 rounded-2xl px-4 py-3">
+              <span className="bg-surface flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full shadow-[0_0_0_1px_var(--color-line)]">
                 <Image
                   src="/logo.png"
                   alt=""
@@ -510,7 +510,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                   className="h-7 w-7 object-cover"
                 />
               </span>
-              <span className="flex-1 text-[12.5px] leading-relaxed text-ink-70">
+              <span className="text-ink-70 flex-1 text-[12.5px] leading-relaxed">
                 Pulls up to {playlist.syncQuantityPerSource} tracks from each of{" "}
                 {sources.length} source{sources.length === 1 ? "" : "s"},{" "}
                 {playlist.syncMode.toLowerCase()},{" "}
@@ -518,7 +518,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
               </span>
               <Link
                 href={`/library/${playlist.id}/settings`}
-                className="shrink-0 text-[12.5px] font-medium text-brand-deep hover:text-brand"
+                className="text-brand-deep hover:text-brand shrink-0 text-[12.5px] font-medium"
               >
                 Change rules
               </Link>
@@ -527,14 +527,14 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
         )}
 
         {tab === "sources" && (
-          <div className="rounded-2xl border border-line bg-surface">
-            <div className="flex items-center justify-between border-b border-line px-4 py-3">
-              <span className="font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
+          <div className="border-line bg-surface rounded-2xl border">
+            <div className="border-line flex items-center justify-between border-b px-4 py-3">
+              <span className="text-ink-35 font-mono text-[10px] font-medium tracking-[0.08em] uppercase">
                 Sources
               </span>
               <Link
                 href="/"
-                className="inline-flex items-center gap-1 text-[12px] font-medium text-brand-deep hover:text-brand"
+                className="text-brand-deep hover:text-brand inline-flex items-center gap-1 text-[12px] font-medium"
               >
                 <Plus className="h-3 w-3" />
                 Add source
@@ -550,7 +550,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                   return (
                     <div
                       key={key}
-                      className="m-2 flex items-center justify-between rounded-xl bg-brand-tint px-3 py-2 text-[12.5px] text-brand-deep"
+                      className="bg-brand-tint text-brand-deep m-2 flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px]"
                     >
                       <span className="min-w-0 truncate">
                         Removed{" "}
@@ -572,16 +572,16 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                 return (
                   <div
                     key={sub.sourcePlaylist.id}
-                    className="flex items-center gap-3 border-b border-line px-4 py-2.5 last:border-b-0"
+                    className="border-line flex items-center gap-3 border-b px-4 py-2.5 last:border-b-0"
                   >
                     <CoverArt
                       src={sub.sourcePlaylist.imageUrl}
                       className="h-8 w-8 shrink-0 rounded-md"
                     />
-                    <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink-70">
+                    <span className="text-ink-70 min-w-0 flex-1 truncate text-[13px] font-medium">
                       {sub.sourcePlaylist.name}
                     </span>
-                    <span className="shrink-0 font-mono text-[11px] text-ink-35">
+                    <span className="text-ink-35 shrink-0 font-mono text-[11px]">
                       {sub.sourcePlaylist.trackCount} trks
                     </span>
                     <button
@@ -593,7 +593,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                           sub.sourcePlaylist.name,
                         )
                       }
-                      className="shrink-0 text-[12px] font-medium text-ink-35 hover:text-warn-text"
+                      className="text-ink-35 hover:text-warn-text shrink-0 text-[12px] font-medium"
                     >
                       Remove
                     </button>
@@ -601,7 +601,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                 );
               })}
               {sources.length === 0 && (
-                <p className="px-4 py-6 text-center text-[12.5px] text-ink-50">
+                <p className="text-ink-50 px-4 py-6 text-center text-[12.5px]">
                   No sources feed this playlist.
                 </p>
               )}
@@ -611,17 +611,17 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
 
         {tab === "runs" &&
           (runs && runs.length > 0 ? (
-            <div className="rounded-2xl border border-line bg-surface">
+            <div className="border-line bg-surface rounded-2xl border">
               {runs.map((r) => (
                 <RunRow key={r.id} run={r} />
               ))}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong p-10 text-center">
-              <p className="font-display text-[15px] font-semibold text-ink">
+            <div className="border-line-strong flex flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center">
+              <p className="font-display text-ink text-[15px] font-semibold">
                 No run history yet
               </p>
-              <p className="mt-1 max-w-[42ch] text-[12.5px] leading-relaxed text-ink-50">
+              <p className="text-ink-50 mt-1 max-w-[42ch] text-[12.5px] leading-relaxed">
                 Once this playlist syncs, every run shows up here with what it
                 added and what it skipped, and why.
               </p>

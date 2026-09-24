@@ -177,7 +177,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
   const playingTrack = tracks.find((t) => t.id === playingId) ?? null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-ink/40 max-[719px]:items-end max-[719px]:justify-center">
+    <div className="bg-ink/40 fixed inset-0 z-50 flex justify-end max-[719px]:items-end max-[719px]:justify-center">
       <audio ref={audioRef} preload="none" playsInline className="hidden" />
       <button
         type="button"
@@ -185,11 +185,11 @@ export const TrackModal: React.FC<TrackModalProps> = ({
         onClick={onClose}
         className="absolute inset-0 cursor-default"
       />
-      <div className="relative z-10 flex w-full max-w-[440px] flex-col bg-surface shadow-[-8px_0_30px_rgba(26,21,18,0.12)] max-[719px]:max-h-[92vh] max-[719px]:rounded-t-[18px] max-[719px]:pb-[env(safe-area-inset-bottom)]">
+      <div className="bg-surface relative z-10 flex w-full max-w-[440px] flex-col shadow-[-8px_0_30px_rgba(26,21,18,0.12)] max-[719px]:max-h-[92vh] max-[719px]:rounded-t-[18px] max-[719px]:pb-[env(safe-area-inset-bottom)]">
         {/* Header */}
-        <div className="border-b border-line px-5 py-4">
+        <div className="border-line border-b px-5 py-4">
           <div className="mb-3.5 flex items-center justify-between">
-            <span className="font-mono text-[10.5px] font-medium uppercase tracking-[0.08em] text-ink-35">
+            <span className="text-ink-35 font-mono text-[10.5px] font-medium tracking-[0.08em] uppercase">
               Preview source
             </span>
             <button
@@ -213,13 +213,13 @@ export const TrackModal: React.FC<TrackModalProps> = ({
               <span className="art-placeholder h-[76px] w-[76px] shrink-0 rounded-xl" />
             )}
             <div className="min-w-0">
-              <div className="font-display text-[18px] font-semibold tracking-[-0.015em] text-ink">
+              <div className="font-display text-ink text-[18px] font-semibold tracking-[-0.015em]">
                 {playlist.name}
               </div>
-              <div className="mt-0.5 text-[12.5px] text-ink-50">
+              <div className="text-ink-50 mt-0.5 text-[12.5px]">
                 By {playlist.owner ?? "Unknown"}
               </div>
-              <div className="mt-1.5 flex items-center gap-1.5 text-[12px] text-ink-35">
+              <div className="text-ink-35 mt-1.5 flex items-center gap-1.5 text-[12px]">
                 <span
                   className={`h-1.5 w-1.5 rounded-full ${
                     playlist.provider === "APPLE_MUSIC"
@@ -237,7 +237,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
               type="button"
               onClick={onSubscribe}
               disabled={!onSubscribe}
-              className="flex-1 rounded-full bg-brand py-2.5 text-[13.5px] font-medium text-surface transition-colors hover:bg-brand-deep disabled:opacity-50"
+              className="bg-brand text-surface hover:bg-brand-deep flex-1 rounded-full py-2.5 text-[13.5px] font-medium transition-colors disabled:opacity-50"
             >
               Subscribe to this
             </button>
@@ -245,7 +245,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
               href={externalUrl}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full border border-line-strong px-4 py-2.5 text-[13.5px] font-medium text-ink-70 transition-colors hover:border-line"
+              className="border-line-strong text-ink-70 hover:border-line rounded-full border px-4 py-2.5 text-[13.5px] font-medium transition-colors"
             >
               Open in {PROVIDER_LABELS[playlist.provider]}
             </a>
@@ -261,18 +261,18 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                   key={i}
                   className="flex items-center gap-3 rounded-[11px] px-3 py-2.5"
                 >
-                  <span className="w-[22px] shrink-0 text-center font-mono text-[12.5px] text-ink-35">
+                  <span className="text-ink-35 w-[22px] shrink-0 text-center font-mono text-[12.5px]">
                     {i + 1}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="h-[11px] w-[55%] rounded bg-ground-chip" />
-                    <div className="mt-1.5 h-[9px] w-[34%] rounded bg-ground-alt" />
+                    <div className="bg-ground-chip h-[11px] w-[55%] rounded" />
+                    <div className="bg-ground-alt mt-1.5 h-[9px] w-[34%] rounded" />
                   </div>
                 </div>
               ))}
             </div>
           ) : tracks.length === 0 ? (
-            <p className="py-16 text-center text-[13px] text-ink-50">
+            <p className="text-ink-50 py-16 text-center text-[13px]">
               No tracks to show.
             </p>
           ) : (
@@ -300,13 +300,13 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                   >
                     <span className="flex w-[22px] shrink-0 items-center justify-center">
                       {st === "resolving" ? (
-                        <span className="h-[13px] w-[13px] animate-spin rounded-full border-2 border-[#E4DBD2] border-t-brand" />
+                        <span className="border-t-brand h-[13px] w-[13px] animate-spin rounded-full border-2 border-[#E4DBD2]" />
                       ) : isPlaying ? (
-                        <Pause className="h-3.5 w-3.5 text-brand" />
+                        <Pause className="text-brand h-3.5 w-3.5" />
                       ) : isHovered && !noPreview ? (
-                        <Play className="h-3.5 w-3.5 text-ink-50" />
+                        <Play className="text-ink-50 h-3.5 w-3.5" />
                       ) : (
-                        <span className="font-mono text-[12.5px] text-ink-35">
+                        <span className="text-ink-35 font-mono text-[12.5px]">
                           {index + 1}
                         </span>
                       )}
@@ -320,7 +320,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                       >
                         {track.name}
                       </div>
-                      <div className="truncate text-[12px] text-ink-35">
+                      <div className="text-ink-35 truncate text-[12px]">
                         {track.artists.join(", ") || "Unknown Artist"}
                       </div>
                     </div>
@@ -328,7 +328,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                     {isPlaying && (
                       <span className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-[#EFE0D2]">
                         <span
-                          className="block h-full bg-brand"
+                          className="bg-brand block h-full"
                           style={{
                             width: `${Math.min(100, (elapsed / 30) * 100)}%`,
                           }}
@@ -336,12 +336,12 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                       </span>
                     )}
                     {st === "resolving" && !isPlaying && (
-                      <span className="shrink-0 text-[11.5px] text-ink-35">
+                      <span className="text-ink-35 shrink-0 text-[11.5px]">
                         finding preview…
                       </span>
                     )}
                     {noPreview && (
-                      <span className="shrink-0 text-[11.5px] text-ink-50">
+                      <span className="text-ink-50 shrink-0 text-[11.5px]">
                         no preview
                       </span>
                     )}
@@ -354,7 +354,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
 
         {/* Mini-player */}
         {playingTrack && (
-          <div className="flex items-center gap-3 border-t border-line bg-ground px-4 py-3">
+          <div className="border-line bg-ground flex items-center gap-3 border-t px-4 py-3">
             {playlist.imageUrl ? (
               <img
                 src={playlist.imageUrl}
@@ -365,21 +365,21 @@ export const TrackModal: React.FC<TrackModalProps> = ({
               <span className="art-placeholder h-[34px] w-[34px] shrink-0 rounded-[9px]" />
             )}
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[12.5px] font-medium text-ink">
+              <div className="text-ink truncate text-[12.5px] font-medium">
                 {playingTrack.name}
               </div>
-              <div className="text-[11.5px] text-ink-35">
+              <div className="text-ink-35 text-[11.5px]">
                 30-second preview · iTunes
               </div>
             </div>
-            <span className="shrink-0 font-mono text-[11.5px] text-ink-35">
+            <span className="text-ink-35 shrink-0 font-mono text-[11.5px]">
               {fmt(elapsed)} / 0:30
             </span>
             <button
               type="button"
               onClick={stop}
               aria-label="Pause preview"
-              className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-ink text-surface"
+              className="bg-ink text-surface flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full"
             >
               <Pause className="h-3.5 w-3.5" />
             </button>

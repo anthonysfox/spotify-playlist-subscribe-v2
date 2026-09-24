@@ -63,13 +63,13 @@ function StepMock({ i }: { i: number }) {
         {rows.map((name, r) => (
           <div
             key={name}
-            className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-1.5"
+            className="border-line bg-surface flex items-center gap-2 rounded-lg border px-2 py-1.5"
           >
             <Cover i={r + 1} size="h-6 w-6" />
-            <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-ink-70">
+            <span className="text-ink-70 min-w-0 flex-1 truncate text-[11px] font-medium">
               {name}
             </span>
-            <span className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand text-[11px] leading-none text-surface">
+            <span className="bg-brand text-surface ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] leading-none">
               +
             </span>
           </div>
@@ -82,13 +82,13 @@ function StepMock({ i }: { i: number }) {
     // The managed playlist
     return (
       <div className={`${shell} flex flex-col justify-center`}>
-        <div className="rounded-lg border-[1.5px] border-brand bg-brand-tint-soft p-2.5">
+        <div className="border-brand bg-brand-tint-soft rounded-lg border-[1.5px] p-2.5">
           <div className="mb-1.5 flex items-center gap-2">
             <Cover i={0} size="h-6 w-6" />
-            <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-ink">
+            <span className="text-ink min-w-0 flex-1 truncate text-[11px] font-semibold">
               Friday Rotation
             </span>
-            <span className="ml-auto shrink-0 rounded-full bg-surface px-1.5 py-0.5 font-mono text-[9px] text-brand-deep">
+            <span className="bg-surface text-brand-deep ml-auto shrink-0 rounded-full px-1.5 py-0.5 font-mono text-[9px]">
               weekly
             </span>
           </div>
@@ -96,7 +96,7 @@ function StepMock({ i }: { i: number }) {
             {["Fresh Finds", "Deep Focus"].map((s, c) => (
               <span
                 key={s}
-                className="flex items-center gap-1 rounded-full bg-surface px-1.5 py-0.5 text-[9px] text-ink-50"
+                className="bg-surface text-ink-50 flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px]"
               >
                 <Cover i={c + 1} size="h-3 w-3" />
                 {s}
@@ -119,13 +119,13 @@ function StepMock({ i }: { i: number }) {
       {runs.map(([dot, name, n], r) => (
         <div
           key={name}
-          className="flex items-center gap-2 rounded-lg border border-line bg-surface px-2 py-1.5"
+          className="border-line bg-surface flex items-center gap-2 rounded-lg border px-2 py-1.5"
         >
           <Dot className={dot} />
-          <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-ink-70">
+          <span className="text-ink-70 min-w-0 flex-1 truncate text-[11px] font-medium">
             {name}
           </span>
-          <span className="ml-auto shrink-0 font-mono text-[10px] text-ink-35">
+          <span className="text-ink-35 ml-auto shrink-0 font-mono text-[10px]">
             {n}
           </span>
         </div>
@@ -142,20 +142,20 @@ export const HomePage = () => {
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-[46px]">
           {/* Left */}
           <div>
-            <div className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-[12.5px]">
+            <div className="border-line bg-surface mb-6 inline-flex items-center gap-2.5 rounded-full border px-3.5 py-1.5 text-[12.5px]">
               <span className="text-ink-35">Works with</span>
-              <span className="inline-flex items-center gap-1.5 text-ink-70">
+              <span className="text-ink-70 inline-flex items-center gap-1.5">
                 <Dot className="bg-spotify" />
                 Spotify
               </span>
               <span className="text-line-strong">·</span>
-              <span className="inline-flex items-center gap-1.5 text-ink-70">
+              <span className="text-ink-70 inline-flex items-center gap-1.5">
                 <Dot className="bg-apple" />
                 Apple Music
               </span>
             </div>
 
-            <h1 className="font-display text-[clamp(2.5rem,6vw,3.75rem)] font-semibold leading-[1.02] tracking-[-0.035em] text-ink">
+            <h1 className="font-display text-ink text-[clamp(2.5rem,6vw,3.75rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
               Playlists that
               <br />
               keep up with
@@ -163,7 +163,7 @@ export const HomePage = () => {
               <span className="text-brand">themselves.</span>
             </h1>
 
-            <p className="mt-5 max-w-[44ch] text-[17px] leading-relaxed text-ink-50">
+            <p className="text-ink-50 mt-5 max-w-[44ch] text-[17px] leading-relaxed">
               Subscribe to the playlists you already follow. PlaylistFox funnels
               their new tracks into a playlist it manages for you — on Spotify
               and Apple Music, on whatever schedule you pick.
@@ -171,25 +171,25 @@ export const HomePage = () => {
 
             <div className="mt-7 flex flex-wrap items-center gap-4">
               <SignInButton>
-                <button className="rounded-full bg-brand px-[30px] py-4 text-[16px] font-medium text-surface transition-colors hover:cursor-pointer hover:bg-brand-deep">
+                <button className="bg-brand text-surface hover:bg-brand-deep rounded-full px-[30px] py-4 text-[16px] font-medium transition-colors hover:cursor-pointer">
                   Get started free
                 </button>
               </SignInButton>
               <a
                 href="#how-it-works"
-                className="inline-flex items-center gap-1 text-[14px] font-medium text-ink-50 transition-colors hover:text-ink-70"
+                className="text-ink-50 hover:text-ink-70 inline-flex items-center gap-1 text-[14px] font-medium transition-colors"
               >
                 See how it works
                 <ChevronDown className="h-4 w-4" />
               </a>
             </div>
 
-            <p className="mt-6 max-w-sm text-[13px] leading-relaxed text-ink-35">
+            <p className="text-ink-35 mt-6 max-w-sm text-[13px] leading-relaxed">
               New here and using Spotify? Spotify&apos;s developer mode needs an
               allowlist —{" "}
               <a
                 href="mailto:anthonysfox1@gmail.com?subject=PlaylistFox%20access%20request"
-                className="font-medium text-brand underline-offset-2 hover:underline"
+                className="text-brand font-medium underline-offset-2 hover:underline"
               >
                 email anthonysfox1@gmail.com
               </a>{" "}
@@ -199,7 +199,7 @@ export const HomePage = () => {
 
           {/* Right — concept card */}
           <div className="relative mx-auto w-full max-w-[470px]">
-            <span className="absolute -right-3 -top-3 z-10 flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-full bg-surface shadow-[0_6px_18px_rgba(26,21,18,0.18)]">
+            <span className="bg-surface absolute -top-3 -right-3 z-10 flex h-[52px] w-[52px] items-center justify-center overflow-hidden rounded-full shadow-[0_6px_18px_rgba(26,21,18,0.18)]">
               <Image
                 src="/logo.png"
                 alt="PlaylistFox"
@@ -210,19 +210,19 @@ export const HomePage = () => {
               />
             </span>
 
-            <div className="rounded-[18px] border border-line bg-surface p-6">
-              <div className="font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
+            <div className="border-line bg-surface rounded-[18px] border p-6">
+              <div className="text-ink-35 font-mono text-[10px] font-medium tracking-[0.08em] uppercase">
                 Two kinds of playlist
               </div>
 
               <div className="mt-3 flex flex-col">
-                <div className="rounded-xl border border-line px-4 py-3">
-                  <div className="font-mono text-[10px] uppercase tracking-wide text-ink-35">
+                <div className="border-line rounded-xl border px-4 py-3">
+                  <div className="text-ink-35 font-mono text-[10px] tracking-wide uppercase">
                     A source you follow
                   </div>
                   <div className="mt-1.5 flex items-center gap-2.5">
                     <Cover i={1} size="h-8 w-8" />
-                    <span className="text-[13.5px] font-medium text-ink">
+                    <span className="text-ink text-[13.5px] font-medium">
                       Fresh Finds — Basement
                     </span>
                   </div>
@@ -246,25 +246,25 @@ export const HomePage = () => {
                       className="animate-flowdash"
                     />
                   </svg>
-                  <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full bg-surface px-2 font-mono text-[10px] text-brand-deep">
+                  <span className="bg-surface text-brand-deep absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-2 font-mono text-[10px] whitespace-nowrap">
                     new tracks, weekly
                   </span>
                 </div>
 
-                <div className="rounded-xl border-[1.5px] border-brand bg-brand-tint-soft px-4 py-3">
-                  <div className="font-mono text-[10px] uppercase tracking-wide text-brand-deep">
+                <div className="border-brand bg-brand-tint-soft rounded-xl border-[1.5px] px-4 py-3">
+                  <div className="text-brand-deep font-mono text-[10px] tracking-wide uppercase">
                     A playlist we manage
                   </div>
                   <div className="mt-1.5 flex items-center gap-2.5">
                     <Cover i={0} size="h-8 w-8" />
-                    <span className="text-[13.5px] font-medium text-ink">
+                    <span className="text-ink text-[13.5px] font-medium">
                       Friday Rotation
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-4 rounded-xl bg-ground-alt px-4 py-2.5 text-[12.5px] text-ink-70">
+              <div className="bg-ground-alt text-ink-70 mt-4 rounded-xl px-4 py-2.5 text-[12.5px]">
                 Subscribing is just drawing that arrow.
               </div>
             </div>
@@ -275,19 +275,19 @@ export const HomePage = () => {
       {/* ---- Three-step explainer ---- */}
       <section
         id="how-it-works"
-        className="scroll-mt-20 border-y border-line bg-surface"
+        className="border-line bg-surface scroll-mt-20 border-y"
       >
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-10">
           <div className="grid gap-10 sm:grid-cols-3">
             {STEPS.map((step, i) => (
               <div key={step.title}>
-                <div className="font-mono text-[12px] font-medium text-brand">
+                <div className="text-brand font-mono text-[12px] font-medium">
                   0{i + 1}
                 </div>
-                <h3 className="mt-2 font-display text-[19px] font-semibold tracking-[-0.015em] text-ink">
+                <h3 className="font-display text-ink mt-2 text-[19px] font-semibold tracking-[-0.015em]">
                   {step.title}
                 </h3>
-                <p className="mt-1.5 text-[13.5px] leading-relaxed text-ink-50">
+                <p className="text-ink-50 mt-1.5 text-[13.5px] leading-relaxed">
                   {step.body}
                 </p>
                 <StepMock i={i} />
@@ -298,12 +298,12 @@ export const HomePage = () => {
       </section>
 
       {/* ---- Footer ---- */}
-      <footer className="border-t border-line bg-ground">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-8 text-[12.5px] text-ink-35 sm:flex-row sm:px-10">
+      <footer className="border-line bg-ground border-t">
+        <div className="text-ink-35 mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 py-8 text-[12.5px] sm:flex-row sm:px-10">
           <span>PlaylistFox — playlists that keep up with themselves.</span>
           <a
             href="mailto:anthonysfox1@gmail.com"
-            className="transition-colors hover:text-ink-50"
+            className="hover:text-ink-50 transition-colors"
           >
             Contact
           </a>

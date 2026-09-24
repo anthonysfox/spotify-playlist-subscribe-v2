@@ -159,7 +159,7 @@ function StatusBlock({
         {s.label}
       </div>
       {s.detail && (
-        <div className="mt-0.5 text-[11.5px] text-ink-35">{s.detail}</div>
+        <div className="text-ink-35 mt-0.5 text-[11.5px]">{s.detail}</div>
       )}
     </div>
   );
@@ -180,7 +180,7 @@ function IconButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border border-line text-ink-35 transition-colors hover:border-line-strong hover:bg-ground-alt hover:text-ink-70"
+      className="border-line text-ink-35 hover:border-line-strong hover:bg-ground-alt hover:text-ink-70 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border transition-colors"
     >
       {children}
     </button>
@@ -317,10 +317,10 @@ export const Subscriptions = () => {
       {/* Header */}
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-[24px] font-semibold tracking-[-0.02em] text-ink">
+          <h1 className="font-display text-ink text-[24px] font-semibold tracking-[-0.02em]">
             Library
           </h1>
-          <p className="mt-0.5 text-[12.5px] text-ink-50">
+          <p className="text-ink-50 mt-0.5 text-[12.5px]">
             {managedPlaylists.length} managed playlist
             {managedPlaylists.length === 1 ? "" : "s"} · {totalSources} source
             {totalSources === 1 ? "" : "s"}
@@ -332,13 +332,13 @@ export const Subscriptions = () => {
             type="button"
             onClick={handleSyncNow}
             disabled={isSyncing || isEmpty}
-            className="rounded-full border border-line-strong px-4 py-2 text-[12.5px] font-medium text-ink-70 transition-colors hover:border-brand/40 hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
+            className="border-line-strong text-ink-70 hover:border-brand/40 hover:text-brand rounded-full border px-4 py-2 text-[12.5px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSyncing ? "Syncing…" : "Sync all"}
           </button>
           <Link
             href="/"
-            className="rounded-full bg-brand px-4 py-2 text-[12.5px] font-medium text-surface transition-colors hover:bg-brand-deep"
+            className="bg-brand text-surface hover:bg-brand-deep rounded-full px-4 py-2 text-[12.5px] font-medium transition-colors"
           >
             New playlist
           </Link>
@@ -351,10 +351,10 @@ export const Subscriptions = () => {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search playlists and sources"
-            className="min-w-[180px] flex-1 rounded-full border border-line-strong bg-surface px-4 py-2 text-[13px] text-ink placeholder:text-ink-50 focus:border-brand/40 focus:outline-none"
+            className="border-line-strong bg-surface text-ink placeholder:text-ink-50 focus:border-brand/40 min-w-[180px] flex-1 rounded-full border px-4 py-2 text-[13px] focus:outline-none"
           />
 
-          <div className="flex rounded-full bg-ground-chip p-0.5">
+          <div className="bg-ground-chip flex rounded-full p-0.5">
             {(["ALL", "SPOTIFY", "APPLE_MUSIC"] as ProviderFilter[]).map(
               (p) => (
                 <button
@@ -377,7 +377,7 @@ export const Subscriptions = () => {
             <select
               value={sortKey}
               onChange={(e) => setSortKey(e.target.value as SortKey)}
-              className="appearance-none rounded-full border border-line-strong bg-surface px-3 py-1.5 pr-7 text-[12px] font-medium text-ink-70 focus:outline-none"
+              className="border-line-strong bg-surface text-ink-70 appearance-none rounded-full border px-3 py-1.5 pr-7 text-[12px] font-medium focus:outline-none"
             >
               {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
                 <option key={k} value={k}>
@@ -385,14 +385,14 @@ export const Subscriptions = () => {
                 </option>
               ))}
             </select>
-            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-35" />
+            <ChevronDown className="text-ink-35 pointer-events-none absolute top-1/2 right-2 h-3.5 w-3.5 -translate-y-1/2" />
           </label>
 
           {expanded.size > 0 && (
             <button
               type="button"
               onClick={() => setExpanded(new Set())}
-              className="text-[12px] font-medium text-ink-50 hover:text-ink-70"
+              className="text-ink-50 hover:text-ink-70 text-[12px] font-medium"
             >
               Collapse all
             </button>
@@ -403,26 +403,26 @@ export const Subscriptions = () => {
       {/* List */}
       <div className="min-h-0 grow overflow-y-auto">
         {isEmpty ? (
-          <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong p-10 text-center">
-            <span className="mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-surface shadow-[0_0_0_1px_var(--color-line)]">
+          <div className="border-line-strong flex h-full flex-col items-center justify-center rounded-2xl border border-dashed p-10 text-center">
+            <span className="bg-surface mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full shadow-[0_0_0_1px_var(--color-line)]">
               <img src="/logo.png" alt="" className="h-16 w-16 object-cover" />
             </span>
-            <p className="font-display text-[17px] font-semibold text-ink">
+            <p className="font-display text-ink text-[17px] font-semibold">
               No managed playlists yet
             </p>
-            <p className="mt-1 max-w-[38ch] text-[13px] leading-relaxed text-ink-50">
+            <p className="text-ink-50 mt-1 max-w-[38ch] text-[13px] leading-relaxed">
               Subscribe to a source playlist from Discover and it becomes a
               managed playlist that keeps itself fresh.
             </p>
             <Link
               href="/"
-              className="mt-5 rounded-full bg-brand px-5 py-2.5 text-[13px] font-medium text-surface transition-colors hover:bg-brand-deep"
+              className="bg-brand text-surface hover:bg-brand-deep mt-5 rounded-full px-5 py-2.5 text-[13px] font-medium transition-colors"
             >
               Browse Discover
             </Link>
           </div>
         ) : visible.length === 0 ? (
-          <p className="py-10 text-center text-[13px] text-ink-50">
+          <p className="text-ink-50 py-10 text-center text-[13px]">
             No playlists match “{query}”.
           </p>
         ) : (
@@ -441,7 +441,7 @@ export const Subscriptions = () => {
               return (
                 <div
                   key={playlist.id}
-                  className="overflow-hidden rounded-2xl border border-line bg-surface"
+                  className="border-line bg-surface overflow-hidden rounded-2xl border"
                 >
                   <div className="flex items-center gap-3 p-3.5">
                     <CoverArt
@@ -453,18 +453,18 @@ export const Subscriptions = () => {
                       <div className="flex items-center gap-2">
                         <Link
                           href={`/library/${playlist.id}`}
-                          className="truncate font-display text-[15px] font-semibold text-ink hover:text-brand-deep"
+                          className="font-display text-ink hover:text-brand-deep truncate text-[15px] font-semibold"
                         >
                           {playlist.name}
                         </Link>
-                        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ground-alt px-2 py-0.5 text-[11px] font-medium text-ink-50">
+                        <span className="bg-ground-alt text-ink-50 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium">
                           <span
                             className={`h-1.5 w-1.5 rounded-full ${PROVIDER_DOT[playlist.provider]}`}
                           />
                           {PROVIDER_LABELS[playlist.provider]}
                         </span>
                       </div>
-                      <div className="mt-0.5 truncate text-[12.5px] text-ink-50">
+                      <div className="text-ink-50 mt-0.5 truncate text-[12.5px]">
                         {configLine}
                       </div>
                     </div>
@@ -481,7 +481,7 @@ export const Subscriptions = () => {
                         href={`/library/${playlist.id}/settings`}
                         aria-label={`Settings for ${playlist.name}`}
                         title="Settings"
-                        className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border border-line text-ink-35 transition-colors hover:border-line-strong hover:bg-ground-alt hover:text-ink-70"
+                        className="border-line text-ink-35 hover:border-line-strong hover:bg-ground-alt hover:text-ink-70 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border transition-colors"
                       >
                         <Settings className="h-3.5 w-3.5" />
                       </Link>
@@ -499,14 +499,14 @@ export const Subscriptions = () => {
                   </div>
 
                   {/* status on its own line on narrow screens */}
-                  <div className="border-t border-line px-3.5 py-2 sm:hidden">
+                  <div className="border-line border-t px-3.5 py-2 sm:hidden">
                     <StatusBlock playlist={playlist} />
                   </div>
 
                   {isOpen && (
-                    <div className="border-t border-line bg-surface-sunk px-3.5 py-3">
+                    <div className="border-line bg-surface-sunk border-t px-3.5 py-3">
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="font-mono text-[10px] font-medium uppercase tracking-[0.08em] text-ink-35">
+                        <span className="text-ink-35 font-mono text-[10px] font-medium tracking-[0.08em] uppercase">
                           {playlist.contributions &&
                           Object.keys(playlist.contributions).length
                             ? "Sources · contribution last 30 days"
@@ -514,7 +514,7 @@ export const Subscriptions = () => {
                         </span>
                         <Link
                           href="/"
-                          className="inline-flex items-center gap-1 text-[12px] font-medium text-brand-deep hover:text-brand"
+                          className="text-brand-deep hover:text-brand inline-flex items-center gap-1 text-[12px] font-medium"
                         >
                           <Plus className="h-3 w-3" />
                           Add source
@@ -531,7 +531,7 @@ export const Subscriptions = () => {
                             return (
                               <div
                                 key={key}
-                                className="my-1 flex items-center justify-between rounded-xl bg-brand-tint px-3 py-2 text-[12.5px] text-brand-deep"
+                                className="bg-brand-tint text-brand-deep my-1 flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px]"
                               >
                                 <span className="min-w-0 truncate">
                                   Removed{" "}
@@ -562,7 +562,7 @@ export const Subscriptions = () => {
                           return (
                             <div
                               key={sub.sourcePlaylist.id}
-                              className={`flex items-center gap-3 border-b border-line py-2 last:border-b-0 ${
+                              className={`border-line flex items-center gap-3 border-b py-2 last:border-b-0 ${
                                 contrib === 0 ? "opacity-60" : ""
                               }`}
                             >
@@ -571,25 +571,25 @@ export const Subscriptions = () => {
                                 alt={sub.sourcePlaylist.name}
                                 className="h-7 w-7 shrink-0 rounded-md"
                               />
-                              <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-ink-70">
+                              <span className="text-ink-70 min-w-0 flex-1 truncate text-[12.5px] font-medium">
                                 {sub.sourcePlaylist.name}
                               </span>
                               {contrib !== null ? (
                                 <span className="flex w-24 shrink-0 items-center gap-2">
-                                  <span className="h-[5px] flex-1 overflow-hidden rounded-full bg-ground-chip">
+                                  <span className="bg-ground-chip h-[5px] flex-1 overflow-hidden rounded-full">
                                     <span
-                                      className="block h-full rounded-full bg-brand"
+                                      className="bg-brand block h-full rounded-full"
                                       style={{
                                         width: `${(contrib / maxContrib) * 100}%`,
                                       }}
                                     />
                                   </span>
-                                  <span className="font-mono text-[11px] text-ink-35">
+                                  <span className="text-ink-35 font-mono text-[11px]">
                                     {contrib}
                                   </span>
                                 </span>
                               ) : (
-                                <span className="shrink-0 font-mono text-[11px] text-ink-35">
+                                <span className="text-ink-35 shrink-0 font-mono text-[11px]">
                                   {sub.sourcePlaylist.trackCount} trks
                                 </span>
                               )}
@@ -602,7 +602,7 @@ export const Subscriptions = () => {
                                     sub.sourcePlaylist.name,
                                   )
                                 }
-                                className="shrink-0 text-[12px] font-medium text-ink-35 transition-colors hover:text-warn-text"
+                                className="text-ink-35 hover:text-warn-text shrink-0 text-[12px] font-medium transition-colors"
                               >
                                 Remove
                               </button>
@@ -620,7 +620,7 @@ export const Subscriptions = () => {
                             ],
                         ) &&
                           playlist.subscriptions.length > 0 && (
-                            <p className="py-2 text-[12px] text-ink-35">
+                            <p className="text-ink-35 py-2 text-[12px]">
                               All sources removed.
                             </p>
                           )}

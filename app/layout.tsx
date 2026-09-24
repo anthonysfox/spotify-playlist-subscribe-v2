@@ -72,8 +72,8 @@ export default async function RootLayout({
     <ClerkProvider>
       <html lang="en" className="scroll-smooth">
         <body
-          className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} font-sans antialiased bg-ground text-ink-70 ${
-            isApp ? "flex flex-col h-screen overflow-hidden" : "min-h-screen"
+          className={`${spaceGrotesk.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} bg-ground text-ink-70 font-sans antialiased ${
+            isApp ? "flex h-screen flex-col overflow-hidden" : "min-h-screen"
           }`}
         >
           {/* Signed-in chrome is the rail/tab-bar in AppShell (rendered per
@@ -82,7 +82,7 @@ export default async function RootLayout({
           {!isApp && <NavBar />}
           <StoreResetOnSignOut />
           {isApp ? (
-            <main className="grow flex min-h-0 overflow-hidden">
+            <main className="flex min-h-0 grow overflow-hidden">
               {children}
             </main>
           ) : (

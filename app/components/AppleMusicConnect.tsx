@@ -196,12 +196,12 @@ export const AppleMusicConnect = () => {
         onError={() => setUnavailable(true)}
       />
 
-      <div className="rounded-2xl border border-line bg-surface p-4">
+      <div className="border-line bg-surface rounded-2xl border p-4">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-apple" />
-              <span className="font-display text-[15px] font-semibold text-ink">
+              <span className="bg-apple h-1.5 w-1.5 shrink-0 rounded-full" />
+              <span className="font-display text-ink text-[15px] font-semibold">
                 Apple Music
               </span>
               <span
@@ -220,7 +220,7 @@ export const AppleMusicConnect = () => {
                     : "Not connected"}
               </span>
             </div>
-            <p className="mt-1 max-w-[52ch] text-[12.5px] leading-relaxed text-ink-50">
+            <p className="text-ink-50 mt-1 max-w-[52ch] text-[12.5px] leading-relaxed">
               {connected
                 ? `Lets PlaylistFox read and update your Apple Music playlists.${
                     since ? ` Connected ${since}.` : ""
@@ -235,7 +235,7 @@ export const AppleMusicConnect = () => {
             disabled={busy || !scriptReady || !status}
             className={`shrink-0 rounded-full px-4 py-2 text-[12.5px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
               connected && !needsRefresh
-                ? "border border-line-strong text-ink-70 hover:border-brand/40 hover:text-brand"
+                ? "border-line-strong text-ink-70 hover:border-brand/40 hover:text-brand border"
                 : "bg-brand text-surface hover:bg-brand-deep"
             }`}
           >

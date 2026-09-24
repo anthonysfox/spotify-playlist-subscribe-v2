@@ -32,9 +32,9 @@ export function SearchAssistant() {
         type="button"
         onClick={() => openWithMessage()}
         aria-label="Ask the fox"
-        className="fixed bottom-[76px] right-4 z-40 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-ink shadow-[0_8px_24px_rgba(26,21,18,0.28)] transition-transform hover:scale-105 min-[900px]:bottom-6 min-[900px]:right-6"
+        className="bg-ink fixed right-4 bottom-[76px] z-40 flex h-[52px] w-[52px] items-center justify-center rounded-full shadow-[0_8px_24px_rgba(26,21,18,0.28)] transition-transform hover:scale-105 min-[900px]:right-6 min-[900px]:bottom-6"
       >
-        <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-surface">
+        <span className="bg-surface flex h-8 w-8 items-center justify-center overflow-hidden rounded-full">
           <Image
             src="/logo.png"
             alt=""

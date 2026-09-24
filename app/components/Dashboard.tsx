@@ -26,9 +26,9 @@ const Dashboard = () => {
   const hasNone = connections !== null && connected.length === 0;
 
   return (
-    <div className="flex w-full h-full min-h-0 flex-col px-4 py-5 min-[900px]:px-6 min-[900px]:py-6">
-      <div className="mb-5 w-full flex flex-wrap items-end justify-between gap-3">
-        <h1 className="font-display text-[30px] font-semibold leading-tight tracking-[-0.025em] text-ink">
+    <div className="flex h-full min-h-0 w-full flex-col px-4 py-5 min-[900px]:px-6 min-[900px]:py-6">
+      <div className="mb-5 flex w-full flex-wrap items-end justify-between gap-3">
+        <h1 className="font-display text-ink text-[30px] leading-tight font-semibold tracking-[-0.025em]">
           Find a playlist worth subscribing to.
         </h1>
         <ProviderSwitcher />
@@ -36,26 +36,26 @@ const Dashboard = () => {
 
       {hasNone ? (
         <div className="flex grow flex-col items-center justify-center p-8 text-center">
-          <span className="mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-surface shadow-[0_0_0_1px_var(--color-line)]">
+          <span className="bg-surface mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full shadow-[0_0_0_1px_var(--color-line)]">
             <img src="/logo.png" alt="" className="h-16 w-16 object-cover" />
           </span>
-          <h2 className="mb-1 font-display text-[17px] font-semibold text-ink">
+          <h2 className="font-display text-ink mb-1 text-[17px] font-semibold">
             Nothing to browse yet
           </h2>
-          <p className="mb-4 max-w-[34ch] text-[13.5px] leading-relaxed text-ink-50">
+          <p className="text-ink-50 mb-4 max-w-[34ch] text-[13.5px] leading-relaxed">
             Connect a music service and PlaylistFox can start pulling playlists
             in.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-2.5">
             <a
               href="/settings/connections"
-              className="rounded-full bg-brand px-5 py-2.5 text-[13.5px] font-medium text-surface transition-colors hover:bg-brand-deep"
+              className="bg-brand text-surface hover:bg-brand-deep rounded-full px-5 py-2.5 text-[13.5px] font-medium transition-colors"
             >
               Connect Spotify
             </a>
             <a
               href="/settings/connections"
-              className="rounded-full border border-line-strong px-5 py-2.5 text-[13.5px] font-medium text-ink-70 transition-colors hover:border-brand/40 hover:text-brand"
+              className="border-line-strong text-ink-70 hover:border-brand/40 hover:text-brand rounded-full border px-5 py-2.5 text-[13.5px] font-medium transition-colors"
             >
               Connect Apple Music
             </a>

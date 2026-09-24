@@ -51,7 +51,7 @@ export const ProviderSwitcher = () => {
         <div
           role="tablist"
           aria-label="Music service"
-          className="inline-flex items-center rounded-full border border-line-strong bg-surface p-0.5"
+          className="border-line-strong bg-surface inline-flex items-center rounded-full border p-0.5"
         >
           {connected.map((provider) => {
             const active = provider === activeProvider;
@@ -79,7 +79,7 @@ export const ProviderSwitcher = () => {
       ) : (
         // Only one service connected — nothing to switch between yet, just
         // show what's active.
-        <span className="flex items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 py-1.5 text-[13px] font-medium text-ink-70">
+        <span className="border-line-strong bg-surface text-ink-70 flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium">
           <span
             className={`h-1.5 w-1.5 rounded-full ${providerDot[connected[0]]}`}
           />
@@ -90,7 +90,7 @@ export const ProviderSwitcher = () => {
       {unconnected.length > 0 && (
         <Link
           href="/settings/connections"
-          className="inline-flex items-center gap-1 rounded-full border border-dashed border-line-strong px-3 py-1.5 text-[13px] font-medium text-ink-50 transition-colors hover:border-brand/40 hover:text-brand"
+          className="border-line-strong text-ink-50 hover:border-brand/40 hover:text-brand inline-flex items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-[13px] font-medium transition-colors"
         >
           <Plus className="h-3.5 w-3.5" />
           Connect {PROVIDER_LABELS[unconnected[0]]}

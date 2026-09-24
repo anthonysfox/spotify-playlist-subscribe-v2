@@ -51,7 +51,7 @@ export const CategoryFilters = ({
               className={`rounded-full px-3.5 py-1.5 text-[12.5px] font-medium transition-colors ${
                 active
                   ? "bg-ink text-surface"
-                  : "border border-line bg-surface text-ink-50 hover:text-ink-70"
+                  : "border-line bg-surface text-ink-50 hover:text-ink-70 border"
               }`}
             >
               {category.name}
@@ -61,7 +61,7 @@ export const CategoryFilters = ({
       </div>
 
       {subOptions && (
-        <div className="flex flex-wrap gap-2 border-t border-line pt-3">
+        <div className="border-line flex flex-wrap gap-2 border-t pt-3">
           {subOptions.map((option) => {
             const active = activeSubOption === option.id;
             return (
