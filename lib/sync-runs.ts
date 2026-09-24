@@ -12,11 +12,7 @@ export const STALE_RUNNING_MS = 15 * 60 * 1000;
 export const CONTRIBUTION_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 
 export type SyncRunUiStatus =
-  | "running"
-  | "success"
-  | "failed"
-  | "skipped"
-  | "stale";
+  "running" | "success" | "failed" | "skipped" | "stale";
 
 export interface SourceContribution {
   sourcePlaylistId: string;

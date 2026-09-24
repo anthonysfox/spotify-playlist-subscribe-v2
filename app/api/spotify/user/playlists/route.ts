@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json([
         ...data.items.filter(
-          (playlist: any) => playlist.owner.id === spotifyUserId
+          (playlist: any) => playlist.owner.id === spotifyUserId,
         ),
       ]);
     }

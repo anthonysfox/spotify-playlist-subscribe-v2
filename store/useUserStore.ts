@@ -26,7 +26,7 @@ export const UNDO_WINDOW_MS = 8000;
 
 export const pendingRemovalKey = (
   managedPlaylistId: string,
-  sourcePlaylistId: string
+  sourcePlaylistId: string,
 ) => `${managedPlaylistId}:${sourcePlaylistId}`;
 
 export type UserStoreState = {
@@ -49,27 +49,27 @@ export type UserStoreActions = {
   refreshPlaylists: () => Promise<void>;
   setLoadedAllPlaylists: (loaded: boolean) => void;
   setManagedPlaylists: (
-    managedPlaylists: ManagedPlaylistWithSubscriptions[]
+    managedPlaylists: ManagedPlaylistWithSubscriptions[],
   ) => void;
   updateManagedPlaylist: (
     playlistId: string,
-    updates: Partial<ManagedPlaylist>
+    updates: Partial<ManagedPlaylist>,
   ) => void;
   addManagedPlaylist: (newPlaylist: ManagedPlaylistWithSubscriptions) => void;
   removeSubscriptionFromManagedPlaylist: (
     managedPlaylistId: string,
-    subscriptionId: string
+    subscriptionId: string,
   ) => void;
   unsubscribeFromSource: (
     sourcePlaylistId: string,
-    managedPlaylistId: string
+    managedPlaylistId: string,
   ) => Promise<void>;
   /** Optimistically remove a source with an undo window. The row disappears
    *  immediately; the DELETE only fires after UNDO_WINDOW_MS unless undone. */
   removeSourceWithUndo: (
     managedPlaylistId: string,
     sourcePlaylistId: string,
-    sourceName: string
+    sourceName: string,
   ) => void;
   /** Cancel a pending removal (key from `pendingRemovalKey`). */
   undoSourceRemoval: (key: string) => void;
@@ -116,7 +116,7 @@ export const useUserStore = create<UserStore>()(
         addManagedPlaylist: (newPlaylist) =>
           set((state) => {
             const existingIndex = state.managedPlaylists.findIndex(
-              (playlist) => playlist.id === newPlaylist.id
+              (playlist) => playlist.id === newPlaylist.id,
             );
 
             if (existingIndex >= 0) {
@@ -136,12 +136,12 @@ export const useUserStore = create<UserStore>()(
             managedPlaylists: state.managedPlaylists.map((playlist) =>
               playlist.id === playlistId
                 ? { ...playlist, ...updates }
-                : { ...playlist }
+                : { ...playlist },
             ),
           })),
         removeSubscriptionFromManagedPlaylist: (
           managedPlaylistId,
-          subscriptionId
+          subscriptionId,
         ) =>
           set((state) => {
             const updatedManagedPlaylists = state.managedPlaylists
@@ -149,7 +149,7 @@ export const useUserStore = create<UserStore>()(
                 if (managedPlaylist.id === managedPlaylistId) {
                   const updatedSubscriptions =
                     managedPlaylist.subscriptions.filter(
-                      (subscription: any) => subscription.id !== subscriptionId
+                      (subscription: any) => subscription.id !== subscriptionId,
                     );
 
                   return {
@@ -160,21 +160,21 @@ export const useUserStore = create<UserStore>()(
                 return managedPlaylist;
               })
               .filter(
-                (managedPlaylist) => managedPlaylist.subscriptions.length
+                (managedPlaylist) => managedPlaylist.subscriptions.length,
               );
 
             return { managedPlaylists: updatedManagedPlaylists };
           }),
         unsubscribeFromSource: async (
           sourcePlaylistId: string,
-          managedPlaylistId: string
+          managedPlaylistId: string,
         ) => {
           try {
             const response = await fetch(
               `/api/users/me/managed-playlists/${managedPlaylistId}/subscriptions/${sourcePlaylistId}`,
               {
                 method: "DELETE",
-              }
+              },
             );
 
             const { success, data } = await response.json();
@@ -186,7 +186,7 @@ export const useUserStore = create<UserStore>()(
             // Update local state
             get().removeSubscriptionFromManagedPlaylist(
               data.managedPlaylistId,
-              data.subscriptionId
+              data.subscriptionId,
             );
 
             toast.success("Successfully unsubscribed");
@@ -199,7 +199,7 @@ export const useUserStore = create<UserStore>()(
         removeSourceWithUndo: (
           managedPlaylistId,
           sourcePlaylistId,
-          sourceName
+          sourceName,
         ) => {
           const key = pendingRemovalKey(managedPlaylistId, sourcePlaylistId);
           // Already pending — ignore the repeat click.
@@ -209,7 +209,7 @@ export const useUserStore = create<UserStore>()(
             try {
               const response = await fetch(
                 `/api/users/me/managed-playlists/${managedPlaylistId}/subscriptions/${sourcePlaylistId}`,
-                { method: "DELETE" }
+                { method: "DELETE" },
               );
               const { success, data } = await response.json();
               if (!success) {
@@ -217,7 +217,7 @@ export const useUserStore = create<UserStore>()(
               }
               get().removeSubscriptionFromManagedPlaylist(
                 data.managedPlaylistId,
-                data.subscriptionId
+                data.subscriptionId,
               );
             } catch (error: any) {
               console.error("Error unsubscribing:", error?.message || error);
@@ -259,7 +259,7 @@ export const useUserStore = create<UserStore>()(
       {
         name: "user-store",
         partialize: (state) => ({ playlists: state.userPlaylists }),
-      }
-    )
-  )
+      },
+    ),
+  ),
 );

@@ -78,7 +78,10 @@ export async function POST(request: Request) {
     // Transport concern #3: translate domain failures into HTTP. A SubscribeError
     // carries the right status; anything else is an unexpected 500.
     if (error instanceof SubscribeError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
     }
 
     console.error("Error handling subscribe request:", error);

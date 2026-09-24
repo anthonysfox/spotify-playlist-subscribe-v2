@@ -1,4 +1,8 @@
-import { getProvider, isProviderSupported, type MusicProvider } from "@/lib/music";
+import {
+  getProvider,
+  isProviderSupported,
+  type MusicProvider,
+} from "@/lib/music";
 
 const ALL_PROVIDERS: MusicProvider[] = ["SPOTIFY", "APPLE_MUSIC"];
 

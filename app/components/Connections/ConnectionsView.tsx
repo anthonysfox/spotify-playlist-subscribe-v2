@@ -18,8 +18,7 @@ export function ConnectionsView() {
   const spotifyAccount = user?.externalAccounts?.find((a) =>
     /spotify/i.test(a.provider),
   );
-  const spotifyConnected =
-    connections?.SPOTIFY ?? Boolean(spotifyAccount);
+  const spotifyConnected = connections?.SPOTIFY ?? Boolean(spotifyAccount);
   const spotifyHandle =
     spotifyAccount?.username ||
     spotifyAccount?.emailAddress ||

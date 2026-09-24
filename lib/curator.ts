@@ -58,7 +58,9 @@ export async function selectByVibe(
   const shortlist = candidates.slice(0, MAX_CANDIDATES);
 
   const numbered = shortlist
-    .map((track, index) => `${index}. ${track.name} — ${track.artists.join(", ")}`)
+    .map(
+      (track, index) => `${index}. ${track.name} — ${track.artists.join(", ")}`,
+    )
     .join("\n");
 
   try {

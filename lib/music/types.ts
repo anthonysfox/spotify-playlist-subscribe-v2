@@ -66,7 +66,10 @@ export interface MusicClient {
    * 3-track preview of a 2,000-track playlist is one small request, not a full
    * fetch of everything followed by a slice.
    */
-  getPlaylistTracks(playlistId: string, limit?: number): Promise<PlaylistTrack[]>;
+  getPlaylistTracks(
+    playlistId: string,
+    limit?: number,
+  ): Promise<PlaylistTrack[]>;
 
   /** Name, artwork and size. Null if the playlist is gone or not visible to us. */
   getPlaylist(playlistId: string): Promise<PlaylistSummary | null>;

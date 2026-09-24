@@ -66,7 +66,9 @@ export async function GET(request: NextRequest) {
     // order, a single dominant first term (or, on Spotify, one that returns a
     // full page) would fill the whole grid before the others got a look in.
     // Round-robin keeps the category varied.
-    const byTerm = results.map((r) => (r.status === "fulfilled" ? r.value : []));
+    const byTerm = results.map((r) =>
+      r.status === "fulfilled" ? r.value : [],
+    );
     const seen = new Set<string>();
     const pool: PlaylistSummary[] = [];
 
@@ -102,8 +104,7 @@ export async function GET(request: NextRequest) {
         // change slowly — let the browser reuse it across category toggles and
         // back-navigation instead of re-running a dozen Spotify searches.
         headers: {
-          "Cache-Control":
-            "private, max-age=300, stale-while-revalidate=1800",
+          "Cache-Control": "private, max-age=300, stale-while-revalidate=1800",
         },
       },
     );

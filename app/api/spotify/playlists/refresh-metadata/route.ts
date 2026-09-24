@@ -6,18 +6,18 @@ import { debugDetails } from "@/lib/api-errors";
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
-  
+
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
     const { playlistIds } = await request.json();
-    
+
     if (!playlistIds || !Array.isArray(playlistIds)) {
       return NextResponse.json(
         { error: "playlistIds array is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!token) {
       return NextResponse.json(
         { error: "No valid Spotify token" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          }
+          },
         );
 
         if (!spotifyResponse.ok) {
@@ -74,7 +74,10 @@ export async function POST(request: NextRequest) {
 
         return updatedPlaylist;
       } catch (error) {
-        console.error(`Error refreshing metadata for playlist ${playlistId}:`, error);
+        console.error(
+          `Error refreshing metadata for playlist ${playlistId}:`,
+          error,
+        );
         return null;
       }
     });
@@ -87,12 +90,11 @@ export async function POST(request: NextRequest) {
       message: `Refreshed metadata for ${successfulUpdates.length}/${playlistIds.length} playlists`,
       updatedPlaylists: successfulUpdates,
     });
-
   } catch (error: any) {
     console.error("Error refreshing playlist metadata:", error);
     return NextResponse.json(
       { error: "Failed to refresh metadata", ...debugDetails(error) },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

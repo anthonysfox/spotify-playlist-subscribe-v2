@@ -10,7 +10,10 @@ export async function GET(request: NextRequest) {
   const { userId } = await auth();
 
   if (!userId) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
   }
 
   const { searchParams } = request.nextUrl;
@@ -46,14 +49,16 @@ export async function GET(request: NextRequest) {
         // A playlist's track list changes slowly; the preview drawer and the
         // assistant flip-tiles re-request the same ones a lot.
         headers: {
-          "Cache-Control":
-            "private, max-age=300, stale-while-revalidate=1800",
+          "Cache-Control": "private, max-age=300, stale-while-revalidate=1800",
         },
       },
     );
   } catch (error: any) {
     console.error(`Failed to read tracks on ${provider}:`, error.message);
 
-    return NextResponse.json({ error: "Failed to load tracks" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to load tracks" },
+      { status: 500 },
+    );
   }
 }

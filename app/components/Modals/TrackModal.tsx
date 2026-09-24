@@ -289,9 +289,7 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                     onMouseLeave={() => setHoveredId(null)}
                     onClick={() => onRowClick(track)}
                     className={`flex items-center gap-3 rounded-[11px] px-3 py-2.5 transition-colors ${
-                      noPreview
-                        ? "cursor-default"
-                        : "cursor-pointer"
+                      noPreview ? "cursor-default" : "cursor-pointer"
                     } ${
                       isPlaying
                         ? "bg-brand-tint-soft"
@@ -331,7 +329,9 @@ export const TrackModal: React.FC<TrackModalProps> = ({
                       <span className="h-1 w-16 shrink-0 overflow-hidden rounded-full bg-[#EFE0D2]">
                         <span
                           className="block h-full bg-brand"
-                          style={{ width: `${Math.min(100, (elapsed / 30) * 100)}%` }}
+                          style={{
+                            width: `${Math.min(100, (elapsed / 30) * 100)}%`,
+                          }}
                         />
                       </span>
                     )}

@@ -15,5 +15,7 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json({ connections: await getConnectionsForUser(userId) });
+  return NextResponse.json({
+    connections: await getConnectionsForUser(userId),
+  });
 }

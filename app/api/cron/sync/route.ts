@@ -21,9 +21,7 @@ const MAX_ROTATION_MEMORY = 1000;
 
 /** Why a playlist was skipped. Skips are normal; they are not errors. */
 type SkipReason =
-  | "NO_SUBSCRIPTIONS"
-  | "PROVIDER_NOT_CONNECTED"
-  | "REPLACE_UNSUPPORTED";
+  "NO_SUBSCRIPTIONS" | "PROVIDER_NOT_CONNECTED" | "REPLACE_UNSUPPORTED";
 
 /** Per-source contribution for one run, stored on SyncRun.sourceBreakdown. */
 interface SourceContribution {
@@ -79,8 +77,7 @@ function isAuthorizedCronRequest(authHeader: string | null): boolean {
   // timingSafeEqual throws on a length mismatch, and a differing length is
   // already a mismatch — the length of the header is not the secret.
   return (
-    presented.length === expected.length &&
-    timingSafeEqual(presented, expected)
+    presented.length === expected.length && timingSafeEqual(presented, expected)
   );
 }
 
@@ -512,7 +509,9 @@ async function syncSinglePlaylist(
         // record is gone — which is why it kept re-adding the same first N songs
         // and "replacing" the playlist with an identical one. This subscription's
         // own memory is what makes each run genuinely fresh.
-        const alreadyServed = new Set<string>(subscription.recentlyServed ?? []);
+        const alreadyServed = new Set<string>(
+          subscription.recentlyServed ?? [],
+        );
 
         if (syncMode === "REPLACE") {
           const { pool, exhausted } = rotateUnseen(
@@ -578,9 +577,8 @@ async function syncSinglePlaylist(
             // that grows without bound.
             ...(syncMode === "REPLACE"
               ? {
-                  recentlyServed: Array.from(alreadyServed).slice(
-                    -MAX_ROTATION_MEMORY,
-                  ),
+                  recentlyServed:
+                    Array.from(alreadyServed).slice(-MAX_ROTATION_MEMORY),
                 }
               : {}),
           },

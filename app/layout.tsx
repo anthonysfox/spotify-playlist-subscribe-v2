@@ -82,7 +82,9 @@ export default async function RootLayout({
           {!isApp && <NavBar />}
           <StoreResetOnSignOut />
           {isApp ? (
-            <main className="grow flex min-h-0 overflow-hidden">{children}</main>
+            <main className="grow flex min-h-0 overflow-hidden">
+              {children}
+            </main>
           ) : (
             <main>{children}</main>
           )}

@@ -2,12 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  RefreshCw,
-  Settings,
-  ChevronDown,
-  Plus,
-} from "lucide-react";
+import { RefreshCw, Settings, ChevronDown, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { useUserStore, pendingRemovalKey } from "store/useUserStore";
 import { PROVIDER_LABELS } from "store/useMusicStore";
@@ -244,8 +239,7 @@ export const Subscriptions = () => {
   };
 
   const totalSources = useMemo(
-    () =>
-      managedPlaylists.reduce((n, p) => n + p.subscriptions.length, 0),
+    () => managedPlaylists.reduce((n, p) => n + p.subscriptions.length, 0),
     [managedPlaylists],
   );
 
@@ -361,20 +355,22 @@ export const Subscriptions = () => {
           />
 
           <div className="flex rounded-full bg-ground-chip p-0.5">
-            {(["ALL", "SPOTIFY", "APPLE_MUSIC"] as ProviderFilter[]).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setProviderFilter(p)}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                  providerFilter === p
-                    ? "bg-ink text-surface"
-                    : "text-ink-50 hover:text-ink-70"
-                }`}
-              >
-                {p === "ALL" ? "All" : PROVIDER_LABELS[p as MusicProvider]}
-              </button>
-            ))}
+            {(["ALL", "SPOTIFY", "APPLE_MUSIC"] as ProviderFilter[]).map(
+              (p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setProviderFilter(p)}
+                  className={`rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                    providerFilter === p
+                      ? "bg-ink text-surface"
+                      : "text-ink-50 hover:text-ink-70"
+                  }`}
+                >
+                  {p === "ALL" ? "All" : PROVIDER_LABELS[p as MusicProvider]}
+                </button>
+              ),
+            )}
           </div>
 
           <label className="relative">
@@ -409,11 +405,7 @@ export const Subscriptions = () => {
         {isEmpty ? (
           <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-line-strong p-10 text-center">
             <span className="mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-surface shadow-[0_0_0_1px_var(--color-line)]">
-              <img
-                src="/logo.png"
-                alt=""
-                className="h-16 w-16 object-cover"
-              />
+              <img src="/logo.png" alt="" className="h-16 w-16 object-cover" />
             </span>
             <p className="font-display text-[17px] font-semibold text-ink">
               No managed playlists yet

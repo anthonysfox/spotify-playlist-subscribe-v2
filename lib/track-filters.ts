@@ -158,7 +158,10 @@ export function withoutExplicit(tracks: PlaylistTrack[]): PlaylistTrack[] {
  * Tracks with no added_at are kept — an unknown date is not evidence of being
  * old, and silently dropping them would be worse than letting them through.
  */
-export function withinAgeLimit(tracks: PlaylistTrack[], days: number): PlaylistTrack[] {
+export function withinAgeLimit(
+  tracks: PlaylistTrack[],
+  days: number,
+): PlaylistTrack[] {
   if (!days || days <= 0) return tracks;
 
   const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;

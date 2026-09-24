@@ -112,8 +112,8 @@ export function ActivityFeed() {
               No sync activity yet
             </p>
             <p className="mt-1 max-w-[42ch] text-[13px] leading-relaxed text-ink-50">
-              Once your playlists start syncing, each run shows up here with what
-              it added and what it skipped.
+              Once your playlists start syncing, each run shows up here with
+              what it added and what it skipped.
             </p>
           </div>
         ) : (

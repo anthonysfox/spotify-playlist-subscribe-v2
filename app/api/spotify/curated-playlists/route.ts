@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   if (!userId || !token) {
     return NextResponse.json(
       { error: "Spotify authorization required" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -316,7 +316,7 @@ export async function GET(request: Request) {
       const spotifyUrl = `${
         process.env.BASE_SPOTIFY_URL
       }/search?q=${encodeURIComponent(term)}&type=playlist&limit=${Math.floor(
-        OFFSET / searchTerms.length
+        OFFSET / searchTerms.length,
       )}&offset=${offset}`;
       return fetch(spotifyUrl, {
         headers: {
@@ -337,14 +337,15 @@ export async function GET(request: Request) {
       .filter((response) => response.status === "fulfilled")
       .flatMap(
         (response) =>
-          response.value.playlists?.items.filter((isThere: unknown) => isThere) ||
-          []
+          response.value.playlists?.items.filter(
+            (isThere: unknown) => isThere,
+          ) || [],
       );
 
     // Remove duplicates based on playlist ID
     const uniquePlaylists = playlists.filter(
       (playlist, index, self) =>
-        index === self.findIndex((p) => p?.id === playlist?.id)
+        index === self.findIndex((p) => p?.id === playlist?.id),
     );
 
     return NextResponse.json(uniquePlaylists);

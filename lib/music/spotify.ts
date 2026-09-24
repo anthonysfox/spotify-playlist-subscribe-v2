@@ -48,7 +48,8 @@ class SpotifyClient implements MusicClient {
     const pageSize = limit ? Math.min(limit, 50) : 50;
     const tracks: PlaylistTrack[] = [];
 
-    let next: string | null = `/playlists/${playlistId}/tracks?fields=${fields}&limit=${pageSize}`;
+    let next: string | null =
+      `/playlists/${playlistId}/tracks?fields=${fields}&limit=${pageSize}`;
 
     while (next) {
       if (limit && tracks.length >= limit) break;
@@ -127,17 +128,19 @@ class SpotifyClient implements MusicClient {
 
     const data = await response.json();
 
-    return (data.playlists?.items ?? [])
-      // Spotify returns nulls in this array for playlists it won't serve us.
-      .filter(Boolean)
-      .map((playlist: any) => ({
-        id: playlist.id,
-        name: playlist.name,
-        imageUrl: playlist.images?.[0]?.url ?? null,
-        trackCount: playlist.tracks?.total ?? 0,
-        owner: playlist.owner?.display_name ?? null,
-        provider: this.provider,
-      }));
+    return (
+      (data.playlists?.items ?? [])
+        // Spotify returns nulls in this array for playlists it won't serve us.
+        .filter(Boolean)
+        .map((playlist: any) => ({
+          id: playlist.id,
+          name: playlist.name,
+          imageUrl: playlist.images?.[0]?.url ?? null,
+          trackCount: playlist.tracks?.total ?? 0,
+          owner: playlist.owner?.display_name ?? null,
+          provider: this.provider,
+        }))
+    );
   }
 
   async searchTracks(query: string, limit = 5): Promise<PlaylistTrack[]> {
@@ -149,17 +152,15 @@ class SpotifyClient implements MusicClient {
 
     const data = await response.json();
 
-    return (data.tracks?.items ?? [])
-      .filter(Boolean)
-      .map((track: any) => ({
-        id: track.id,
-        name: track.name ?? "",
-        artists: (track.artists ?? [])
-          .map((artist: any) => artist?.name)
-          .filter(Boolean),
-        explicit: Boolean(track.explicit),
-        addedAt: null,
-      }));
+    return (data.tracks?.items ?? []).filter(Boolean).map((track: any) => ({
+      id: track.id,
+      name: track.name ?? "",
+      artists: (track.artists ?? [])
+        .map((artist: any) => artist?.name)
+        .filter(Boolean),
+      explicit: Boolean(track.explicit),
+      addedAt: null,
+    }));
   }
 
   async getUserPlaylists(limit = 20, offset = 0): Promise<PlaylistSummary[]> {

@@ -10,7 +10,10 @@ export async function GET(request: NextRequest) {
   const { userId } = await auth();
 
   if (!userId) {
-    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 },
+    );
   }
 
   const { searchParams } = request.nextUrl;

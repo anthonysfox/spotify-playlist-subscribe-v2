@@ -165,8 +165,8 @@ export const HomePage = () => {
 
             <p className="mt-5 max-w-[44ch] text-[17px] leading-relaxed text-ink-50">
               Subscribe to the playlists you already follow. PlaylistFox funnels
-              their new tracks into a playlist it manages for you — on Spotify and
-              Apple Music, on whatever schedule you pick.
+              their new tracks into a playlist it manages for you — on Spotify
+              and Apple Music, on whatever schedule you pick.
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-4">

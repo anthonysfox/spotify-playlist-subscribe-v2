@@ -112,7 +112,8 @@ export const AppleMusicConnect = () => {
    * say to someone who didn't ask for anything.
    */
   useEffect(() => {
-    if (!scriptReady || !status?.needsRefresh || refreshAttempted.current) return;
+    if (!scriptReady || !status?.needsRefresh || refreshAttempted.current)
+      return;
 
     refreshAttempted.current = true;
 

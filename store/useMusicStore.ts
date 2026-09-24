@@ -53,7 +53,10 @@ export const useMusicStore = create<MusicStore>((set, get) => ({
   setActiveProvider: (provider) => set({ activeProvider: provider }),
 
   setConnections: (connections) => {
-    const activeProvider = pickActiveProvider(connections, get().activeProvider);
+    const activeProvider = pickActiveProvider(
+      connections,
+      get().activeProvider,
+    );
     set({ connections, activeProvider });
   },
 

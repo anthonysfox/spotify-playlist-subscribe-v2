@@ -259,7 +259,10 @@ export const CuratedPlaylists: React.FC<CuratedPlaylistsProps> = ({
               ))}
             </div>
           ) : (
-            <SimplePlaylistList playlists={playlists} onSubscribe={onSubscribe} />
+            <SimplePlaylistList
+              playlists={playlists}
+              onSubscribe={onSubscribe}
+            />
           )}
 
           {loading && playlists.length > 0 && (

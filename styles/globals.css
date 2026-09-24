@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 @config '../tailwind.config.js';
 
@@ -22,7 +22,12 @@
   --color-ink-25: #a79e96; /* placeholder text, inactive icon strokes */
 
   --color-line: rgba(26, 21, 18, 0.08); /* hairline borders */
-  --color-line-strong: rgba(26, 21, 18, 0.12); /* input / secondary-button borders */
+  --color-line-strong: rgba(
+    26,
+    21,
+    18,
+    0.12
+  ); /* input / secondary-button borders */
 
   --color-ground: #fbf8f5; /* app background (warm off-white) */
   --color-ground-alt: #f4f0eb; /* inset panels, mobile search fields */
@@ -39,9 +44,11 @@
   --color-apple: #fa243c; /* provider dot only */
 
   /* Type — replaces Inter. Bound to the next/font CSS vars set in app/layout.tsx. */
-  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
   --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-mono:
+    var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, monospace;
 
   /* Motion */
   --animate-softpulse: softpulse 1.6s ease-in-out infinite;

@@ -9,7 +9,7 @@ This is a Spotify playlist subscription service built with Next.js 15, React 19,
 ## Common Development Commands
 
 - `npm run dev` - Start development server with Prisma generation and ngrok tunnel
-- `npm run build` - Generate Prisma client, push DB schema, and build for production  
+- `npm run build` - Generate Prisma client, push DB schema, and build for production
 - `npm run lint` - Run Next.js linting
 - `npm run prisma:generate` - Generate Prisma client
 - `npm run prisma:migrate` - Run database migrations in development
@@ -19,12 +19,14 @@ This is a Spotify playlist subscription service built with Next.js 15, React 19,
 ## Architecture
 
 ### Database Schema (Prisma)
+
 - **User**: Clerk-authenticated users with `clerkUserId` as unique identifier
 - **ManagedPlaylist**: User-owned Spotify playlists managed by the app with sync settings
 - **SourcePlaylist**: External Spotify playlists that serve as content sources
 - **ManagedPlaylistSourceSubscription**: Many-to-many relationship linking managed playlists to their source subscriptions
 
 ### Frontend Structure
+
 - **App Router**: Next.js 15 app directory structure
 - **Authentication**: Clerk integration for user management
 - **State Management**: Zustand store in `store/useUserStore.ts` for playlists and user data
@@ -34,11 +36,13 @@ This is a Spotify playlist subscription service built with Next.js 15, React 19,
   - Subscription modals and settings
 
 ### API Routes
+
 - **Spotify Integration**: `/api/spotify/` endpoints for playlist operations, search, and player control
 - **User Management**: `/api/users/` for subscription management
 - **Webhooks**: `/api/webhooks/` for external integrations
 
 ### Key Features
+
 - Spotify Web Player integration with play/pause controls
 - Curated playlist discovery and search
 - Subscription management with frequency settings

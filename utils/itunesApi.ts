@@ -17,7 +17,7 @@ export async function searchItunesTrack(
   trackName: string,
   artistName: string,
   albumName: string,
-  durationMs: number
+  durationMs: number,
 ): Promise<string | null> {
   try {
     // Create a more specific search query
@@ -35,9 +35,7 @@ export async function searchItunesTrack(
     if (data.results && data.results.length > 0) {
       // Find the best match based on duration and preview URL
       const durationTolerance = 5000; // 5 seconds
-      let potentialMatches = data.results.filter(
-        (track) => track.previewUrl
-      );
+      let potentialMatches = data.results.filter((track) => track.previewUrl);
 
       if (potentialMatches.length === 0) {
         return null;
@@ -45,13 +43,21 @@ export async function searchItunesTrack(
 
       // Sort by duration difference
       potentialMatches.sort((a, b) => {
-        const aDiff = a.trackTimeMillis ? Math.abs(a.trackTimeMillis - durationMs) : Infinity;
-        const bDiff = b.trackTimeMillis ? Math.abs(b.trackTimeMillis - durationMs) : Infinity;
+        const aDiff = a.trackTimeMillis
+          ? Math.abs(a.trackTimeMillis - durationMs)
+          : Infinity;
+        const bDiff = b.trackTimeMillis
+          ? Math.abs(b.trackTimeMillis - durationMs)
+          : Infinity;
         return aDiff - bDiff;
       });
 
       // If the best match is within the tolerance, return it
-      if (potentialMatches[0].trackTimeMillis && Math.abs(potentialMatches[0].trackTimeMillis - durationMs) < durationTolerance) {
+      if (
+        potentialMatches[0].trackTimeMillis &&
+        Math.abs(potentialMatches[0].trackTimeMillis - durationMs) <
+          durationTolerance
+      ) {
         return potentialMatches[0].previewUrl || null;
       }
 
@@ -77,9 +83,10 @@ export async function getTrackPreviewUrl(
   // sharpen the iTunes match (album narrows the search, duration disambiguates),
   // so name + artist alone still resolves a preview — just a little less precisely.
   albumName: string = "",
-  durationMs: number = 0
+  durationMs: number = 0,
 ): Promise<string | null> {
-  const cacheKey = `${trackName}-${artistName}-${albumName}-${durationMs}`.toLowerCase();
+  const cacheKey =
+    `${trackName}-${artistName}-${albumName}-${durationMs}`.toLowerCase();
 
   // Check cache first
   if (previewCache.has(cacheKey)) {
@@ -91,7 +98,7 @@ export async function getTrackPreviewUrl(
     trackName,
     artistName,
     albumName,
-    durationMs
+    durationMs,
   );
 
   // Cache the result (even if null)

@@ -1,15 +1,16 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { X, Download } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { X, Download } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
 export default function InstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
@@ -19,10 +20,10 @@ export default function InstallPrompt() {
       setShowPrompt(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener("beforeinstallprompt", handler);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener("beforeinstallprompt", handler);
     };
   }, []);
 
@@ -31,8 +32,8 @@ export default function InstallPrompt() {
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
+
+    if (outcome === "accepted") {
       setShowPrompt(false);
       setDeferredPrompt(null);
     }
@@ -53,9 +54,9 @@ export default function InstallPrompt() {
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
-              <img 
-                src="/logo.png" 
-                alt="PlaylistFox" 
+              <img
+                src="/logo.png"
+                alt="PlaylistFox"
                 className="w-10 h-10 rounded-lg"
               />
             </div>

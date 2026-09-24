@@ -31,8 +31,7 @@ export interface ManagedPlaylistWithSubscriptions extends ManagedPlaylist {
  * and a managed playlist when opening its settings from the Subscriptions tab.
  */
 export type SelectablePlaylist =
-  | PlaylistSummary
-  | ManagedPlaylistWithSubscriptions;
+  PlaylistSummary | ManagedPlaylistWithSubscriptions;
 
 /**
  * Narrow the union to a browsable playlist (a search/curated result), as opposed

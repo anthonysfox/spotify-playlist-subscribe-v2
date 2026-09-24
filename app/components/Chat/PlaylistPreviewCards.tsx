@@ -222,9 +222,7 @@ function PlaylistPreviewCard({
           className="absolute inset-0 flex flex-col overflow-hidden rounded-lg border border-line bg-white p-1"
         >
           <div className="flex items-center justify-between px-0.5 pb-0.5">
-            <span className="text-[9px] font-medium text-ink-35">
-              Preview
-            </span>
+            <span className="text-[9px] font-medium text-ink-35">Preview</span>
             <button
               type="button"
               onClick={flipToFront}

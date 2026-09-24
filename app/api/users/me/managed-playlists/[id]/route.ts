@@ -6,14 +6,14 @@ import { calculateNextSyncTime } from "utils/sync-schedule";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { userId } = await auth();
 
   if (!userId) {
     return NextResponse.json(
       { error: "Authentication required" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -21,7 +21,7 @@ export async function PUT(
   if (!id || typeof id !== "string") {
     return NextResponse.json(
       { error: "Valid subscription ID is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -99,7 +99,7 @@ export async function PUT(
           managedPlaylist: updatedPlaylist,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     // 5. Improved error handling
@@ -113,7 +113,7 @@ export async function PUT(
       ) {
         return NextResponse.json(
           { error: "Subscription not found or access denied" },
-          { status: 404 }
+          { status: 404 },
         );
       }
 
@@ -121,7 +121,7 @@ export async function PUT(
       if (error.message.includes("P2025")) {
         return NextResponse.json(
           { error: "Record to delete does not exist" },
-          { status: 404 }
+          { status: 404 },
         );
       }
     }
@@ -137,7 +137,7 @@ export async function PUT(
               : "Unknown error"
             : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -122,9 +122,7 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(
-          `/api/users/me/managed-playlists/${id}/runs`,
-        );
+        const res = await fetch(`/api/users/me/managed-playlists/${id}/runs`);
         if (!res.ok) return;
         const data = await res.json();
         if (!cancelled) setRuns(data.runs ?? []);
@@ -398,7 +396,9 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                         </span>
                       )}
                       {lastRun.skippedExplicit > 0 && (
-                        <span>{lastRun.skippedExplicit} skipped — explicit</span>
+                        <span>
+                          {lastRun.skippedExplicit} skipped — explicit
+                        </span>
                       )}
                       {lastRun.skippedTooOld > 0 && (
                         <span>{lastRun.skippedTooOld} skipped — too old</span>
@@ -411,7 +411,9 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                     </div>
                   ) : (
                     <div className="mt-2 text-[12px] text-ink-50">
-                      {synced ? `Last synced ${synced}` : "No runs recorded yet"}
+                      {synced
+                        ? `Last synced ${synced}`
+                        : "No runs recorded yet"}
                       {nextIn ? ` · next ${nextIn}` : ""}
                     </div>
                   )}
@@ -439,7 +441,10 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                 </p>
               ) : (
                 <>
-                  <div className="flex items-end gap-1.5" style={{ height: 44 }}>
+                  <div
+                    className="flex items-end gap-1.5"
+                    style={{ height: 44 }}
+                  >
                     {historyRuns.map((r, i) => {
                       const failed =
                         r.status === "failed" ||
@@ -447,17 +452,14 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                         r.status === "skipped";
                       const h = failed
                         ? 10
-                        : Math.max(
-                            6,
-                            (r.tracksAdded / maxAdded) * 44,
-                          );
+                        : Math.max(6, (r.tracksAdded / maxAdded) * 44);
                       const newest = i === historyRuns.length - 1;
                       return (
                         <span
                           key={r.id}
                           title={
                             failed
-                              ? r.errorMessage ?? r.skipReason ?? "failed"
+                              ? (r.errorMessage ?? r.skipReason ?? "failed")
                               : `${r.tracksAdded} added`
                           }
                           className={`w-full rounded-t ${
@@ -473,12 +475,9 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                     })}
                   </div>
                   <div className="mt-2 flex justify-between text-[11px] text-ink-35">
-                    <span>
-                      {formatRelativeTime(historyRuns[0].startedAt)}
-                    </span>
+                    <span>{formatRelativeTime(historyRuns[0].startedAt)}</span>
                     {historyRuns.some(
-                      (r) =>
-                        r.status === "failed" || r.status === "stale",
+                      (r) => r.status === "failed" || r.status === "stale",
                     ) && (
                       <span className="text-warn-text">
                         {
@@ -543,7 +542,10 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
             </div>
             <div className="flex flex-col">
               {sources.map((sub) => {
-                const key = pendingRemovalKey(playlist.id, sub.sourcePlaylist.id);
+                const key = pendingRemovalKey(
+                  playlist.id,
+                  sub.sourcePlaylist.id,
+                );
                 if (pendingSourceRemovals[key]) {
                   return (
                     <div

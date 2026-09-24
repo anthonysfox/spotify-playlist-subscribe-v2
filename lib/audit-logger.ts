@@ -39,7 +39,7 @@ export class AuditLogger {
   static async logSubscriptionCreated(
     managedPlaylistId: string,
     sourcePlaylistId: string,
-    userId?: string
+    userId?: string,
   ) {
     await this.log({
       action: "SUBSCRIBED",
@@ -53,7 +53,7 @@ export class AuditLogger {
   static async logSubscriptionDeleted(
     managedPlaylistId: string,
     sourcePlaylistId: string,
-    userId?: string
+    userId?: string,
   ) {
     await this.log({
       action: "UNSUBSCRIBED",
@@ -78,7 +78,7 @@ export class AuditLogger {
     playlistId: string,
     oldValues: any,
     newValues: any,
-    userId?: string
+    userId?: string,
   ) {
     await this.log({
       action: "UPDATED",
@@ -124,7 +124,7 @@ export class AuditLogger {
       sourceId?: string;
       runId?: string;
     },
-    entityId: string
+    entityId: string,
   ) {
     return this.log({
       action: "SYNC_RUN_STARTED",
@@ -147,7 +147,7 @@ export class AuditLogger {
       playlistId?: string;
       sourceId?: string;
       runId?: string;
-    }
+    },
   ) {
     return this.log({
       action: "SYNC_RUN_FAILED",
@@ -175,7 +175,7 @@ export class AuditLogger {
       sourceId?: string;
       runId?: string;
       reason?: string;
-    }
+    },
   ) {
     return this.log({
       action: "SYNC_RUN_COMPLETED",

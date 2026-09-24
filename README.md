@@ -36,15 +36,15 @@ Also doubles as a place to actually learn things properly: testing, CI/CD, datab
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 15 (App Router) |
-| Frontend | React 19, Tailwind CSS 4 |
-| State | Zustand |
-| Auth | Clerk |
-| Database | PostgreSQL with Prisma ORM |
-| Animations | GSAP |
-| Deployment | Vercel |
+| Layer      | Technology                 |
+| ---------- | -------------------------- |
+| Framework  | Next.js 15 (App Router)    |
+| Frontend   | React 19, Tailwind CSS 4   |
+| State      | Zustand                    |
+| Auth       | Clerk                      |
+| Database   | PostgreSQL with Prisma ORM |
+| Animations | GSAP                       |
+| Deployment | Vercel                     |
 
 ## Testing
 

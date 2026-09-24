@@ -54,7 +54,9 @@ async function createFixture() {
 
 // Tolerant of rows unsubscribe() already deleted itself — deleteMany on an
 // id that doesn't exist just matches zero rows, it doesn't throw.
-async function cleanupFixture(fixture: Awaited<ReturnType<typeof createFixture>>) {
+async function cleanupFixture(
+  fixture: Awaited<ReturnType<typeof createFixture>>,
+) {
   await prisma.managedPlaylistSourceSubscription.deleteMany({
     where: { id: fixture.subscription.id },
   });
@@ -90,8 +92,12 @@ describe("unsubscribe (integration)", () => {
       prisma.managedPlaylistSourceSubscription.findUnique({
         where: { id: fixture.subscription.id },
       }),
-      prisma.sourcePlaylist.findUnique({ where: { id: fixture.sourcePlaylist.id } }),
-      prisma.managedPlaylist.findUnique({ where: { id: fixture.managedPlaylist.id } }),
+      prisma.sourcePlaylist.findUnique({
+        where: { id: fixture.sourcePlaylist.id },
+      }),
+      prisma.managedPlaylist.findUnique({
+        where: { id: fixture.managedPlaylist.id },
+      }),
     ]);
 
     expect(subscriptionRow).toBeNull();
@@ -110,9 +116,10 @@ describe("unsubscribe (integration)", () => {
       }),
     ).rejects.toBeInstanceOf(UnsubscribeError);
 
-    const subscriptionRow = await prisma.managedPlaylistSourceSubscription.findUnique({
-      where: { id: fixture.subscription.id },
-    });
+    const subscriptionRow =
+      await prisma.managedPlaylistSourceSubscription.findUnique({
+        where: { id: fixture.subscription.id },
+      });
     expect(subscriptionRow).not.toBeNull();
   });
 });

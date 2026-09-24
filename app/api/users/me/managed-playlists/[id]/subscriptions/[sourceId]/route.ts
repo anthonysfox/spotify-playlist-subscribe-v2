@@ -8,7 +8,7 @@ export async function DELETE(
     params,
   }: {
     params: Promise<{ id: string; sourceId: string }>;
-  }
+  },
 ) {
   try {
     // 1. Authentication
@@ -16,7 +16,7 @@ export async function DELETE(
     if (!userId) {
       return NextResponse.json(
         { error: "Authentication required" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -25,14 +25,14 @@ export async function DELETE(
     if (!sourceId || typeof sourceId !== "string") {
       return NextResponse.json(
         { error: "Valid subscription ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!id || typeof id !== "string") {
       return NextResponse.json(
         { error: "Valid managed playlist ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -54,13 +54,16 @@ export async function DELETE(
           managedPlaylistDeleted: result.managedPlaylistDeleted,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("[DELETE /api/subscriptions/[id]] Error:", error);
 
     if (error instanceof UnsubscribeError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
     }
 
     // Generic error response
@@ -74,7 +77,7 @@ export async function DELETE(
               : "Unknown error"
             : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

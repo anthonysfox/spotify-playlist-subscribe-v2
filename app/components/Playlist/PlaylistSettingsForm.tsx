@@ -114,9 +114,9 @@ export function PlaylistSettingsForm({
   );
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [coverPayload, setCoverPayload] = useState<string | null>(null);
-  const [coverBusy, setCoverBusy] = useState<"idle" | "generating" | "applying">(
-    "idle",
-  );
+  const [coverBusy, setCoverBusy] = useState<
+    "idle" | "generating" | "applying"
+  >("idle");
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -311,7 +311,9 @@ export function PlaylistSettingsForm({
               <h3 className="font-display text-[15px] font-semibold text-ink">
                 Schedule
               </h3>
-              <p className="mb-3 mt-0.5 text-[12.5px] text-ink-50">{scopeLine}</p>
+              <p className="mb-3 mt-0.5 text-[12.5px] text-ink-50">
+                {scopeLine}
+              </p>
               <div className="mb-3 flex rounded-[10px] bg-ground-chip p-[3px]">
                 {FREQ.map((f) => (
                   <button
@@ -448,7 +450,9 @@ export function PlaylistSettingsForm({
               <h3 className="font-display text-[15px] font-semibold text-ink">
                 Filters
               </h3>
-              <p className="mb-3 mt-0.5 text-[12.5px] text-ink-50">{scopeLine}</p>
+              <p className="mb-3 mt-0.5 text-[12.5px] text-ink-50">
+                {scopeLine}
+              </p>
               <label className="flex items-center justify-between border-b border-line py-3">
                 <span className="text-[13px] text-ink">
                   Filter explicit tracks
@@ -559,7 +563,9 @@ export function PlaylistSettingsForm({
                           none yet
                         </span>
                       )}
-                      <span className="text-[10.5px] text-ink-35">Generated</span>
+                      <span className="text-[10.5px] text-ink-35">
+                        Generated
+                      </span>
                     </div>
                   </div>
                   <div className="mt-3 flex gap-2">

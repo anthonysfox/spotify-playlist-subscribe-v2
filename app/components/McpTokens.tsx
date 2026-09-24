@@ -23,7 +23,10 @@ const formatDate = (iso: string) =>
 
 // `expiresAt: null` only happens on tokens created before expiry was
 // mandatory — everything generated from this form always has one.
-function expiryLabel(expiresAt: string | null): { text: string; warn: boolean } {
+function expiryLabel(expiresAt: string | null): {
+  text: string;
+  warn: boolean;
+} {
   if (!expiresAt) return { text: "Never expires", warn: false };
   const daysLeft = Math.ceil(
     (new Date(expiresAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000),
@@ -41,9 +44,9 @@ export const McpTokens = () => {
   const [busy, setBusy] = useState(false);
   // The plaintext of a freshly created token — shown once, then dismissed.
   const [freshToken, setFreshToken] = useState<string | null>(null);
-  const [freshTokenExpiresAt, setFreshTokenExpiresAt] = useState<
-    string | null
-  >(null);
+  const [freshTokenExpiresAt, setFreshTokenExpiresAt] = useState<string | null>(
+    null,
+  );
 
   const load = useCallback(async () => {
     const res = await fetch("/api/users/me/mcp-tokens");
@@ -114,8 +117,8 @@ export const McpTokens = () => {
           MCP access tokens
         </h3>
         <p className="mt-1 max-w-[60ch] text-[12.5px] leading-relaxed text-ink-50">
-          Connect PlaylistFox to an MCP client like Claude Desktop. Paste a token
-          as an{" "}
+          Connect PlaylistFox to an MCP client like Claude Desktop. Paste a
+          token as an{" "}
           <code className="rounded bg-ground-alt px-1 py-0.5 font-mono text-[11px]">
             Authorization: Bearer
           </code>{" "}

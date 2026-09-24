@@ -72,7 +72,13 @@ export async function POST(request: Request) {
       prefix,
       expiresAt: expiresAtFromDays(expiresInDays),
     },
-    select: { id: true, name: true, prefix: true, createdAt: true, expiresAt: true },
+    select: {
+      id: true,
+      name: true,
+      prefix: true,
+      createdAt: true,
+      expiresAt: true,
+    },
   });
 
   // `token` is included here and NOWHERE else, ever.

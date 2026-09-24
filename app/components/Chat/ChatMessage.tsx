@@ -54,7 +54,10 @@ export function MessageBubble({ message }: { message: any }) {
                 key={i}
                 className="prose prose-sm max-w-none text-[13px] text-ink prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-headings:my-1.5 prose-a:text-brand-deep"
               >
-                <MemoizedMarkdown content={part.text} id={`${message.id}-${i}`} />
+                <MemoizedMarkdown
+                  content={part.text}
+                  id={`${message.id}-${i}`}
+                />
               </div>
             );
           }
@@ -75,7 +78,9 @@ export function MessageBubble({ message }: { message: any }) {
             const error: string | undefined = done && part.output?.error;
 
             if (proposal) {
-              return <ConfirmCard key={part.toolCallId ?? i} proposal={proposal} />;
+              return (
+                <ConfirmCard key={part.toolCallId ?? i} proposal={proposal} />
+              );
             }
             if (error) {
               return (
@@ -110,7 +115,9 @@ export function MessageBubble({ message }: { message: any }) {
 
 const READ_LABEL: Record<string, (o: any) => string> = {
   searchPlaylists: (o) =>
-    Array.isArray(o) ? `Searched · ${o.length} result${o.length === 1 ? "" : "s"}` : "Searched",
+    Array.isArray(o)
+      ? `Searched · ${o.length} result${o.length === 1 ? "" : "s"}`
+      : "Searched",
   listManagedPlaylists: () => "Read your library",
   listManagedPlaylistDetails: () => "Read a playlist's settings",
 };

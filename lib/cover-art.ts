@@ -5,7 +5,8 @@ import type { PlaylistTrack } from "./track-filters";
 // Both steps run through Google via the Vercel AI Gateway, so one
 // AI_GATEWAY_API_KEY covers the whole feature. The art-direction step turns a
 // track list into an image prompt — a small job, so a cheap fast text model.
-const PROMPT_MODEL = process.env.COVER_ART_PROMPT_MODEL ?? "google/gemini-2.5-flash";
+const PROMPT_MODEL =
+  process.env.COVER_ART_PROMPT_MODEL ?? "google/gemini-2.5-flash";
 
 // "Nano Banana" — Gemini's image model. Unlike a dedicated text-to-image model,
 // it generates images through the *language* API and returns them as files on

@@ -51,7 +51,7 @@ export const useAppStore = create<AppStore>()(
       {
         name: "user-store",
         partialize: (state) => ({ playlists: state.browsePlaylists }),
-      }
-    )
-  )
+      },
+    ),
+  ),
 );

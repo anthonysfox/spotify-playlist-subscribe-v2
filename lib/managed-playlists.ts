@@ -107,9 +107,15 @@ function scheduleStaleMetadataRefresh(userId: string, subscriptions: WithSubs) {
             lastMetadataRefreshAt: new Date(),
           };
           if (type === "managed") {
-            await prisma.managedPlaylist.update({ where: { id }, data: updateData });
+            await prisma.managedPlaylist.update({
+              where: { id },
+              data: updateData,
+            });
           } else {
-            await prisma.sourcePlaylist.update({ where: { id }, data: updateData });
+            await prisma.sourcePlaylist.update({
+              where: { id },
+              data: updateData,
+            });
           }
         } catch (error) {
           console.error(`Failed to refresh ${type} playlist ${id}:`, error);
