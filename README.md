@@ -14,8 +14,6 @@ A personal Spotify playlist subscription service that lets you create managed pl
 
 Also doubles as a place to actually learn things properly: testing, CI/CD, database and system design, AI tool-calling, and the general practices a toy project usually lets you skip.
 
-> This is a personal project and is not intended for public use, distribution, or contribution.
-
 ## How It Works
 
 1. **Create a managed playlist** — a new Spotify playlist owned by the app on your behalf
