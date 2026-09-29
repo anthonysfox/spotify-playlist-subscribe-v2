@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 
 /**
  * DELETE — revoke one of the caller's tokens. Soft revoke (`revokedAt`) rather

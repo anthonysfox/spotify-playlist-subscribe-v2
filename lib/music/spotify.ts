@@ -1,4 +1,4 @@
-import type { PlaylistTrack } from "@/lib/track-filters";
+import type { PlaylistTrack } from "@/lib/sync/track-filters";
 import type {
   MusicClient,
   MusicProviderAdapter,

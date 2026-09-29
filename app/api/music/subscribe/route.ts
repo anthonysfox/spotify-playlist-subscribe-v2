@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
-import { subscribe, SubscribeError } from "@/lib/subscribe";
+import { subscribe, SubscribeError } from "@/lib/playlists/subscribe";
 import { debugDetails } from "@/lib/api-errors";
 
 const playlistRef = z.object({

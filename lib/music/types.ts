@@ -1,5 +1,5 @@
 import type { MusicProvider } from "@/generated/prisma/enums";
-import type { PlaylistTrack } from "@/lib/track-filters";
+import type { PlaylistTrack } from "@/lib/sync/track-filters";
 
 export type { MusicProvider, PlaylistTrack };
 

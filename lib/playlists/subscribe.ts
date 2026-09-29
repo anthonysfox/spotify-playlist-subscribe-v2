@@ -1,6 +1,6 @@
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
-import { calculateNextSyncTime } from "utils/sync-schedule";
+import { calculateNextSyncTime } from "@/lib/sync/schedule";
 import { getProvider, type MusicProvider } from "@/lib/music";
 import type { ManagedPlaylistWithSubscriptions } from "@/types";
 import { ensureUser } from "@/lib/user";

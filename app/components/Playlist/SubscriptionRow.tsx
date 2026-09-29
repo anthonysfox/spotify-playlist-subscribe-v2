@@ -6,7 +6,7 @@ import { ManagedPlaylistWithSubscriptions } from "@/types";
 import { ChevronDown, Plus, RefreshCw, Settings } from "lucide-react";
 import { useUserStore, pendingRemovalKey } from "store/useUserStore";
 import { CoverArt } from "./CoverArt";
-import { deriveStatus } from "@/lib/sync-status";
+import { deriveStatus } from "@/lib/sync/status";
 import { IconButton } from "./IconButton";
 
 const PROVIDER_DOT: Record<MusicProvider, string> = {

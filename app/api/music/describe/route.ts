@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getProvider, type MusicProvider } from "@/lib/music";
-import { describePlaylist } from "@/lib/describe-playlist";
+import { describePlaylist } from "@/lib/playlists/describe-playlist";
 
 /**
  * GET /api/music/describe?playlistId=<provider id>&provider=SPOTIFY

@@ -9,7 +9,7 @@ import toast from "react-hot-toast";
 import { useUserStore, pendingRemovalKey } from "store/useUserStore";
 import { PROVIDER_LABELS } from "store/useMusicStore";
 import { formatRelativeTime } from "utils/formatRelativeTime";
-import { totalSkipped, type SyncRunSummary } from "@/lib/sync-runs";
+import { totalSkipped, type SyncRunSummary } from "@/lib/sync/runs";
 import { PlaylistSettingsForm } from "./PlaylistSettingsForm";
 import { SyncFailedCard } from "../States/SyncFailedCard";
 import { CoverArt } from "./CoverArt";

@@ -1,11 +1,11 @@
 import { after } from "next/server";
 import getClerkOAuthToken from "utils/clerk";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 import {
   CONTRIBUTION_WINDOW_MS,
   toSyncRunSummary,
   type SourceContribution,
-} from "@/lib/sync-runs";
+} from "@/lib/sync/runs";
 
 // How long provider metadata (track counts, cover art) is trusted before it's
 // refreshed inline from the music service. The refresh is N external API calls

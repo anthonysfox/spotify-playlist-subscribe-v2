@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 import getClerkOAuthToken from "utils/clerk";
 import { debugDetails } from "@/lib/api-errors";
 

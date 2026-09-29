@@ -4,7 +4,7 @@ import type {
   SourcePlaylist,
 } from "@/generated/prisma/client";
 import type { MusicProvider, PlaylistSummary } from "@/lib/music/types";
-import type { SyncRunSummary } from "@/lib/sync-runs";
+import type { SyncRunSummary } from "@/lib/sync/runs";
 
 /**
  * A managed playlist with its source subscriptions eagerly loaded — the shape

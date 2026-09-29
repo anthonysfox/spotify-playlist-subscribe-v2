@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, Loader2, Music2, Pause, Play } from "lucide-react";
 import type { PlaylistSummary } from "@/lib/music/types";
-import type { PlaylistTrack } from "@/lib/track-filters";
+import type { PlaylistTrack } from "@/lib/sync/track-filters";
 import { getTrackPreviewUrl } from "utils/itunesApi";
 
 const PREVIEW_TRACK_LIMIT = 3;

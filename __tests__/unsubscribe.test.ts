@@ -16,7 +16,7 @@ const { mockPrisma } = vi.hoisted(() => {
 
 vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
 
-import { unsubscribe, UnsubscribeError } from "@/lib/unsubscribe";
+import { unsubscribe, UnsubscribeError } from "@/lib/playlists/unsubscribe";
 
 describe("unsubscribe", () => {
   beforeEach(() => {

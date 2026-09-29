@@ -1,7 +1,10 @@
 import { getProvider, type MusicProvider } from "../music";
-import { subscribe } from "../subscribe";
-import { unsubscribe } from "../unsubscribe";
-import { generateTracklist, resolveTracks } from "../generate-playlist";
+import { subscribe } from "../playlists/subscribe";
+import { unsubscribe } from "../playlists/unsubscribe";
+import {
+  generateTracklist,
+  resolveTracks,
+} from "../playlists/generate-playlist";
 
 /**
  * The assistant never mutates the library directly. A mutating tool resolves

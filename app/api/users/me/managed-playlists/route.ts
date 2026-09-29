@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getManagedPlaylistsForUser } from "@/lib/managed-playlists";
+import { getManagedPlaylistsForUser } from "@/lib/playlists/managed";
 
 export async function GET() {
   const { userId } = await auth();

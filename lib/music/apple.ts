@@ -1,5 +1,5 @@
 import { SignJWT, importPKCS8 } from "jose";
-import type { PlaylistTrack } from "@/lib/track-filters";
+import type { PlaylistTrack } from "@/lib/sync/track-filters";
 import type {
   MusicClient,
   MusicProviderAdapter,
@@ -435,7 +435,7 @@ export const appleMusicProvider: MusicProviderAdapter = {
 
   async forUser(userId: string): Promise<MusicClient | null> {
     // Imported lazily so this module stays usable outside a Next server runtime.
-    const { default: prisma } = await import("@/lib/prisma");
+    const { default: prisma } = await import("@/lib/db/prisma");
 
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId },

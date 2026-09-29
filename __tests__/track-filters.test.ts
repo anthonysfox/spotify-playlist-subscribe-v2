@@ -6,12 +6,12 @@ import {
   withinAgeLimit,
   withoutExplicit,
   type PlaylistTrack,
-} from "@/lib/track-filters";
+} from "@/lib/sync/track-filters";
 import {
   calculateNextCustomRun,
   calculateNextSyncTime,
   SyncScheduleOptions,
-} from "utils/sync-schedule";
+} from "@/lib/sync/schedule";
 
 function track(overrides: Partial<PlaylistTrack> = {}): PlaylistTrack {
   return {

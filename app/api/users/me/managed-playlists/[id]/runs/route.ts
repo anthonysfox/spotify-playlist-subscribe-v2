@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import prisma from "@/lib/prisma";
-import { toSyncRunSummary } from "@/lib/sync-runs";
+import prisma from "@/lib/db/prisma";
+import { toSyncRunSummary } from "@/lib/sync/runs";
 
 /**
  * Recent sync runs for one managed playlist — feeds the detail page's Runs tab

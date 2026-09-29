@@ -1,4 +1,4 @@
-import type { PlaylistTrack } from "@/lib/track-filters";
+import type { PlaylistTrack } from "@/lib/sync/track-filters";
 
 export interface PlaylistDescription {
   /** Most frequent artists on the playlist, best first — the "who's on this". */

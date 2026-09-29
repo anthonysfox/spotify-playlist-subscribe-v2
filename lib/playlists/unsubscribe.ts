@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
 
 export interface UnsubscribeParams {

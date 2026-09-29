@@ -1,4 +1,4 @@
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 
 export async function ensureUser(clerkUserId: string) {
   const existing = await prisma.user.findUnique({ where: { clerkUserId } });

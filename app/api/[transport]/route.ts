@@ -1,11 +1,15 @@
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import z from "zod";
 import { getProvider, type MusicProvider } from "@/lib/music";
-import { subscribe, SubscribeError, SubscribeParams } from "@/lib/subscribe";
-import prisma from "@/lib/prisma";
-import { triggerSync } from "@/lib/sync";
+import {
+  subscribe,
+  SubscribeError,
+  SubscribeParams,
+} from "@/lib/playlists/subscribe";
+import prisma from "@/lib/db/prisma";
+import { triggerSync } from "@/lib/sync/trigger";
 import { hashToken } from "@/lib/mcp-tokens";
-import { describePlaylist } from "@/lib/describe-playlist";
+import { describePlaylist } from "@/lib/playlists/describe-playlist";
 
 const handler = createMcpHandler(
   (server) => {

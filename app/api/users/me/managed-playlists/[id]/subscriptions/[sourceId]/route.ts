@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { unsubscribe, UnsubscribeError } from "@/lib/unsubscribe";
+import { unsubscribe, UnsubscribeError } from "@/lib/playlists/unsubscribe";
 
 export async function DELETE(
   request: NextRequest,

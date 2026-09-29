@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import z from "zod";
 import { getProvider, MusicProvider } from "../music";
-import prisma from "../prisma";
+import prisma from "../db/prisma";
 import type { AgentProposal } from "./proposals";
 
 const FREQ_WORD: Record<string, string> = {

@@ -1,5 +1,5 @@
 import { AuditAction } from "@/generated/prisma/client";
-import prisma from "./prisma";
+import prisma from "./db/prisma";
 import { randomUUID } from "crypto";
 
 interface AuditLogData {

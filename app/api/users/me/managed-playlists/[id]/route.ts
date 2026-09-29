@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/db/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
-import { calculateNextSyncTime } from "utils/sync-schedule";
+import { calculateNextSyncTime } from "@/lib/sync/schedule";
 
 export async function PUT(
   request: NextRequest,

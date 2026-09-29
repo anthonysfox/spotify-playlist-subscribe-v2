@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { randomUUID } from "crypto";
-import prisma from "@/lib/prisma";
-import { unsubscribe, UnsubscribeError } from "@/lib/unsubscribe";
+import prisma from "@/lib/db/prisma";
+import { unsubscribe, UnsubscribeError } from "@/lib/playlists/unsubscribe";
 
 /**
  * Runs unsubscribe() against a real Postgres database (see

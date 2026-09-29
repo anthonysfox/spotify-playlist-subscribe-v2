@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { formatRelativeTime } from "utils/formatRelativeTime";
-import { totalSkipped, type SyncRunSummary } from "@/lib/sync-runs";
+import { totalSkipped, type SyncRunSummary } from "@/lib/sync/runs";
 
 type Row = SyncRunSummary & {
   playlist: {
