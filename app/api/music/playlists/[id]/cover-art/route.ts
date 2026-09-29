@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import prisma from "@/lib/db/prisma";
 import { getProvider } from "@/lib/music";
-import { generatePlaylistCover, isCoverArtConfigured } from "@/lib/cover-art";
+import {
+  generatePlaylistCover,
+  isCoverArtConfigured,
+} from "@/lib/playlists/cover-art";
 
 // sharp needs the Node runtime (not edge), and image generation is slow enough
 // to want a generous ceiling.
