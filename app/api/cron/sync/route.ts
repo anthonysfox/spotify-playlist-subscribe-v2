@@ -119,24 +119,17 @@ export async function GET(request: NextRequest) {
     );
 
     // 3. Build query conditions
-    const whereConditions: any = {
+    const whereConditions: Prisma.ManagedPlaylistWhereInput = {
       deletedAt: null,
+      userId: specificUserId || undefined,
+      id: specificPlaylistId || undefined,
+      ...(!forceSync && {
+        OR: [
+          { nextSyncTime: { lte: new Date() } }, // Sync if next sync time is in the past
+          { nextSyncTime: null }, // Never synced playlists
+        ],
+      }),
     };
-
-    if (!forceSync) {
-      whereConditions.OR = [
-        { nextSyncTime: { lte: new Date() } }, // Sync if next sync time is in the past
-        { nextSyncTime: null }, // Never synced playlists
-      ];
-    }
-
-    if (specificUserId) {
-      whereConditions.userId = specificUserId;
-    }
-
-    if (specificPlaylistId) {
-      whereConditions.id = specificPlaylistId;
-    }
 
     // 4. Fetch playlists to sync
     const playlistsToSync = await prisma.managedPlaylist.findMany({

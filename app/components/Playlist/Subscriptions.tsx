@@ -2,22 +2,17 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { RefreshCw, Settings, ChevronDown, Plus } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import toast from "react-hot-toast";
-import { useUserStore, pendingRemovalKey } from "store/useUserStore";
+import { useUserStore } from "store/useUserStore";
 import { PROVIDER_LABELS } from "store/useMusicStore";
-import type { ManagedPlaylistWithSubscriptions } from "@/types";
 import type { MusicProvider } from "@/lib/music/types";
 import { SubscriptionSkeleton } from "../Skeletons/SubscriptionSkeleton";
 import { formatRelativeTime } from "utils/formatRelativeTime";
+import { SubscriptionRow } from "./SubscriptionRow";
 
 type ProviderFilter = "ALL" | MusicProvider;
 type SortKey = "nextSync" | "name" | "lastSynced" | "sourceCount";
-
-const PROVIDER_DOT: Record<MusicProvider, string> = {
-  SPOTIFY: "bg-spotify",
-  APPLE_MUSIC: "bg-apple",
-};
 
 const SORT_LABELS: Record<SortKey, string> = {
   nextSync: "Next sync",
@@ -26,177 +21,16 @@ const SORT_LABELS: Record<SortKey, string> = {
   sourceCount: "Source count",
 };
 
-/** Cover art, or the diagonal-stripe placeholder for a playlist with no
- *  artwork yet (a brand-new Apple Music playlist has none until it has tracks). */
-function CoverArt({
-  src,
-  alt,
-  className,
-}: {
-  src: string | null | undefined;
-  alt: string;
-  className: string;
-}) {
-  if (src)
-    return (
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        className={`${className} object-cover`}
-      />
-    );
-  return <div className={`${className} art-placeholder`} aria-label={alt} />;
-}
-
-const SKIP_HINT: Record<string, string> = {
-  PROVIDER_NOT_CONNECTED: "Reconnect your music service",
-  REPLACE_UNSUPPORTED: "Replace mode isn't supported here",
-  NO_SUBSCRIPTIONS: "No sources yet",
-};
-
-/**
- * Sync status for one managed playlist (README "Library" > status block), from
- * the per-run log (`playlist.lastRun`) with the old `lastSyncCompletedAt` as a
- * fallback for playlists that ran before the log existed.
- */
-export function deriveStatus(playlist: ManagedPlaylistWithSubscriptions): {
-  tone: "ok" | "warn" | "running" | "none";
-  dot: string;
-  pulse?: boolean;
-  label: string;
-  detail: string;
-} {
-  const nextIn = formatRelativeTime(playlist.nextSyncTime);
-  const run = playlist.lastRun;
-  const nSources = playlist.subscriptions.length;
-
-  if (run?.status === "running") {
-    return {
-      tone: "running",
-      dot: "bg-brand",
-      pulse: true,
-      label: "Syncing now…",
-      detail: `Pulling from ${nSources} source${nSources === 1 ? "" : "s"}`,
-    };
-  }
-  if (run?.status === "failed" || run?.status === "stale") {
-    return {
-      tone: "warn",
-      dot: "bg-warn",
-      label: "Last run failed",
-      detail: run.errorMessage
-        ? run.errorMessage.slice(0, 64)
-        : "check the run log",
-    };
-  }
-  if (run?.status === "skipped") {
-    return {
-      tone: "warn",
-      dot: "bg-warn",
-      label: "Last run skipped",
-      detail: SKIP_HINT[run.skipReason ?? ""] ?? "skipped",
-    };
-  }
-  if (run?.status === "success") {
-    const ago = formatRelativeTime(run.finishedAt);
-    return {
-      tone: "ok",
-      dot: "bg-ok",
-      label:
-        run.tracksAdded > 0
-          ? `Synced · +${run.tracksAdded} track${run.tracksAdded === 1 ? "" : "s"}`
-          : "Synced · no new tracks",
-      detail: [ago, nextIn ? `next ${nextIn}` : null]
-        .filter(Boolean)
-        .join(" · "),
-    };
-  }
-
-  if (playlist.lastSyncCompletedAt) {
-    const ago = formatRelativeTime(playlist.lastSyncCompletedAt);
-    return {
-      tone: "ok",
-      dot: "bg-ok",
-      label: "Synced",
-      detail: [ago, nextIn ? `next ${nextIn}` : null]
-        .filter(Boolean)
-        .join(" · "),
-    };
-  }
-  return {
-    tone: "none",
-    dot: "bg-ink-25",
-    label: "Not synced yet",
-    detail: nextIn ? `next ${nextIn}` : "not scheduled",
-  };
-}
-
-const TONE_TEXT: Record<string, string> = {
-  ok: "text-ok-text",
-  warn: "text-warn-text",
-  running: "text-ink-70",
-  none: "text-ink-50",
-};
-
-function StatusBlock({
-  playlist,
-}: {
-  playlist: ManagedPlaylistWithSubscriptions;
-}) {
-  const s = deriveStatus(playlist);
-  return (
-    <div className="min-w-0 text-right">
-      <div
-        className={`flex items-center justify-end gap-1.5 text-[12.5px] font-medium ${TONE_TEXT[s.tone]}`}
-      >
-        <span
-          className={`h-1.5 w-1.5 shrink-0 rounded-full ${s.dot} ${
-            s.pulse ? "animate-softpulse" : ""
-          }`}
-        />
-        {s.label}
-      </div>
-      {s.detail && (
-        <div className="text-ink-35 mt-0.5 text-[11.5px]">{s.detail}</div>
-      )}
-    </div>
-  );
-}
-
-function IconButton({
-  label,
-  onClick,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className="border-line text-ink-35 hover:border-line-strong hover:bg-ground-alt hover:text-ink-70 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border transition-colors"
-    >
-      {children}
-    </button>
-  );
-}
-
 export const Subscriptions = () => {
   const managedPlaylists = useUserStore((s) => s.managedPlaylists);
   const setManagedPlaylists = useUserStore((s) => s.setManagedPlaylists);
   const isLoading = useUserStore((s) => s.isLoading);
   const setIsLoading = useUserStore((s) => s.setLoading);
-  const pendingSourceRemovals = useUserStore((s) => s.pendingSourceRemovals);
-  const removeSourceWithUndo = useUserStore((s) => s.removeSourceWithUndo);
-  const undoSourceRemoval = useUserStore((s) => s.undoSourceRemoval);
 
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const [playlistsBeingSynced, setPlaylistsBeingSynced] = useState<Set<string>>(
+    new Set(),
+  );
   const [query, setQuery] = useState("");
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("nextSync");
@@ -219,24 +53,57 @@ export const Subscriptions = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSyncNow = async () => {
-    if (isSyncing) return;
-    setIsSyncing(true);
+  const requestSync = async (playlistId?: string) => {
+    const playlistString = playlistId
+      ? `?playlistId=${encodeURIComponent(playlistId)}`
+      : "";
+    const res = await fetch(`/api/users/me/sync${playlistString}`, {
+      method: "POST",
+    });
+    const data = await res.json();
+    if (!res.ok || data?.success === false) {
+      throw new Error(data?.message || data?.error || "Sync failed");
+    }
+    toast.success(
+      data?.message || "Sync started. Playlists will update shortly.",
+    );
+  };
+
+  const handleSyncAll = async () => {
+    if (isSyncingAll || playlistsBeingSynced.size > 0) return;
+    setIsSyncingAll(true);
     try {
-      const response = await fetch("/api/users/me/sync", { method: "POST" });
-      const data = await response.json();
-      if (!response.ok || data?.success === false) {
-        throw new Error(data?.message || data?.error || "Sync failed");
-      }
-      toast.success(
-        data?.message || "Sync started. Playlists will update shortly.",
-      );
+      await requestSync();
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to start sync");
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
+
+  const handleSyncOne = async (playlistId: string) => {
+    if (isSyncingAll || playlistsBeingSynced.has(playlistId)) return;
+    setPlaylistsBeingSynced((ids) => new Set(ids).add(playlistId));
+
+    try {
+      await requestSync(playlistId);
     } catch (error: any) {
       toast.error(error?.message || "Failed to start sync");
     } finally {
-      setIsSyncing(false);
+      setPlaylistsBeingSynced((prev) => {
+        const next = new Set(prev);
+        next.delete(playlistId);
+        return next;
+      });
     }
   };
+
+  const toggleExpanded = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
 
   const totalSources = useMemo(
     () => managedPlaylists.reduce((n, p) => n + p.subscriptions.length, 0),
@@ -295,13 +162,6 @@ export const Subscriptions = () => {
     return list;
   }, [managedPlaylists, query, providerFilter, sortKey]);
 
-  const toggleExpanded = (id: string) =>
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-
   if (isLoading) {
     return (
       <div className="flex h-full min-h-0 flex-col px-4 py-5 min-[900px]:px-6 min-[900px]:py-6">
@@ -330,11 +190,13 @@ export const Subscriptions = () => {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleSyncNow}
-            disabled={isSyncing || isEmpty}
+            onClick={() => handleSyncAll()}
+            disabled={isSyncingAll || playlistsBeingSynced.size > 0}
             className="border-line-strong text-ink-70 hover:border-brand/40 hover:text-brand rounded-full border px-4 py-2 text-[12.5px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSyncing ? "Syncing…" : "Sync all"}
+            {isSyncingAll || playlistsBeingSynced.size > 0
+              ? "Syncing…"
+              : "Sync all"}
           </button>
           <Link
             href="/"
@@ -427,209 +289,21 @@ export const Subscriptions = () => {
           </p>
         ) : (
           <div className="flex flex-col gap-2.5">
-            {visible.map((playlist) => {
-              const isOpen = expanded.has(playlist.id);
-              const configLine = [
-                `${playlist.subscriptions.length} source${
-                  playlist.subscriptions.length === 1 ? "" : "s"
-                }`,
-                `${playlist.syncQuantityPerSource} per source`,
-                playlist.syncInterval.toLowerCase(),
-                playlist.syncMode.toLowerCase(),
-              ].join(" · ");
-
-              return (
-                <div
-                  key={playlist.id}
-                  className="border-line bg-surface overflow-hidden rounded-2xl border"
-                >
-                  <div className="flex items-center gap-3 p-3.5">
-                    <CoverArt
-                      src={playlist.imageUrl}
-                      alt={playlist.name}
-                      className="h-12 w-12 shrink-0 rounded-[10px]"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/library/${playlist.id}`}
-                          className="font-display text-ink hover:text-brand-deep truncate text-[15px] font-semibold"
-                        >
-                          {playlist.name}
-                        </Link>
-                        <span className="bg-ground-alt text-ink-50 inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium">
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${PROVIDER_DOT[playlist.provider]}`}
-                          />
-                          {PROVIDER_LABELS[playlist.provider]}
-                        </span>
-                      </div>
-                      <div className="text-ink-50 mt-0.5 truncate text-[12.5px]">
-                        {configLine}
-                      </div>
-                    </div>
-
-                    <div className="hidden sm:block">
-                      <StatusBlock playlist={playlist} />
-                    </div>
-
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      <IconButton label="Sync now" onClick={handleSyncNow}>
-                        <RefreshCw className="h-3.5 w-3.5" />
-                      </IconButton>
-                      <Link
-                        href={`/library/${playlist.id}/settings`}
-                        aria-label={`Settings for ${playlist.name}`}
-                        title="Settings"
-                        className="border-line text-ink-35 hover:border-line-strong hover:bg-ground-alt hover:text-ink-70 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg border transition-colors"
-                      >
-                        <Settings className="h-3.5 w-3.5" />
-                      </Link>
-                      <IconButton
-                        label={isOpen ? "Collapse" : "Expand"}
-                        onClick={() => toggleExpanded(playlist.id)}
-                      >
-                        <ChevronDown
-                          className={`h-3.5 w-3.5 transition-transform ${
-                            isOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </IconButton>
-                    </div>
-                  </div>
-
-                  {/* status on its own line on narrow screens */}
-                  <div className="border-line border-t px-3.5 py-2 sm:hidden">
-                    <StatusBlock playlist={playlist} />
-                  </div>
-
-                  {isOpen && (
-                    <div className="border-line bg-surface-sunk border-t px-3.5 py-3">
-                      <div className="mb-2 flex items-center justify-between">
-                        <span className="text-ink-35 font-mono text-[10px] font-medium tracking-[0.08em] uppercase">
-                          {playlist.contributions &&
-                          Object.keys(playlist.contributions).length
-                            ? "Sources · contribution last 30 days"
-                            : "Sources"}
-                        </span>
-                        <Link
-                          href="/"
-                          className="text-brand-deep hover:text-brand inline-flex items-center gap-1 text-[12px] font-medium"
-                        >
-                          <Plus className="h-3 w-3" />
-                          Add source
-                        </Link>
-                      </div>
-
-                      <div className="flex flex-col">
-                        {playlist.subscriptions.map((sub) => {
-                          const key = pendingRemovalKey(
-                            playlist.id,
-                            sub.sourcePlaylist.id,
-                          );
-                          if (pendingSourceRemovals[key]) {
-                            return (
-                              <div
-                                key={key}
-                                className="bg-brand-tint text-brand-deep my-1 flex items-center justify-between rounded-xl px-3 py-2 text-[12.5px]"
-                              >
-                                <span className="min-w-0 truncate">
-                                  Removed{" "}
-                                  <b className="font-semibold">
-                                    {sub.sourcePlaylist.name}
-                                  </b>{" "}
-                                  from this playlist.
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => undoSourceRemoval(key)}
-                                  className="ml-3 shrink-0 font-semibold underline underline-offset-2"
-                                >
-                                  Undo
-                                </button>
-                              </div>
-                            );
-                          }
-                          const contrib =
-                            playlist.contributions?.[sub.sourcePlaylist.id] ??
-                            null;
-                          const maxContrib = playlist.contributions
-                            ? Math.max(
-                                1,
-                                ...Object.values(playlist.contributions),
-                              )
-                            : 1;
-                          return (
-                            <div
-                              key={sub.sourcePlaylist.id}
-                              className={`border-line flex items-center gap-3 border-b py-2 last:border-b-0 ${
-                                contrib === 0 ? "opacity-60" : ""
-                              }`}
-                            >
-                              <CoverArt
-                                src={sub.sourcePlaylist.imageUrl}
-                                alt={sub.sourcePlaylist.name}
-                                className="h-7 w-7 shrink-0 rounded-md"
-                              />
-                              <span className="text-ink-70 min-w-0 flex-1 truncate text-[12.5px] font-medium">
-                                {sub.sourcePlaylist.name}
-                              </span>
-                              {contrib !== null ? (
-                                <span className="flex w-24 shrink-0 items-center gap-2">
-                                  <span className="bg-ground-chip h-[5px] flex-1 overflow-hidden rounded-full">
-                                    <span
-                                      className="bg-brand block h-full rounded-full"
-                                      style={{
-                                        width: `${(contrib / maxContrib) * 100}%`,
-                                      }}
-                                    />
-                                  </span>
-                                  <span className="text-ink-35 font-mono text-[11px]">
-                                    {contrib}
-                                  </span>
-                                </span>
-                              ) : (
-                                <span className="text-ink-35 shrink-0 font-mono text-[11px]">
-                                  {sub.sourcePlaylist.trackCount} trks
-                                </span>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  removeSourceWithUndo(
-                                    playlist.id,
-                                    sub.sourcePlaylist.id,
-                                    sub.sourcePlaylist.name,
-                                  )
-                                }
-                                className="text-ink-35 hover:text-warn-text shrink-0 text-[12px] font-medium transition-colors"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          );
-                        })}
-
-                        {playlist.subscriptions.every(
-                          (sub) =>
-                            pendingSourceRemovals[
-                              pendingRemovalKey(
-                                playlist.id,
-                                sub.sourcePlaylist.id,
-                              )
-                            ],
-                        ) &&
-                          playlist.subscriptions.length > 0 && (
-                            <p className="text-ink-35 py-2 text-[12px]">
-                              All sources removed.
-                            </p>
-                          )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+            {visible.map((playlist) => (
+              <SubscriptionRow
+                key={playlist.id}
+                playlist={playlist}
+                isOpen={expanded.has(playlist.id)}
+                onToggle={() => toggleExpanded(playlist.id)}
+                isSyncing={
+                  isSyncingAll || playlistsBeingSynced.has(playlist.id)
+                }
+                syncDisabled={
+                  isSyncingAll || playlistsBeingSynced.has(playlist.id)
+                }
+                onSync={() => handleSyncOne(playlist.id)}
+              />
+            ))}
           </div>
         )}
       </div>

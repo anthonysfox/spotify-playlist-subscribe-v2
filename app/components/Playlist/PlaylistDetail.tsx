@@ -9,10 +9,10 @@ import toast from "react-hot-toast";
 import { useUserStore, pendingRemovalKey } from "store/useUserStore";
 import { PROVIDER_LABELS } from "store/useMusicStore";
 import { formatRelativeTime } from "utils/formatRelativeTime";
-import type { ManagedPlaylistWithSubscriptions } from "@/types";
 import { totalSkipped, type SyncRunSummary } from "@/lib/sync-runs";
 import { PlaylistSettingsForm } from "./PlaylistSettingsForm";
 import { SyncFailedCard } from "../States/SyncFailedCard";
+import { CoverArt } from "./CoverArt";
 
 /**
  * Managed-playlist detail (README "Playlist detail", artboard 1c) — the one new
@@ -37,26 +37,6 @@ const TABS: { id: Tab; label: string; href: (id: string) => string }[] = [
     href: (id) => `/library/${id}/settings`,
   },
 ];
-
-function CoverArt({
-  src,
-  className,
-}: {
-  src: string | null | undefined;
-  className: string;
-}) {
-  if (src)
-    return (
-      <img
-        src={src}
-        alt=""
-        loading="lazy"
-        decoding="async"
-        className={`${className} object-cover`}
-      />
-    );
-  return <span className={`${className} art-placeholder`} />;
-}
 
 const RUN_DOT: Record<string, string> = {
   success: "bg-ok",

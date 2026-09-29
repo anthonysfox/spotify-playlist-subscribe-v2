@@ -3,7 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
-
+  const { searchParams } = request.nextUrl;
+  const specificPlaylistId = searchParams.get("playlistId");
   if (!userId) {
     return NextResponse.json(
       { success: false, error: "Authentication required" },
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     const origin = request.nextUrl.origin;
     const syncUrl = `${origin}/api/cron/sync?force=true&userId=${encodeURIComponent(
       userId,
-    )}`;
+    )}${specificPlaylistId ? `&playlistId=${encodeURIComponent(specificPlaylistId)}` : ""}`;
 
     const syncResponse = await fetch(syncUrl, {
       method: "GET",
