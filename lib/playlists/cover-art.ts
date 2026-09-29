@@ -1,6 +1,6 @@
 import { generateText, gateway } from "ai";
 import sharp from "sharp";
-import type { PlaylistTrack } from "./sync/track-filters";
+import type { PlaylistTrack } from "../sync/track-filters";
 
 // Both steps run through Google via the Vercel AI Gateway, so one
 // AI_GATEWAY_API_KEY covers the whole feature. The art-direction step turns a
