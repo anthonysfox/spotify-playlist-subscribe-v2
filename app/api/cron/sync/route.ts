@@ -55,6 +55,8 @@ function isAuthorizedCronRequest(authHeader: string | null): boolean {
   );
 }
 
+export const maxDuration = 300;
+
 export async function GET(request: NextRequest) {
   try {
     // 1. Authentication - Verify cron request

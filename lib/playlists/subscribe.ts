@@ -4,6 +4,8 @@ import { calculateNextSyncTime } from "@/lib/sync/schedule";
 import { getProvider, type MusicProvider } from "@/lib/music";
 import type { ManagedPlaylistWithSubscriptions } from "@/types";
 import { ensureUser } from "@/lib/user";
+import { triggerSync } from "@/lib/sync/trigger";
+import { after } from "next/server";
 
 /**
  * The minimal playlist shape the subscribe flow needs from a caller — an id, a
@@ -261,25 +263,21 @@ export async function subscribe(
           userId,
         );
 
-        if (runImmediateSync) {
-          const syncUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/cron/sync?playlistId=${finalManagedPlaylist.id}&sourceId=${existingSourcePlaylist.id}&force=true`;
-
-          // Fire-and-forget: a failed sync shouldn't fail the subscription.
-          fetch(syncUrl, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${process.env.CRON_SECRET}`,
-              "Content-Type": "application/json",
-            },
-          }).catch((error) => {
-            console.error("Failed to trigger immediate sync:", error);
-          });
-        }
-
         return { finalManagedPlaylist, existingSourcePlaylist, subscription };
       },
       { timeout: 10000 },
     );
+
+    if (runImmediateSync) {
+      after(() =>
+        triggerSync({
+          playlistId: result.finalManagedPlaylist.id,
+          sourceId: result.existingSourcePlaylist.id,
+          userId,
+          force: true,
+        }).catch((e) => console.error("Failed to trigger immediate sync:", e)),
+      );
+    }
 
     const completePlaylist = await prisma.managedPlaylist.findUnique({
       where: { id: result.finalManagedPlaylist.id },

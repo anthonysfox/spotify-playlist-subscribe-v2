@@ -6,6 +6,7 @@ import { MemoizedMarkdown } from "../MemoizedMarkdown";
 import { PlaylistResultCards } from "./PlaylistPreviewCards";
 import { useUserStore } from "store/useUserStore";
 import type { AgentProposal } from "@/lib/agent/proposals";
+import { describeProposal } from "@/lib/agent/describe-proposal";
 
 const READ_TOOLS = new Set([
   "searchPlaylists",
@@ -166,6 +167,11 @@ function ConfirmCard({ proposal }: { proposal: AgentProposal }) {
     "idle" | "running" | "done" | "skipped" | "error"
   >("idle");
   const [message, setMessage] = useState<string>("");
+  const managedPlaylists = useUserStore((s) => s.managedPlaylists);
+  const { heading, lines, unresolved } = describeProposal(
+    proposal,
+    managedPlaylists,
+  );
 
   const doIt = async () => {
     setState("running");
@@ -225,10 +231,21 @@ function ConfirmCard({ proposal }: { proposal: AgentProposal }) {
         </span>
         Confirm before I change anything
       </div>
-      <div className="text-ink text-[13px] font-medium">{proposal.title}</div>
-      <p className="text-ink-50 mt-0.5 text-[12px] leading-relaxed">
-        {proposal.detail}
-      </p>
+      <div className="text-ink text-[13px] font-medium">{heading}</div>
+      {lines.map((line) => (
+        <p
+          key={line}
+          className="text-ink-50 mt-0.5 text-[12px] leading-relaxed"
+        >
+          {line}
+        </p>
+      ))}
+      {unresolved && (
+        <p className="text-warn-text mt-2 text-[11.5px]">
+          This refers to a playlist that isn&apos;t in your library, so it
+          can&apos;t be applied
+        </p>
+      )}
 
       {state === "error" && (
         <p className="text-warn-text mt-2 text-[11.5px]">{message}</p>
@@ -238,7 +255,7 @@ function ConfirmCard({ proposal }: { proposal: AgentProposal }) {
         <button
           type="button"
           onClick={doIt}
-          disabled={state === "running"}
+          disabled={state === "running" || unresolved}
           className="bg-brand text-surface hover:bg-brand-deep rounded-full px-3.5 py-1.5 text-[12px] font-medium disabled:opacity-50"
         >
           {state === "running" ? "Working…" : "Do it"}

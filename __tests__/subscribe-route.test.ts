@@ -15,7 +15,7 @@ const { mockAuth, mockSubscribe } = vi.hoisted(() => ({
 
 vi.mock("@clerk/nextjs/server", () => ({ auth: mockAuth }));
 
-vi.mock("@/lib/subscribe", () => ({
+vi.mock("@/lib/playlists/subscribe", () => ({
   subscribe: mockSubscribe,
   // The route does `error instanceof SubscribeError`, so the mock module has to
   // export a real class for that check to mean anything.
