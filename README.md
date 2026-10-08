@@ -73,39 +73,9 @@ An hourly GitHub Actions job calls `/api/cron/sync`, authenticated with a shared
 | Scheduling | GitHub Actions (hourly cron)                |
 | Deployment | Vercel (Fluid Compute)                      |
 
-## Getting Started
-
-Requires Node 22, pnpm, and Docker (for integration tests only).
-
-```bash
-pnpm install
-pnpm prisma:migrate   # apply migrations to your dev database
-pnpm dev
-```
-
-Environment variables go in `.env`. The main ones:
-
-| Variable                                       | Used for                                           |
-| ---------------------------------------------- | -------------------------------------------------- |
-| `POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING` | Database (pooled for the app, direct for migrations) |
-| Clerk keys                                     | Sign-in, and the Spotify connection via Clerk      |
-| `NEXT_PUBLIC_APP_URL`                          | Base URL the app uses to call its own sync route   |
-| `CRON_SECRET`                                  | Authenticates calls to `/api/cron/sync`            |
-| `GEMINI_API_KEY`                               | Vibe curation                                      |
-| `AI_GATEWAY_API_KEY`                           | Assistant, playlist generation, cover art          |
-
 ## Testing
 
 Covered at two levels: unit tests for pure logic — sync scheduling, playlist dedupe/filtering, subscription rules — and integration tests that run against a real, disposable Postgres database to verify behavior a mock can't, like unique constraints and cascading deletes actually firing correctly. Both run in CI on every push and pull request.
-
-```bash
-pnpm test                 # unit tests
-
-pnpm test:db:up           # start the throwaway Postgres (port 5433)
-pnpm test:db:migrate
-pnpm test:integration
-pnpm test:db:down
-```
 
 ## License
 
