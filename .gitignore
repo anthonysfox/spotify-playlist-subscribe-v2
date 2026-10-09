@@ -42,3 +42,9 @@ certificates
 generated
 # TypeScript incremental build cache
 tsconfig.tsbuildinfo
+.env*
+
+infra/.terraform/
+infra/*.tfstate*
+infra/*.tfvars
+
