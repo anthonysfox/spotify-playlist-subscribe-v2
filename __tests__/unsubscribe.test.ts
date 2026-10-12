@@ -14,7 +14,7 @@ const { mockPrisma } = vi.hoisted(() => {
   return { mockPrisma };
 });
 
-vi.mock("@/lib/prisma", () => ({ default: mockPrisma }));
+vi.mock("@/lib/db/prisma", () => ({ default: mockPrisma }));
 
 import { unsubscribe, UnsubscribeError } from "@/lib/playlists/unsubscribe";
 

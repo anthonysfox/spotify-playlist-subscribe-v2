@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
+// Waits on /api/cron/sync, so it needs the same headroom.
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   const { userId } = await auth();
   const { searchParams } = request.nextUrl;

@@ -419,7 +419,7 @@ const handler = createMcpHandler(
     );
   },
   {},
-  { basePath: "/api", maxDuration: 60, verboseLogs: true },
+  { basePath: "/api", maxDuration: 300, verboseLogs: true },
 );
 
 /**
