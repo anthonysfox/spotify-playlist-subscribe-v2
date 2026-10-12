@@ -4,6 +4,10 @@ import prisma from "@/lib/db/prisma";
 import { getDeveloperToken } from "@/lib/music/apple";
 import { debugDetails } from "@/lib/api-errors";
 import { ensureUser } from "@/lib/user";
+import {
+  isProviderPaused,
+  pausedProviderMessage,
+} from "@/lib/music/availability";
 
 /**
  * A Music User Token lasts about six months and cannot be renewed server-side.
@@ -81,6 +85,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Authentication required" },
       { status: 401 },
+    );
+  }
+
+  if (isProviderPaused("APPLE_MUSIC")) {
+    return NextResponse.json(
+      { error: pausedProviderMessage("APPLE_MUSIC") },
+      { status: 503 },
     );
   }
 

@@ -53,12 +53,12 @@ const Dashboard = () => {
             >
               Connect Spotify
             </a>
-            <a
-              href="/settings/connections"
-              className="border-line-strong text-ink-70 hover:border-brand/40 hover:text-brand rounded-full border px-5 py-2.5 text-[13.5px] font-medium transition-colors"
-            >
-              Connect Apple Music
-            </a>
+            {/* Apple Music is paused (see lib/music/availability.ts) — show
+                it's coming rather than offering a button that can't work. */}
+            <span className="border-line-strong text-ink-35 inline-flex cursor-default items-center gap-1.5 rounded-full border border-dashed px-5 py-2.5 text-[13.5px] font-medium">
+              <span className="bg-apple h-1.5 w-1.5 rounded-full opacity-50" />
+              Apple Music · back soon
+            </span>
           </div>
         </div>
       ) : (

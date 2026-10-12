@@ -2,6 +2,10 @@ import prisma from "@/lib/db/prisma";
 import { AuditLogger } from "@/lib/audit-logger";
 import { calculateNextSyncTime } from "@/lib/sync/schedule";
 import { getProvider, type MusicProvider } from "@/lib/music";
+import {
+  isProviderPaused,
+  pausedProviderMessage,
+} from "@/lib/music/availability";
 import type { ManagedPlaylistWithSubscriptions } from "@/types";
 import { ensureUser } from "@/lib/user";
 
@@ -96,6 +100,10 @@ export async function subscribe(
   // Creating a playlist is the only thing here that touches a music service, and
   // it goes through the provider abstraction rather than Spotify's API directly
   // — which is what lets an Apple Music playlist be created at all.
+  if (isProviderPaused(provider)) {
+    throw new SubscribeError(pausedProviderMessage(provider), 503);
+  }
+
   const client = await getProvider(provider).forUser(userId);
   if (!client) {
     throw new SubscribeError(`${provider} is not connected for this user`, 400);

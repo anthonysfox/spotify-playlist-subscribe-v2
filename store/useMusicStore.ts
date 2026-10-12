@@ -1,12 +1,17 @@
 import { create } from "zustand";
 import type { MusicProvider } from "@/lib/music/types";
+import { isProviderPaused } from "@/lib/music/availability";
 
 export const PROVIDER_LABELS: Record<MusicProvider, string> = {
   SPOTIFY: "Spotify",
   APPLE_MUSIC: "Apple Music",
 };
 
-export const PROVIDER_ORDER: MusicProvider[] = ["SPOTIFY", "APPLE_MUSIC"];
+// Paused providers are left out entirely, so the switcher and "Connect …"
+// nudges don't offer something that can't work right now.
+export const PROVIDER_ORDER: MusicProvider[] = (
+  ["SPOTIFY", "APPLE_MUSIC"] as MusicProvider[]
+).filter((provider) => !isProviderPaused(provider));
 
 type Connections = Record<MusicProvider, boolean>;
 

@@ -3,6 +3,7 @@
 import { useUser, useClerk, SignOutButton } from "@clerk/nextjs";
 import { useMusicStore } from "store/useMusicStore";
 import { AppleMusicConnect } from "../AppleMusicConnect";
+import { isProviderPaused } from "@/lib/music/availability";
 import { McpTokens } from "../McpTokens";
 
 /**
@@ -94,8 +95,28 @@ export function ConnectionsView() {
             )}
           </div>
 
-          {/* Apple Music — owns its own connect/disconnect/reconnect flow */}
-          <AppleMusicConnect />
+          {/* Apple Music — owns its own connect/disconnect/reconnect flow.
+              While it's paused, show a placeholder instead so MusicKit never
+              loads and nobody can start a connect that would fail. */}
+          {isProviderPaused("APPLE_MUSIC") ? (
+            <div className="border-line bg-surface rounded-2xl border p-4">
+              <div className="flex items-center gap-2">
+                <span className="bg-apple h-1.5 w-1.5 shrink-0 rounded-full opacity-50" />
+                <span className="font-display text-ink text-[15px] font-semibold">
+                  Apple Music
+                </span>
+                <span className="text-ink-50 text-[11.5px] font-medium">
+                  Back soon
+                </span>
+              </div>
+              <p className="text-ink-50 mt-1 max-w-[52ch] text-[12.5px] leading-relaxed">
+                Apple Music support is built but temporarily paused. It&apos;ll
+                be back soon — Spotify works as normal in the meantime.
+              </p>
+            </div>
+          ) : (
+            <AppleMusicConnect />
+          )}
         </div>
 
         <div className="mt-8">

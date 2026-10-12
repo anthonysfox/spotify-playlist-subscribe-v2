@@ -3,6 +3,7 @@ import {
   isProviderSupported,
   type MusicProvider,
 } from "@/lib/music";
+import { isProviderPaused } from "@/lib/music/availability";
 
 const ALL_PROVIDERS: MusicProvider[] = ["SPOTIFY", "APPLE_MUSIC"];
 
@@ -17,7 +18,8 @@ export async function getConnectionsForUser(
 ): Promise<Record<MusicProvider, boolean>> {
   const entries = await Promise.all(
     ALL_PROVIDERS.map(async (provider) => {
-      if (!isProviderSupported(provider)) return [provider, false] as const;
+      if (!isProviderSupported(provider) || isProviderPaused(provider))
+        return [provider, false] as const;
       try {
         return [
           provider,

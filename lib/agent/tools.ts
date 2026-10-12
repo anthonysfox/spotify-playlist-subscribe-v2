@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import z from "zod";
 import { getProvider, MusicProvider } from "../music";
+import { ACTIVE_PROVIDERS } from "../music/availability";
 import prisma from "../db/prisma";
 import type { AgentProposal } from "./proposals";
 
@@ -16,7 +17,7 @@ export function buildTools(userId: string) {
       description: "Search a music service for playlists to subscribe to.",
       inputSchema: z.object({
         query: z.string(),
-        provider: z.enum(["SPOTIFY", "APPLE_MUSIC"]).default("SPOTIFY"),
+        provider: z.enum(ACTIVE_PROVIDERS).default("SPOTIFY"),
       }),
       execute: async ({ query, provider }) => {
         const client = await getProvider(provider as MusicProvider).forUser(
@@ -90,7 +91,7 @@ export function buildTools(userId: string) {
           .describe("The mood/genre/vibe, e.g. 'late-night synthwave drive'"),
         playlistName: z.string().describe("Name for the new playlist"),
         count: z.number().int().min(5).max(40).default(20),
-        provider: z.enum(["SPOTIFY", "APPLE_MUSIC"]).default("SPOTIFY"),
+        provider: z.enum(ACTIVE_PROVIDERS).default("SPOTIFY"),
       }),
       execute: async ({ vibe, playlistName, count, provider }) => {
         const client = await getProvider(provider).forUser(userId);
@@ -136,7 +137,7 @@ export function buildTools(userId: string) {
           .max(5)
           .describe("Artist names, e.g. ['John Mayer', 'Justin Bieber']"),
         syncFrequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).default("WEEKLY"),
-        provider: z.enum(["SPOTIFY", "APPLE_MUSIC"]).default("SPOTIFY"),
+        provider: z.enum(ACTIVE_PROVIDERS).default("SPOTIFY"),
       }),
       execute: async ({
         managedPlaylistId,
@@ -179,7 +180,7 @@ export function buildTools(userId: string) {
         newPlaylistName: z.string().optional(),
         managedPlaylistId: z.string().optional(),
         syncFrequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).default("WEEKLY"),
-        provider: z.enum(["SPOTIFY", "APPLE_MUSIC"]).default("SPOTIFY"),
+        provider: z.enum(ACTIVE_PROVIDERS).default("SPOTIFY"),
       }),
       execute: async ({
         sourcePlaylistId,

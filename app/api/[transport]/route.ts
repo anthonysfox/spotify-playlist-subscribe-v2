@@ -1,6 +1,7 @@
 import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import z from "zod";
 import { getProvider, type MusicProvider } from "@/lib/music";
+import { ACTIVE_PROVIDERS } from "@/lib/music/availability";
 import {
   subscribe,
   SubscribeError,
@@ -22,7 +23,7 @@ const handler = createMcpHandler(
         inputSchema: {
           query: z.string().describe("What to search for, e.g. 'lo-fi study'"),
           provider: z
-            .enum(["SPOTIFY", "APPLE_MUSIC"])
+            .enum(ACTIVE_PROVIDERS)
             .default("SPOTIFY")
             .describe("Which service to search"),
         },
@@ -298,7 +299,7 @@ const handler = createMcpHandler(
             .describe(
               "The name of a new playlist to be created. Required if there is no managedPlaylistId",
             ),
-          provider: z.enum(["SPOTIFY", "APPLE_MUSIC"]).default("SPOTIFY"),
+          provider: z.enum(ACTIVE_PROVIDERS).default("SPOTIFY"),
           syncFrequency: z
             .enum(["DAILY", "WEEKLY", "MONTHLY"])
             .default("WEEKLY"),

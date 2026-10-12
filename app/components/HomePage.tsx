@@ -149,9 +149,12 @@ export const HomePage = () => {
                 Spotify
               </span>
               <span className="text-line-strong">·</span>
-              <span className="text-ink-70 inline-flex items-center gap-1.5">
-                <Dot className="bg-apple" />
+              <span className="text-ink-35 inline-flex items-center gap-1.5">
+                <Dot className="bg-apple opacity-50" />
                 Apple Music
+                <span className="bg-apple/10 text-apple rounded-full px-1.5 py-0.5 text-[10.5px] font-medium">
+                  back soon
+                </span>
               </span>
             </div>
 
@@ -166,7 +169,8 @@ export const HomePage = () => {
             <p className="text-ink-50 mt-5 max-w-[44ch] text-[17px] leading-relaxed">
               Subscribe to the playlists you already follow. PlaylistFox funnels
               their new tracks into a playlist it manages for you — on Spotify
-              and Apple Music, on whatever schedule you pick.
+              (Apple Music support is built and coming back soon), on whatever
+              schedule you pick.
             </p>
 
             <div className="mt-7 flex flex-wrap items-center gap-4">
@@ -223,7 +227,7 @@ export const HomePage = () => {
                   <div className="mt-1.5 flex items-center gap-2.5">
                     <Cover i={1} size="h-8 w-8" />
                     <span className="text-ink text-[13.5px] font-medium">
-                      Fresh Finds — Basement
+                      Pregame Energy
                     </span>
                   </div>
                 </div>

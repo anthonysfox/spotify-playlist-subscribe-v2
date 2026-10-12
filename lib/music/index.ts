@@ -1,6 +1,7 @@
 import type { MusicProvider, MusicProviderAdapter } from "./types";
 import { spotifyProvider } from "./spotify";
 import { appleMusicProvider } from "./apple";
+import { isProviderPaused } from "./availability";
 
 export type {
   MusicClient,
@@ -41,6 +42,14 @@ export function getProvider(provider: MusicProvider): MusicProviderAdapter {
 
   if (!adapter) {
     throw new Error(`No adapter implemented for music provider "${provider}"`);
+  }
+
+  // A paused provider behaves exactly like a disconnected one: every caller
+  // already handles a null client (routes say "not connected", the sync engine
+  // skips with PROVIDER_NOT_CONNECTED instead of failing), so gating it here
+  // covers the whole server in one place.
+  if (isProviderPaused(provider)) {
+    return { id: adapter.id, forUser: async () => null };
   }
 
   return adapter;
