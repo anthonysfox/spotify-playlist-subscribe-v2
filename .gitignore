@@ -48,3 +48,5 @@ infra/.terraform/
 infra/*.tfstate*
 infra/*.tfvars
 
+lambda/*/dist
+infra/build

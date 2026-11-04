@@ -7,6 +7,18 @@ terraform {
       source  = "hashicorp/aws" # where to get the plugin
       version = "~> 6.0"        # any 6.x version, never 7.0
     }
+
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.7"
+    }
+  }
+
+  backend "s3" {
+    bucket       = "playlistfox-tfstate-734169003262"
+    key          = "infra/terraform.tfstate"
+    region       = "us-east-1"
+    use_lockfile = true
   }
 }
 

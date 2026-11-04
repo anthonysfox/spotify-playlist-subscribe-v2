@@ -20,11 +20,16 @@
     "test:db:migrate": "POSTGRES_URL_NON_POOLING=postgresql://test:test@localhost:5433/playlistfox_test prisma migrate deploy",
     "test:integration": "POSTGRES_URL_NON_POOLING=postgresql://test:test@localhost:5433/playlistfox_test vitest run --config vitest.integration.config.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check"
+    "format:check": "prettier --check",
+    "build:lambda": "rm -rf lambda/cover-art/dist && esbuild lambda/cover-art/handler.ts --bundle --platform=node --target=node22 --outfile=lambda/cover-art/dist/index.js --external:sharp '--external:@aws-sdk/*' && cd lambda/cover-art/dist && echo '{}' > package.json && npm install --os=linux --cpu=arm64 --libc=glibc sharp@0.35.3"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.12",
     "@ai-sdk/react": "^4.0.45",
+    "@aws-sdk/client-s3": "^3.1152.0",
+    "@aws-sdk/client-sqs": "^3.1152.0",
+    "@aws-sdk/client-ssm": "^3.1152.0",
+    "@aws-sdk/s3-request-presigner": "^3.1152.0",
     "@clerk/nextjs": "^6.39.6",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
@@ -48,8 +53,10 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/typography": "^0.5.20",
+    "@types/aws-lambda": "^8.10.164",
     "@types/react-dom": "^19.2.3",
     "dotenv": "^17.4.2",
+    "esbuild": "^0.28.2",
     "eslint": "8.11.0",
     "eslint-config-next": "^13.0.5",
     "postcss": "^8.4.12",
