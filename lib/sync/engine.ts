@@ -11,12 +11,14 @@ import {
 } from "./track-filters";
 import { selectByVibe } from "./curator";
 import { calculateNextSyncTime } from "./schedule";
+import type { TrackToIndex } from "../tracks/index-tracks";
 
 export type SyncOptions = {
   force?: boolean;
   specificUserId?: string;
   specificPlaylistId?: string;
   specificSourceId?: string;
+  tracksToIndex: Map<string, TrackToIndex>;
 };
 
 export type SyncSummary = {
@@ -76,7 +78,13 @@ export async function runSync(opts: SyncOptions): Promise<SyncSummary> {
   const startTime = Date.now();
   const entityId = randomUUID();
   const trigger = opts.force ? "MANUAL" : "SCHEDULED";
-  const { force, specificUserId, specificPlaylistId, specificSourceId } = opts;
+  const {
+    force,
+    specificUserId,
+    specificPlaylistId,
+    specificSourceId,
+    tracksToIndex,
+  } = opts;
 
   console.log(`🔄 Starting sync job at ${new Date().toISOString()}`, {
     force,
@@ -158,7 +166,9 @@ export async function runSync(opts: SyncOptions): Promise<SyncSummary> {
       const batch = playlistsToSync.slice(i, i + BATCH_SIZE);
 
       const batchResults = await Promise.allSettled(
-        batch.map((playlist) => syncSinglePlaylist(playlist, trigger)),
+        batch.map((playlist) =>
+          syncSinglePlaylist(playlist, trigger, tracksToIndex),
+        ),
       );
 
       batchResults.forEach((result, index) => {
@@ -242,6 +252,7 @@ export async function runSync(opts: SyncOptions): Promise<SyncSummary> {
 async function syncSinglePlaylist(
   managedPlaylist: PlaylistToSync,
   trigger: "SCHEDULED" | "MANUAL",
+  tracksToIndex: Map<string, TrackToIndex>,
 ): Promise<SyncResult> {
   const syncStartTime = Date.now();
 
@@ -410,6 +421,18 @@ async function syncSinglePlaylist(
         if (!sourceTracks.length) {
           console.log(`⚠️ No tracks found in source: ${sourcePlaylist.name}`);
           continue;
+        }
+
+        for (const track of sourceTracks) {
+          if (track.isrc) {
+            tracksToIndex.set(track.isrc, {
+              isrc: track.isrc,
+              provider,
+              externalId: track.id,
+              title: track.name,
+              artist: track.artists.join(", "),
+            });
+          }
         }
 
         // Drop anything we already have (in any of its release guises).

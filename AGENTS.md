@@ -77,4 +77,4 @@ Run `pnpm test` and `npx tsc --noEmit` after changes.
 
 ## Environment
 
-`POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, Clerk keys, `NEXT_PUBLIC_APP_URL`, `CRON_SECRET`, `GEMINI_API_KEY` (curator), `AI_GATEWAY_API_KEY` (assistant, generation, cover art). Optional: model overrides (`CURATOR_MODEL`, `GENERATE_PLAYLIST_MODEL`, `COVER_ART_*_MODEL`), `APPLE_MUSIC_TEAM_ID` / `APPLE_MUSIC_KEY_ID` / `APPLE_MUSIC_PRIVATE_KEY`.
+`POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, Clerk keys, `NEXT_PUBLIC_APP_URL`, `CRON_SECRET`, `GOOGLE_GENERATIVE_AI_API_KEY` (curator), `AI_GATEWAY_API_KEY` (assistant, generation, cover art). Optional: model overrides (`CURATOR_MODEL`, `GENERATE_PLAYLIST_MODEL`, `COVER_ART_*_MODEL`), `APPLE_MUSIC_TEAM_ID` / `APPLE_MUSIC_KEY_ID` / `APPLE_MUSIC_PRIVATE_KEY`.

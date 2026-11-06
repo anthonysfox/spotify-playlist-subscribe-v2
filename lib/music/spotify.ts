@@ -4,15 +4,27 @@ import type {
   MusicProviderAdapter,
   PlaylistSummary,
 } from "./types";
+import { spotifyFetch } from "./spotify-fetch";
 
 // Spotify accepts at most 100 track URIs per add/remove call.
 const TRACK_BATCH_SIZE = 100;
+
+// The most results /search returns per request, and its highest allowed offset.
+const SEARCH_PAGE_SIZE = 10;
+const SEARCH_MAX_OFFSET = 1000;
+
+const TRACK_FIELDS = "id,name,explicit,artists(name),external_ids(isrc)";
 
 // A courtesy pause between batched writes, carried over from the original
 // sync engine — Spotify rate-limits aggressively.
 const BATCH_PAUSE_MS = 100;
 
 const trackUri = (trackId: string) => `spotify:track:${trackId}`;
+
+// Spotify is moving the track count from `tracks` to `items`, and only returns
+// `items` on some playlists, so read both.
+const trackTotal = (playlist: any): number =>
+  playlist.items?.total ?? playlist.tracks?.total ?? 0;
 
 class SpotifyClient implements MusicClient {
   readonly provider = "SPOTIFY" as const;
@@ -24,7 +36,12 @@ class SpotifyClient implements MusicClient {
   constructor(private readonly token: string) {}
 
   private async request(path: string, init?: RequestInit): Promise<Response> {
-    return fetch(`${process.env.BASE_SPOTIFY_URL}${path}`, {
+    // Spotify's paging `next` links are already absolute.
+    const url = path.startsWith("http")
+      ? path
+      : `${process.env.BASE_SPOTIFY_URL}${path}`;
+
+    return spotifyFetch(url, {
       ...init,
       headers: {
         Authorization: `Bearer ${this.token}`,
@@ -38,28 +55,32 @@ class SpotifyClient implements MusicClient {
     playlistId: string,
     limit?: number,
   ): Promise<PlaylistTrack[]> {
-    // Ask for the metadata the engine actually needs. This used to request only
-    // `items(track(id))`, which left the engine unable to tell what any song was
-    // — no filtering, no dedupe, no judgement possible.
-    const fields = "items(added_at,track(id,name,explicit,artists(name))),next";
     // A `limit` (preview mode) only ever needs a handful of tracks, so ask
     // Spotify for exactly that many per page instead of the usual 50 — no
     // point paginating through a page of 50 to read the first 3.
     const pageSize = limit ? Math.min(limit, 50) : 50;
     const tracks: PlaylistTrack[] = [];
 
+    // Ask for the metadata the engine actually needs. This used to request only
+    // `items(track(id))`, which left the engine unable to tell what any song was
+    // — no filtering, no dedupe, no judgement possible.
     let next: string | null =
-      `/playlists/${playlistId}/tracks?fields=${fields}&limit=${pageSize}`;
+      `/playlists/${playlistId}/items?fields=items(added_at,item(${TRACK_FIELDS})),next&limit=${pageSize}`;
+    let usedLegacyEndpoint = false;
 
     while (next) {
       if (limit && tracks.length >= limit) break;
 
-      // Spotify's `next` is an absolute URL, so only the first hop is relative.
-      const response: Response = next.startsWith("http")
-        ? await fetch(next, {
-            headers: { Authorization: `Bearer ${this.token}` },
-          })
-        : await this.request(next);
+      const response: Response = await this.request(next);
+
+      // /items is documented as 403 for playlists the user neither owns nor
+      // collaborates on, which covers most sync sources. The spec offers no
+      // replacement for reading those, so fall back to the deprecated endpoint.
+      if (response.status === 403 && !usedLegacyEndpoint && !tracks.length) {
+        usedLegacyEndpoint = true;
+        next = `/playlists/${playlistId}/tracks?fields=items(added_at,track(${TRACK_FIELDS})),next&limit=${pageSize}`;
+        continue;
+      }
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -74,7 +95,7 @@ class SpotifyClient implements MusicClient {
       const data: any = await response.json();
 
       for (const item of data.items ?? []) {
-        const track = item?.track;
+        const track = item?.item ?? item?.track;
 
         // Local files and removed tracks come back without an ID.
         if (!track?.id) continue;
@@ -87,6 +108,7 @@ class SpotifyClient implements MusicClient {
             .filter(Boolean),
           explicit: Boolean(track.explicit),
           addedAt: item.added_at ?? null,
+          isrc: track.external_ids?.isrc ?? null,
         });
       }
 
@@ -98,7 +120,7 @@ class SpotifyClient implements MusicClient {
 
   async getPlaylist(playlistId: string): Promise<PlaylistSummary | null> {
     const response = await this.request(
-      `/playlists/${playlistId}?fields=id,name,images,tracks.total`,
+      `/playlists/${playlistId}?fields=id,name,images,owner.display_name,items.total,tracks.total`,
     );
 
     if (!response.ok) return null;
@@ -109,7 +131,7 @@ class SpotifyClient implements MusicClient {
       id: data.id,
       name: data.name,
       imageUrl: data.images?.[0]?.url ?? null,
-      trackCount: data.tracks?.total ?? 0,
+      trackCount: trackTotal(data),
       owner: data.owner?.display_name ?? null,
       provider: this.provider,
     };
@@ -120,32 +142,47 @@ class SpotifyClient implements MusicClient {
     limit = 20,
     offset = 0,
   ): Promise<PlaylistSummary[]> {
-    const response = await this.request(
-      `/search?q=${encodeURIComponent(query)}&type=playlist&limit=${limit}&offset=${offset}`,
-    );
+    const playlists: PlaylistSummary[] = [];
+    let fetched = 0;
 
-    if (!response.ok) return [];
+    // Callers can ask for more than one /search page holds, so walk the pages.
+    // `fetched` counts raw results, nulls included, so a caller's next
+    // `offset + limit` page lines up with what Spotify actually skipped.
+    while (fetched < limit && offset + fetched <= SEARCH_MAX_OFFSET) {
+      const pageSize = Math.min(limit - fetched, SEARCH_PAGE_SIZE);
+      const response = await this.request(
+        `/search?q=${encodeURIComponent(query)}&type=playlist&limit=${pageSize}&offset=${offset + fetched}`,
+      );
 
-    const data = await response.json();
+      if (!response.ok) break;
 
-    return (
-      (data.playlists?.items ?? [])
-        // Spotify returns nulls in this array for playlists it won't serve us.
-        .filter(Boolean)
-        .map((playlist: any) => ({
-          id: playlist.id,
-          name: playlist.name,
-          imageUrl: playlist.images?.[0]?.url ?? null,
-          trackCount: playlist.tracks?.total ?? 0,
-          owner: playlist.owner?.display_name ?? null,
-          provider: this.provider,
-        }))
-    );
+      const data = await response.json();
+      const items: any[] = data.playlists?.items ?? [];
+
+      playlists.push(
+        ...items
+          // Spotify returns nulls in this array for playlists it won't serve us.
+          .filter(Boolean)
+          .map((playlist) => ({
+            id: playlist.id,
+            name: playlist.name,
+            imageUrl: playlist.images?.[0]?.url ?? null,
+            trackCount: trackTotal(playlist),
+            owner: playlist.owner?.display_name ?? null,
+            provider: this.provider,
+          })),
+      );
+
+      fetched += items.length;
+      if (!items.length || !data.playlists?.next) break;
+    }
+
+    return playlists;
   }
 
   async searchTracks(query: string, limit = 5): Promise<PlaylistTrack[]> {
     const response = await this.request(
-      `/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`,
+      `/search?q=${encodeURIComponent(query)}&type=track&limit=${Math.min(limit, SEARCH_PAGE_SIZE)}`,
     );
 
     if (!response.ok) return [];
@@ -185,7 +222,7 @@ class SpotifyClient implements MusicClient {
         id: playlist.id,
         name: playlist.name,
         imageUrl: playlist.images?.[0]?.url ?? null,
-        trackCount: playlist.tracks?.total ?? 0,
+        trackCount: trackTotal(playlist),
         owner: playlist.owner?.display_name ?? null,
         provider: this.provider,
       }));
@@ -195,17 +232,7 @@ class SpotifyClient implements MusicClient {
     name: string,
     description?: string,
   ): Promise<PlaylistSummary> {
-    // Spotify creates playlists under a user, so we need the Spotify user ID —
-    // not the Clerk one.
-    const meResponse = await this.request("/me");
-
-    if (!meResponse.ok) {
-      throw new Error(`Failed to resolve Spotify user: ${meResponse.status}`);
-    }
-
-    const { id: spotifyUserId } = await meResponse.json();
-
-    const response = await this.request(`/users/${spotifyUserId}/playlists`, {
+    const response = await this.request("/me/playlists", {
       method: "POST",
       body: JSON.stringify({ name, description, public: false }),
     });
@@ -220,7 +247,7 @@ class SpotifyClient implements MusicClient {
       id: data.id,
       name: data.name,
       imageUrl: data.images?.[0]?.url ?? null,
-      trackCount: data.tracks?.total ?? 0,
+      trackCount: trackTotal(data),
       owner: data.owner?.display_name ?? null,
       provider: this.provider,
     };
@@ -230,7 +257,7 @@ class SpotifyClient implements MusicClient {
     for (let i = 0; i < trackIds.length; i += TRACK_BATCH_SIZE) {
       const batch = trackIds.slice(i, i + TRACK_BATCH_SIZE);
 
-      const response = await this.request(`/playlists/${playlistId}/tracks`, {
+      const response = await this.request(`/playlists/${playlistId}/items`, {
         method: "POST",
         body: JSON.stringify({ uris: batch.map(trackUri) }),
       });
@@ -250,9 +277,6 @@ class SpotifyClient implements MusicClient {
     for (let i = 0; i < trackIds.length; i += TRACK_BATCH_SIZE) {
       const batch = trackIds.slice(i, i + TRACK_BATCH_SIZE);
 
-      // Keep the `/items` + `items` shape the engine has always used. It works
-      // against live Spotify, and this refactor is not the place to also swap
-      // the removal endpoint for the `/tracks` + `tracks` variant.
       const response = await this.request(`/playlists/${playlistId}/items`, {
         method: "DELETE",
         body: JSON.stringify({

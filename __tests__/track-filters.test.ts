@@ -20,6 +20,7 @@ function track(overrides: Partial<PlaylistTrack> = {}): PlaylistTrack {
     artists: ["Artist"],
     explicit: false,
     addedAt: null,
+    isrc: null,
     ...overrides,
   };
 }

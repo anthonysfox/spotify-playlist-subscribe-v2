@@ -1,5 +1,6 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { spotifyFetch } from "@/lib/music/spotify-fetch";
 
 export default async function getClerkOAuthToken(userId?: string | null) {
   let resolvedUserId: string | null = null;
@@ -46,11 +47,14 @@ export default async function getClerkOAuthToken(userId?: string | null) {
     }
 
     // Fetch Spotify user info to get Spotify ID
-    const spotifyUserResponse = await fetch("https://api.spotify.com/v1/me", {
-      headers: {
-        Authorization: `Bearer ${token}`,
+    const spotifyUserResponse = await spotifyFetch(
+      "https://api.spotify.com/v1/me",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       },
-    });
+    );
 
     if (!spotifyUserResponse.ok) {
       const errorBody = await spotifyUserResponse.text();

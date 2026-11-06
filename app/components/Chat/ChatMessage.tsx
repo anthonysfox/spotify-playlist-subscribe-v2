@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { MemoizedMarkdown } from "../MemoizedMarkdown";
 import { PlaylistResultCards } from "./PlaylistPreviewCards";
+import { VibeTrackTable } from "./VibeTrackTable";
 import { useUserStore } from "store/useUserStore";
 import type { AgentProposal } from "@/lib/agent/proposals";
 import { describeProposal } from "@/lib/agent/describe-proposal";
@@ -12,6 +13,7 @@ const READ_TOOLS = new Set([
   "searchPlaylists",
   "listManagedPlaylists",
   "listManagedPlaylistDetails",
+  "searchTracksByVibe",
 ]);
 
 export function MessageBubble({ message }: { message: any }) {
@@ -48,6 +50,7 @@ export function MessageBubble({ message }: { message: any }) {
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         {message.parts.map((part: any, i: number) => {
+          console.log(part);
           if (part.type === "text") {
             if (!part.text) return null;
             return (
@@ -69,6 +72,14 @@ export function MessageBubble({ message }: { message: any }) {
             Array.isArray(part.output)
           ) {
             return <PlaylistResultCards key={i} playlists={part.output} />;
+          }
+
+          if (
+            part.type === "tool-searchTracksByVibe" &&
+            part.state === "output-available" &&
+            Array.isArray(part.output)
+          ) {
+            return <VibeTrackTable key={i} tracks={part.output} />;
           }
 
           if (typeof part.type === "string" && part.type.startsWith("tool-")) {
@@ -125,6 +136,7 @@ const READ_LABEL: Record<string, (o: any) => string> = {
 
 const RUN_LABEL: Record<string, string> = {
   searchPlaylists: "Searching",
+  searchTracksByVibe: "Searching your tracks",
   listManagedPlaylists: "Reading your library",
   listManagedPlaylistDetails: "Reading playlist settings",
   generatePlaylist: "Working out a tracklist",

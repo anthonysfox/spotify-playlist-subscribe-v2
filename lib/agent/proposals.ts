@@ -64,7 +64,6 @@ export type AgentProposal =
         syncFrequency: string;
       };
     };
-
 export interface ExecuteResult {
   ok: boolean;
   message: string;

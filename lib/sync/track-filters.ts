@@ -15,6 +15,7 @@ export interface PlaylistTrack {
   explicit: boolean;
   /** When the track was added to the playlist it came from (ISO 8601). */
   addedAt: string | null;
+  isrc: string | null;
 }
 
 /**

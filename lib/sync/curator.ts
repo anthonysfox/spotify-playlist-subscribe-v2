@@ -3,9 +3,11 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import type { PlaylistTrack } from "./track-filters";
 
-// The app already ships GEMINI_API_KEY; the provider would otherwise look for
+// The app already ships GOOGLE_GENERATIVE_AI_API_KEY; the provider would otherwise look for
 // GOOGLE_GENERATIVE_AI_API_KEY, so the existing key is wired in explicitly.
-const google = createGoogle({ apiKey: process.env.GEMINI_API_KEY });
+const google = createGoogle({
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
+});
 
 // Judging a few dozen track titles is a small job, and this runs on every sync
 // of every playlist that has a vibe set — so use the cheapest fast model. It is
@@ -31,7 +33,7 @@ const SelectionSchema = z.object({
 });
 
 export function isCuratorConfigured(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY);
+  return Boolean(process.env.GOOGLE_GENERATIVE_AI_API_KEY);
 }
 
 /**

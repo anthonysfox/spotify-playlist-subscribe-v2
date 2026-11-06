@@ -11,9 +11,51 @@ import prisma from "@/lib/db/prisma";
 import { triggerSync } from "@/lib/sync/trigger";
 import { hashToken } from "@/lib/mcp-tokens";
 import { describePlaylist } from "@/lib/playlists/describe-playlist";
+import { embedText } from "@/lib/tracks/index-tracks";
 
 const handler = createMcpHandler(
   (server) => {
+    server.registerTool(
+      "search_existing_tracks_by_vibe",
+      {
+        title: "Search Existing Tracks By Vibe",
+        description:
+          "Find songs in PlaylistFox's track catalog that match a mood or vibe. Returns provider track ids that can be passed to the playlist tools.",
+        inputSchema: {
+          vibe: z
+            .string()
+            .describe(
+              "The vibe of the songs to look for, e.g 'rainy day chill'",
+            ),
+          limit: z.number().int().min(1).max(50).optional(),
+        },
+      },
+      async ({ vibe, limit }, extra) => {
+        const userId = extra.authInfo?.extra?.userId as string | undefined;
+        if (!userId) {
+          return {
+            content: [{ type: "text", text: "Not authenticated" }],
+            isError: true,
+          };
+        }
+
+        const vec = JSON.stringify(await embedText(vibe, "search"));
+        const rows = await prisma.$queryRaw<
+          {
+            title: string;
+            artist: string;
+            external_id: string;
+            similarity: number;
+          }[]
+        >`
+          SELECT title, artist, provider, external_id, 1 - (embedding <=> ${vec}::vector) AS similarity
+          FROM tracks
+          ORDER BY embedding <=> ${vec}::vector
+          LIMIT ${limit}
+        `;
+        return { content: [{ type: "text", text: JSON.stringify(rows) }] };
+      },
+    );
     server.registerTool(
       "search_playlists",
       {

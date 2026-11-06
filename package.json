@@ -13,6 +13,7 @@
     "prisma:studio": "prisma studio",
     "postinstall": "prisma generate",
     "apple:check": "tsx scripts/apple-check.ts",
+    "tracks:export": "tsx scripts/export-embeddings.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:db:up": "docker compose up -d --wait postgres-test",

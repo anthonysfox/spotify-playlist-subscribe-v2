@@ -166,6 +166,7 @@ class AppleMusicClient implements MusicClient {
       artists: attributes.artistName ? [attributes.artistName] : [],
       explicit: attributes.contentRating === "explicit",
       addedAt: attributes.dateAdded ?? null,
+      isrc: attributes.isrc ?? null,
     };
   }
 

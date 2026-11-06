@@ -1,6 +1,7 @@
 import { after } from "next/server";
 import getClerkOAuthToken from "utils/clerk";
 import prisma from "@/lib/db/prisma";
+import { spotifyFetch } from "@/lib/music/spotify-fetch";
 import {
   CONTRIBUTION_WINDOW_MS,
   toSyncRunSummary,
@@ -96,14 +97,14 @@ function scheduleStaleMetadataRefresh(userId: string, subscriptions: WithSubs) {
     await Promise.all(
       targets.map(async ({ spotifyId, id, type }) => {
         try {
-          const res = await fetch(
-            `https://api.spotify.com/v1/playlists/${spotifyId}?fields=tracks.total`,
+          const res = await spotifyFetch(
+            `https://api.spotify.com/v1/playlists/${spotifyId}?fields=items.total,tracks.total`,
             { headers: { Authorization: `Bearer ${token}` } },
           );
           if (!res.ok) return;
           const data = await res.json();
           const updateData = {
-            trackCount: data.tracks.total,
+            trackCount: data.items?.total ?? data.tracks?.total,
             lastMetadataRefreshAt: new Date(),
           };
           if (type === "managed") {

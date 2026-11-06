@@ -4,10 +4,12 @@
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
   provider = "postgresql"
+  extensions = [vector]  
 }
 
 enum SubscriptionFrequency {
@@ -40,6 +42,13 @@ enum AuditAction {
   SYNC_RUN_STARTED
   SYNC_RUN_COMPLETED
   SYNC_RUN_FAILED
+}
+
+enum TrackIndexStatus {
+  PENDING
+  INDEXED
+  UNINDEXED
+  FAILED
 }
 
 model User {
@@ -351,4 +360,33 @@ model SyncRun {
   @@index([userId, startedAt])
   @@index([status])
   @@map("sync_runs")
+}
+
+model Track {
+  isrc String @id @db.VarChar(20)
+  title String
+  artist String
+  vibeProfile String? @map("vibe_profile")
+  energy Float?
+  valence Float?
+  instrumentalness Float?
+  acousticness Float?
+  tempoBpm Int? @map("tempo_bpm")
+  metadataSources String[] @default([]) @map("metadata_sources")
+  tags Json?
+  status TrackIndexStatus @default(PENDING)
+  embedding Unsupported("vector(1536)")?
+  createdAt DateTime @default(now()) @map("created_at")
+  indexedAt DateTime? @map("indexed_at")
+
+  @@map("tracks")
+}
+
+model SpotifyTrackCache {
+  isrc String @id @db.VarChar(20)
+  spotifyTrackId String @map("spotify_track_id")
+  expiresAt DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("spotify_track_cache")
 }

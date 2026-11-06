@@ -1,19 +1,7 @@
-import prisma from "@/lib/db/prisma";
-import type { Prisma } from "@/generated/prisma/client";
-import { getProvider } from "@/lib/music";
-import { NextRequest, NextResponse } from "next/server";
-import { AuditLogger } from "@/lib/audit-logger";
-import { calculateNextSyncTime } from "@/lib/sync/schedule";
-import {
-  rotateUnseen,
-  songIdentity,
-  withinAgeLimit,
-  withoutExplicit,
-  type PlaylistTrack,
-} from "@/lib/sync/track-filters";
-import { selectByVibe } from "@/lib/sync/curator";
-import { randomUUID, timingSafeEqual } from "crypto";
+import { after, NextRequest, NextResponse } from "next/server";
 import { runSync } from "@/lib/sync/engine";
+import { timingSafeEqual } from "crypto";
+import { indexTracks, TrackToIndex } from "@/lib/tracks/index-tracks";
 
 /**
  * Whether a request carries the cron secret.
@@ -59,6 +47,9 @@ export const maxDuration = 300;
 
 export async function GET(request: NextRequest) {
   try {
+    const deadline = Date.now() + 240_000;
+    const tracksToIndex = new Map<string, TrackToIndex>();
+
     // 1. Authentication - Verify cron request
     if (!isAuthorizedCronRequest(request.headers.get("authorization"))) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -76,7 +67,14 @@ export async function GET(request: NextRequest) {
       specificUserId,
       specificPlaylistId,
       specificSourceId,
+      tracksToIndex,
     });
+
+    after(() =>
+      indexTracks([...tracksToIndex.values()], deadline).catch((error) =>
+        console.error("Track indexing failed:", error),
+      ),
+    );
 
     return NextResponse.json({
       success: true,

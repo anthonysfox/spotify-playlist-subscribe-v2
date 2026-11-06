@@ -18,6 +18,13 @@ export interface PlaylistSummary {
   provider: MusicProvider;
 }
 
+export interface DBVibeTrack {
+  title: string;
+  artist: string;
+  external_id: string;
+  similarity: number;
+}
+
 /**
  * A music service, bound to one user's credentials.
  *
