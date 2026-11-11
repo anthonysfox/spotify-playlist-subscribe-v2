@@ -31,7 +31,7 @@ const DEMONYMS = new Set([
 
 const NUMERIC = /^\d+$/;
 
-const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+const normalize = (s: string) => s.trim().toLowerCase().replace(/[‘’]/g, "'");
 
 export function cleanTags(
   names: string[],

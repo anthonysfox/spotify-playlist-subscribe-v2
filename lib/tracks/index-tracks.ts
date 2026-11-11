@@ -59,7 +59,6 @@ export async function saveTrack(t: TrackToIndex) {
     return;
 
   const mb = await lookupIsrc(t.isrc);
-  console.log(mb);
 
   const content =
     `${mb?.title ?? t.title} by ${mb?.artist ?? t.artist}` +
