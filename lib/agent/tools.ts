@@ -4,8 +4,8 @@ import { getProvider, MusicProvider } from "../music";
 import { ACTIVE_PROVIDERS } from "../music/availability";
 import prisma from "../db/prisma";
 import type { AgentProposal } from "./proposals";
-import { embedText } from "../tracks/index-tracks";
 import { DBVibeTrack } from "../music/types";
+import { embedText } from "../tracks/embed";
 
 const FREQ_WORD: Record<string, string> = {
   DAILY: "daily",

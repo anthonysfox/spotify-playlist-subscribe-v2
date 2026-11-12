@@ -1,6 +1,5 @@
-import { embed } from "ai";
-import { google } from "@ai-sdk/google";
 import prisma from "../db/prisma";
+import { embedText } from "./embed";
 
 export interface TrackToIndex {
   isrc: string;
@@ -8,21 +7,6 @@ export interface TrackToIndex {
   externalId: string;
   title: string;
   artist: string;
-}
-
-export async function embedText(text: string, kind: "track" | "search") {
-  const { embedding } = await embed({
-    model: google.embedding("gemini-embedding-001"),
-    value: text,
-    providerOptions: {
-      google: {
-        outputDimensionality: 1536,
-        taskType: kind === "track" ? "RETRIEVAL_DOCUMENT" : "RETRIEVAL_QUERY",
-      },
-    },
-  });
-
-  return embedding;
 }
 
 async function lookupIsrc(isrc: string) {
@@ -53,7 +37,7 @@ export async function saveTrack(t: TrackToIndex) {
   if (
     await prisma.track.findUnique({
       where: { isrc: t.isrc },
-      select: { id: true },
+      select: { isrc: true },
     })
   )
     return;

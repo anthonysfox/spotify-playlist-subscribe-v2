@@ -11,7 +11,7 @@ import prisma from "@/lib/db/prisma";
 import { triggerSync } from "@/lib/sync/trigger";
 import { hashToken } from "@/lib/mcp-tokens";
 import { describePlaylist } from "@/lib/playlists/describe-playlist";
-import { embedText } from "@/lib/tracks/index-tracks";
+import { embedText } from "@/lib/tracks/embed";
 
 const handler = createMcpHandler(
   (server) => {
