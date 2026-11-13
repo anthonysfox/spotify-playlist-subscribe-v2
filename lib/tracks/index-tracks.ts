@@ -1,5 +1,8 @@
 import prisma from "../db/prisma";
 import { embedText } from "./embed";
+import { getArtistTags, getTrackTags } from "./sources/lastfm";
+import { lookupMusicBrainz, MusicBrainzMatch } from "./sources/musicbrainz";
+import { cleanTags } from "./tags";
 
 export interface TrackToIndex {
   isrc: string;
@@ -23,7 +26,7 @@ async function lookupIsrc(isrc: string) {
   if (!res.ok) throw new Error(`MusicBrainz error: ${res.status}`);
   const rec = (await res.json()).recordings?.[0];
   if (!rec) return null;
-  console.log(rec);
+
   return {
     title: rec.title as string,
     artist: rec["artist-credit"].map((a: any) => a.name).join(", ") as string,
@@ -80,4 +83,40 @@ export async function indexTracks(tracks: TrackToIndex[], deadline: number) {
   }
 
   console.log(`Ended track index job at ${new Date().toISOString()}`);
+}
+
+async function collectTags(t: TrackToIndex): Promise<{
+  title: string;
+  artist: string;
+  trackTags: string[];
+  artistTags: string[];
+  sources: string[];
+}> {
+  const mbData: MusicBrainzMatch | null = await lookupMusicBrainz(t.isrc);
+  const artistFallback = t.artist.split(", ")[0];
+
+  const [trackTags, artistTags] = await Promise.all([
+    getTrackTags(
+      mbData?.title ?? t.title,
+      mbData?.artists[0] ?? artistFallback,
+    ),
+    getArtistTags(mbData?.artists[0] ?? artistFallback),
+  ]);
+
+  const artistNames = mbData?.artists ?? t.artist.split(", ");
+  const cleanedTrackTags = cleanTags([...trackTags, ...(mbData?.tags ?? [])], {
+    artistNames,
+  });
+  const cleanedArtistTags = cleanTags([...artistTags], { artistNames });
+  const sources = [];
+  if (mbData?.tags.length) sources.push("musicbrainz");
+  if (trackTags.length || artistTags.length) sources.push("lastfm");
+
+  return {
+    title: mbData?.title ?? t.title,
+    artist: mbData?.artists.join(", ") || t.artist,
+    trackTags: cleanedTrackTags,
+    artistTags: cleanedArtistTags,
+    sources,
+  };
 }
