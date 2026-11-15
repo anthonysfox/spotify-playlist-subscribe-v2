@@ -40,7 +40,7 @@ const handler = createMcpHandler(
           };
         }
 
-        const rows = searchTracksByVibe(vibe, limit ?? 10);
+        const rows = await searchTracksByVibe(vibe, limit ?? 10);
         return { content: [{ type: "text", text: JSON.stringify(rows) }] };
       },
     );
