@@ -51,3 +51,5 @@ infra/*.tfvars
 
 lambda/*/dist
 infra/build
+
+.claude/settings.local.json

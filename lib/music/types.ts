@@ -21,7 +21,7 @@ export interface PlaylistSummary {
 export interface DBVibeTrack {
   title: string;
   artist: string;
-  external_id: string;
+  isrc: string;
   similarity: number;
 }
 

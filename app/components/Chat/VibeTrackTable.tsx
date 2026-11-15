@@ -2,7 +2,6 @@ import type { DBVibeTrack } from "@/lib/music/types";
 
 /** searchTracksByVibe results, closest match first (the order the query returns). */
 export function VibeTrackTable({ tracks }: { tracks: DBVibeTrack[] }) {
-  console.log("hi");
   if (tracks.length === 0) {
     return (
       <div className="border-line text-ink-50 self-start rounded-xl border px-3 py-2 text-[12.5px]">
@@ -33,7 +32,7 @@ export function VibeTrackTable({ tracks }: { tracks: DBVibeTrack[] }) {
         <tbody>
           {tracks.map((track, i) => (
             <tr
-              key={track.external_id}
+              key={track.isrc}
               className="border-line border-b last:border-b-0"
             >
               <td className="text-ink-35 px-2.5 py-1.5 text-right tabular-nums">

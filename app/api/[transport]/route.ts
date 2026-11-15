@@ -12,6 +12,7 @@ import { triggerSync } from "@/lib/sync/trigger";
 import { hashToken } from "@/lib/mcp-tokens";
 import { describePlaylist } from "@/lib/playlists/describe-playlist";
 import { embedText } from "@/lib/tracks/embed";
+import { searchTracksByVibe } from "@/lib/tracks/search";
 
 const handler = createMcpHandler(
   (server) => {
@@ -39,20 +40,7 @@ const handler = createMcpHandler(
           };
         }
 
-        const vec = JSON.stringify(await embedText(vibe, "search"));
-        const rows = await prisma.$queryRaw<
-          {
-            title: string;
-            artist: string;
-            external_id: string;
-            similarity: number;
-          }[]
-        >`
-          SELECT title, artist, provider, external_id, 1 - (embedding <=> ${vec}::vector) AS similarity
-          FROM tracks
-          ORDER BY embedding <=> ${vec}::vector
-          LIMIT ${limit}
-        `;
+        const rows = searchTracksByVibe(vibe, limit ?? 10);
         return { content: [{ type: "text", text: JSON.stringify(rows) }] };
       },
     );

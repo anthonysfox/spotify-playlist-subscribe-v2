@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "prisma-cli": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-cli/SKILL.md",
+      "computedHash": "aaec1e0169bb8ae74b0e3c4b39a4ed00cef79741df42fb9c93771736fccf378f"
+    },
+    "prisma-client-api": {
+      "source": "prisma/skills",
+      "sourceType": "github",
+      "skillPath": "prisma-client-api/SKILL.md",
+      "computedHash": "cbbabff961c8e16b2d59f8c1ffb4e7e20be52154e778ab95121e0211d6d09969"
+    }
+  }
+}

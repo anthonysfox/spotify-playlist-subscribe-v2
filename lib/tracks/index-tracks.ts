@@ -3,6 +3,11 @@ import { embedText } from "./embed";
 import { getArtistTags, getTrackTags } from "./sources/lastfm";
 import { lookupMusicBrainz, MusicBrainzMatch } from "./sources/musicbrainz";
 import { cleanTags } from "./tags";
+import {
+  formatVibeProfile,
+  generateVibeProfile,
+  hasEnoughSignal,
+} from "./vibe-profile";
 
 export interface TrackToIndex {
   isrc: string;
@@ -12,77 +17,64 @@ export interface TrackToIndex {
   artist: string;
 }
 
-async function lookupIsrc(isrc: string) {
-  const res = await fetch(
-    `https://musicbrainz.org/ws/2/isrc/${isrc}?inc=artists+tags&fmt=json`,
-    {
-      headers: {
-        "User-Agent": "PlaylistFox/1.0 ( https://anthonyfox.dev )",
-      },
-    },
-  );
-
-  if (res.status === 400 || res.status === 404) return null;
-  if (!res.ok) throw new Error(`MusicBrainz error: ${res.status}`);
-  const rec = (await res.json()).recordings?.[0];
-  if (!rec) return null;
-
-  return {
-    title: rec.title as string,
-    artist: rec["artist-credit"].map((a: any) => a.name).join(", ") as string,
-    tags: [...(rec.tags ?? [])]
-      .map((t: any) => t.name)
-      .slice(0, 10) as string[],
-  };
-}
-
-export async function saveTrack(t: TrackToIndex) {
-  if (
-    await prisma.track.findUnique({
-      where: { isrc: t.isrc },
-      select: { isrc: true },
-    })
-  )
-    return;
-
-  const mb = await lookupIsrc(t.isrc);
-
-  const content =
-    `${mb?.title ?? t.title} by ${mb?.artist ?? t.artist}` +
-    (mb?.tags?.length ? `. Tags: ${mb.tags.join(", ")}` : "");
-  const vec = await embedText(content, "track");
-
-  await prisma.$executeRaw`
-    INSERT INTO tracks (id, isrc, provider, external_id, title, artist, content, embedding)
-    VALUES (${crypto.randomUUID()}, ${t.isrc}, ${t.provider}::"MusicProvider", ${t.externalId}, ${mb?.title ?? t.title}, ${mb?.artist ?? t.artist}, ${content}, ${JSON.stringify(vec)}::vector)
-    ON CONFLICT (isrc) DO NOTHING
-  `;
-}
-
 export async function indexTracks(tracks: TrackToIndex[], deadline: number) {
-  console.log(`Starting track index job at ${new Date().toISOString()}`, {
-    tracks,
-  });
   const existing = await prisma.track.findMany({
-    where: { isrc: { in: tracks.map((t) => t.isrc) } },
+    where: {
+      isrc: { in: tracks.map((t) => t.isrc) },
+      status: { in: ["INDEXED", "UNINDEXED"] },
+    },
     select: { isrc: true },
   });
   const known = new Set(existing.map((t) => t.isrc));
 
+  const counts = {
+    indexed: 0,
+    failed: 0,
+    unindexed: 0,
+  };
   for (const track of tracks) {
     if (known.has(track.isrc)) continue;
+
     if (Date.now() >= deadline) break;
 
     try {
-      await saveTrack(track);
+      const result = await indexTrack(track);
+      if (result === "INDEXED") counts.indexed += 1;
+      if (result === "UNINDEXED") counts.unindexed += 1;
     } catch (error) {
       console.error(`Failed to index ${track.isrc}: `, error);
-    }
 
-    await new Promise((resolve) => setTimeout(resolve, 1100)); // MusicBrainz limit
+      counts.failed += 1;
+
+      try {
+        await prisma.track.upsert({
+          where: { isrc: track.isrc },
+          create: {
+            isrc: track.isrc,
+            title: track.title,
+            artist: track.artist,
+            status: "FAILED",
+          },
+          update: {
+            status: "FAILED",
+          },
+        });
+      } catch (writeError) {
+        console.error(`Couldn't mark ${track.isrc} as FAILED: `, writeError);
+      }
+    }
   }
 
-  console.log(`Ended track index job at ${new Date().toISOString()}`);
+  const notReached =
+    tracks.length -
+    known.size -
+    counts.indexed -
+    counts.unindexed -
+    counts.failed;
+
+  console.log(
+    `Ended track index job at ${new Date().toISOString()}. Indexed: ${counts.indexed}, unindexed: ${counts.unindexed}, failed: ${counts.failed}, skipped: ${known.size}, unreached tracks: ${notReached}`,
+  );
 }
 
 async function collectTags(t: TrackToIndex): Promise<{
@@ -119,4 +111,57 @@ async function collectTags(t: TrackToIndex): Promise<{
     artistTags: cleanedArtistTags,
     sources,
   };
+}
+
+async function indexTrack(t: TrackToIndex): Promise<"INDEXED" | "UNINDEXED"> {
+  const evidence = await collectTags(t);
+
+  if (!hasEnoughSignal(evidence.trackTags, evidence.artistTags)) {
+    const data = {
+      title: evidence.title,
+      artist: evidence.artist,
+      status: "UNINDEXED" as const,
+      tags: {
+        artist: evidence.artistTags,
+        track: evidence.trackTags,
+      },
+      metadataSources: evidence.sources,
+    };
+
+    await prisma.track.upsert({
+      where: { isrc: t.isrc },
+      create: {
+        isrc: t.isrc,
+        ...data,
+      },
+      update: {
+        ...data,
+        vibeProfile: null,
+      },
+    });
+    return "UNINDEXED";
+  }
+
+  const vibeProfile = await generateVibeProfile(
+    evidence.trackTags,
+    evidence.artistTags,
+  );
+
+  const text = formatVibeProfile(vibeProfile);
+  const vec = await embedText(text, "track");
+  await prisma.$executeRaw`
+    INSERT INTO tracks (isrc, title, artist, tags, metadata_sources, status, indexed_at, vibe_profile, embedding)
+    VALUES (${t.isrc}, ${evidence.title}, ${evidence.artist}, ${JSON.stringify({ track: evidence.trackTags, artist: evidence.artistTags })}::jsonb, ${evidence.sources}, 'INDEXED'::"TrackIndexStatus", ${new Date()}, ${text}, ${JSON.stringify(vec)}::vector)
+    ON CONFLICT (isrc) DO UPDATE SET 
+      title = EXCLUDED.title,
+      artist = EXCLUDED.artist,
+      tags = EXCLUDED.tags,
+      metadata_sources = EXCLUDED.metadata_sources,
+      status = EXCLUDED.status,
+      indexed_at = EXCLUDED.indexed_at,
+      vibe_profile = EXCLUDED.vibe_profile,
+      embedding = EXCLUDED.embedding
+  `;
+
+  return "INDEXED";
 }

@@ -6,6 +6,7 @@ import prisma from "../db/prisma";
 import type { AgentProposal } from "./proposals";
 import { DBVibeTrack } from "../music/types";
 import { embedText } from "../tracks/embed";
+import { searchTracksByVibe } from "../tracks/search";
 
 const FREQ_WORD: Record<string, string> = {
   DAILY: "daily",
@@ -174,19 +175,13 @@ export function buildTools(userId: string) {
 
     searchTracksByVibe: tool({
       description:
-        "Find songs in PlaylistFox's track catalog that match a mood or vibe. Returns provider track ids that can be passed to the playlist tools.",
+        "Find songs in PlaylistFox's track catalog that match a mood or vibe.",
       inputSchema: z.object({
         vibe: z.string(),
         limit: z.number().int().min(1).max(50).optional().default(10),
       }),
       execute: async ({ vibe, limit }) => {
-        const vec = JSON.stringify(await embedText(vibe, "search"));
-        const rows = await prisma.$queryRaw<DBVibeTrack[]>`
-          SELECT title, artist, provider, external_id, 1 - (embedding <=> ${vec}::vector) AS similarity
-          FROM tracks
-          ORDER BY embedding <=> ${vec}::vector
-          LIMIT ${limit}
-        `;
+        const rows = await searchTracksByVibe(vibe, limit);
 
         return rows;
       },
