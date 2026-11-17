@@ -3,6 +3,7 @@ import { embedText } from "./embed";
 import { getArtistTags, getTrackTags } from "./sources/lastfm";
 import { lookupMusicBrainz, MusicBrainzMatch } from "./sources/musicbrainz";
 import { cleanTags } from "./tags";
+import { cacheSpotifyIds } from "./spotify-ids";
 import {
   formatVibeProfile,
   generateVibeProfile,
@@ -18,6 +19,19 @@ export interface TrackToIndex {
 }
 
 export async function indexTracks(tracks: TrackToIndex[], deadline: number) {
+  // The sync already fetched each track's Spotify id along with its ISRC, so
+  // caching them here costs no API calls and saves a /search later. A failure
+  // only means a cache miss later, so it mustn't stop indexing.
+  try {
+    await cacheSpotifyIds(
+      tracks
+        .filter((t) => t.provider === "SPOTIFY" && t.externalId)
+        .map((t) => ({ isrc: t.isrc, spotifyTrackId: t.externalId })),
+    );
+  } catch (error) {
+    console.error("Failed to cache Spotify track ids: ", error);
+  }
+
   const existing = await prisma.track.findMany({
     where: {
       isrc: { in: tracks.map((t) => t.isrc) },

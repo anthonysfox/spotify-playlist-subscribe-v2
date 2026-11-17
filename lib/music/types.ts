@@ -23,6 +23,8 @@ export interface DBVibeTrack {
   artist: string;
   isrc: string;
   similarity: number;
+  /** null when the user hasn't connected Spotify, so ids couldn't be looked up. */
+  spotifyId: string | null;
 }
 
 /**

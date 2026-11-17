@@ -23,11 +23,12 @@ async function main() {
 
   // pgvector has no Prisma type, so read it as text: "[0.1,0.2,...]".
   const rows = await prisma.$queryRaw<
-    { title: string; artist: string; content: string; embedding: string }[]
+    { title: string; artist: string; vibe_profile: string; embedding: string }[]
   >`
-    SELECT title, artist, content, embedding::text AS embedding
+    SELECT title, artist, vibe_profile, embedding::text AS embedding
     FROM tracks
-    ORDER BY created_at, id
+    WHERE status = 'INDEXED'
+    ORDER BY created_at, isrc
   `;
 
   if (rows.length === 0) {
@@ -39,14 +40,14 @@ async function main() {
     (JSON.parse(row.embedding) as number[]).join("\t"),
   );
   const metadata = rows.map((row) =>
-    [row.title, row.artist, row.content].map(cell).join("\t"),
+    [row.title, row.artist, row.vibe_profile].map(cell).join("\t"),
   );
 
   await mkdir(outDir, { recursive: true });
   await writeFile(resolve(outDir, "vectors.tsv"), vectors.join("\n") + "\n");
   await writeFile(
     resolve(outDir, "metadata.tsv"),
-    ["title\tartist\tcontent", ...metadata].join("\n") + "\n",
+    ["title\tartist\tvibe_profile", ...metadata].join("\n") + "\n",
   );
 
   console.log(`Exported ${rows.length} tracks to ${outDir}`);

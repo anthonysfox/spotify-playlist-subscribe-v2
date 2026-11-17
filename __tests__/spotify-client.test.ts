@@ -19,6 +19,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
@@ -45,18 +46,25 @@ describe("spotifyFetch", () => {
 
   it("backs off exponentially when there is no Retry-After", async () => {
     fetchMock.mockImplementation(async () => json({}, 429));
+    // Remove the random jitter so the waits are exactly 1s, 2s and 4s. With
+    // jitter, each retry lands somewhere in a 250ms window and the call counts
+    // below were off whenever an earlier retry landed early.
+    vi.spyOn(Math, "random").mockReturnValue(0);
 
     const pending = spotifyFetch(`${BASE}/me`);
 
+    // Retries at t = 1000, 3000 (1000 + 2000) and 7000 (3000 + 4000).
     await vi.advanceTimersByTimeAsync(999);
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(251);
+    await vi.advanceTimersByTimeAsync(1);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     await vi.advanceTimersByTimeAsync(1999);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    await vi.advanceTimersByTimeAsync(251);
+    await vi.advanceTimersByTimeAsync(1);
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    await vi.advanceTimersByTimeAsync(4251);
+    await vi.advanceTimersByTimeAsync(3999);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    await vi.advanceTimersByTimeAsync(1);
     expect(fetchMock).toHaveBeenCalledTimes(4);
 
     // Out of retries: the last 429 goes back to the caller.

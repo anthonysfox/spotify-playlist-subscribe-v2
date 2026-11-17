@@ -11,7 +11,6 @@ import prisma from "@/lib/db/prisma";
 import { triggerSync } from "@/lib/sync/trigger";
 import { hashToken } from "@/lib/mcp-tokens";
 import { describePlaylist } from "@/lib/playlists/describe-playlist";
-import { embedText } from "@/lib/tracks/embed";
 import { searchTracksByVibe } from "@/lib/tracks/search";
 
 const handler = createMcpHandler(
@@ -21,7 +20,7 @@ const handler = createMcpHandler(
       {
         title: "Search Existing Tracks By Vibe",
         description:
-          "Find songs in PlaylistFox's track catalog that match a mood or vibe. Returns provider track ids that can be passed to the playlist tools.",
+          "Find songs in PlaylistFox's track catalog that match a mood or vibe. Each result has a title, artist, ISRC, match score and Spotify track id (null if the user hasn't connected Spotify).",
         inputSchema: {
           vibe: z
             .string()
@@ -40,7 +39,7 @@ const handler = createMcpHandler(
           };
         }
 
-        const rows = await searchTracksByVibe(vibe, limit ?? 10);
+        const rows = await searchTracksByVibe(userId, vibe, limit ?? 10);
         return { content: [{ type: "text", text: JSON.stringify(rows) }] };
       },
     );

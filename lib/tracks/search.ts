@@ -1,6 +1,8 @@
 import prisma from "../db/prisma";
+import { getProvider } from "../music";
 import type { DBVibeTrack } from "../music/types";
 import { embedText } from "./embed";
+import { resolveSpotifyIds } from "./spotify-ids";
 
 // Hybrid search: ranks tracks by meaning (vector distance) and by exact words
 // (Postgres full-text search on vibe_profile), then merges the two rankings
@@ -8,13 +10,46 @@ import { embedText } from "./embed";
 const CANDIDATES = 50;
 const RRF_K = 60;
 
+// Some matches won't be on Spotify for this user and get dropped, so fetch
+// extra to still fill `limit`.
+const OVERFETCH = 2;
+
+type MatchedTrack = Omit<DBVibeTrack, "spotifyId">;
+
+/**
+ * Finds catalog tracks matching a vibe, with each track's Spotify id for the
+ * user. When Spotify is connected, tracks it doesn't have are left out; when it
+ * isn't, results come back with `spotifyId: null`.
+ */
 export async function searchTracksByVibe(
+  userId: string,
   vibe: string,
   limit: number,
 ): Promise<DBVibeTrack[]> {
+  const matches = await findMatches(vibe, limit * OVERFETCH);
+
+  const client = await getProvider("SPOTIFY").forUser(userId);
+  if (!client) {
+    return matches.slice(0, limit).map((m) => ({ ...m, spotifyId: null }));
+  }
+
+  const ids = await resolveSpotifyIds(
+    matches.map((m) => m.isrc),
+    client,
+  );
+  return matches
+    .filter((m) => ids.has(m.isrc))
+    .slice(0, limit)
+    .map((m) => ({ ...m, spotifyId: ids.get(m.isrc)! }));
+}
+
+async function findMatches(
+  vibe: string,
+  limit: number,
+): Promise<MatchedTrack[]> {
   const vec = JSON.stringify(await embedText(vibe, "search"));
 
-  return prisma.$queryRaw<DBVibeTrack[]>`
+  return prisma.$queryRaw<MatchedTrack[]>`
     WITH semantic AS (
       SELECT isrc, ROW_NUMBER() OVER (ORDER BY embedding <=> ${vec}::vector) AS rank
       FROM tracks
