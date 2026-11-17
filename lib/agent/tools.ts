@@ -4,8 +4,6 @@ import { getProvider, MusicProvider } from "../music";
 import { ACTIVE_PROVIDERS } from "../music/availability";
 import prisma from "../db/prisma";
 import type { AgentProposal } from "./proposals";
-import { DBVibeTrack } from "../music/types";
-import { embedText } from "../tracks/embed";
 import { searchTracksByVibe } from "../tracks/search";
 
 const FREQ_WORD: Record<string, string> = {
@@ -175,15 +173,13 @@ export function buildTools(userId: string) {
 
     searchTracksByVibe: tool({
       description:
-        "Find songs in PlaylistFox's track catalog that match a mood or vibe.",
+        "Find songs in PlaylistFox's track catalog that match a mood or vibe. Each result has a title, artist, match score and Spotify track id.",
       inputSchema: z.object({
         vibe: z.string(),
         limit: z.number().int().min(1).max(50).optional().default(10),
       }),
       execute: async ({ vibe, limit }) => {
-        const rows = await searchTracksByVibe(vibe, limit);
-
-        return rows;
+        return searchTracksByVibe(userId, vibe, limit);
       },
     }),
 

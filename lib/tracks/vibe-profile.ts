@@ -1,16 +1,18 @@
-import { createGoogle } from "@ai-sdk/google";
-import { generateText, Output } from "ai";
+import { gateway, generateText, Output } from "ai";
 import { z } from "zod";
+import { sleep } from "utils/sleep";
 
 const MIN_TRACK_TAGS = 1;
 const MIN_ARTIST_TAGS = 3;
 
-const google = createGoogle({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-});
-
+// Runs through the AI Gateway (AI_GATEWAY_API_KEY), like the assistant and
+// cover art, so it's billed per token with no free-tier request cap.
 const VIBE_PROFILE_MODEL =
-  process.env.VIBE_PROFILE_MODEL ?? "gemini-3.1-flash-lite";
+  process.env.VIBE_PROFILE_MODEL ?? "google/gemini-3.1-flash-lite";
+
+// Minimum gap between generate calls. 0 (no limit) on the gateway; set it to
+// 4500 if this is ever pointed at Gemini's free tier (15 requests a minute).
+const MIN_INTERVAL_MS = Number(process.env.VIBE_PROFILE_MIN_INTERVAL_MS ?? 0);
 
 export const VibeProfileSchema = z.object({
   moods: z
@@ -68,8 +70,9 @@ export async function generateVibeProfile(
   trackTags: string[],
   artistTags: string[],
 ): Promise<VibeProfile> {
+  await waitForSlot();
   const { output } = await generateText({
-    model: google(VIBE_PROFILE_MODEL),
+    model: gateway.languageModel(VIBE_PROFILE_MODEL),
     output: Output.object({ schema: VibeProfileSchema }),
     prompt: `You are describing how a song feels, for a mood-based music search index.
 
@@ -83,7 +86,20 @@ Artist tags: ${artistTags.length ? artistTags.join(", ") : "none"}
 Fill moods, genres and listeningContext every time. Fill texture, vocals and tempoFeel only when a tag supports them directly (for example "piano", "female vocalists", "instrumental", "slow"); otherwise leave them out. Use plain lowercase words, with no song titles, artist names or chart references.`,
   });
 
-  return output;
+  // The model occasionally spills the schema's own field names into a list
+  // (moods: ["calm", "genres", "texture"]). Drop them so they aren't embedded.
+  const fieldNames = new Set(
+    Object.keys(VibeProfileSchema.shape).map((k) => k.toLowerCase()),
+  );
+  const clean = (items: string[]) =>
+    items.filter((item) => !fieldNames.has(item.toLowerCase()));
+
+  return {
+    ...output,
+    moods: clean(output.moods),
+    genres: clean(output.genres),
+    listeningContext: clean(output.listeningContext),
+  };
 }
 
 export function hasEnoughSignal(
@@ -93,4 +109,15 @@ export function hasEnoughSignal(
   return (
     trackTags.length >= MIN_TRACK_TAGS || artistTags.length >= MIN_ARTIST_TAGS
   );
+}
+
+// Same slot pattern as the MusicBrainz and Last.fm clients: each caller
+// reserves the next free slot before awaiting, so concurrent callers queue up.
+let nextSlot = 0;
+
+async function waitForSlot() {
+  const now = Date.now();
+  const start = Math.max(now, nextSlot);
+  nextSlot = start + MIN_INTERVAL_MS;
+  if (start > now) await sleep(start - now);
 }

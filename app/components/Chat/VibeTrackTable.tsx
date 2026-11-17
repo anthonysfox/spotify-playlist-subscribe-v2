@@ -42,7 +42,18 @@ export function VibeTrackTable({ tracks }: { tracks: DBVibeTrack[] }) {
                 className="text-ink truncate px-2.5 py-1.5 font-medium"
                 title={track.title}
               >
-                {track.title}
+                {track.spotifyId ? (
+                  <a
+                    href={`https://open.spotify.com/track/${track.spotifyId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    {track.title}
+                  </a>
+                ) : (
+                  track.title
+                )}
               </td>
               <td
                 className="text-ink-50 truncate px-2.5 py-1.5"

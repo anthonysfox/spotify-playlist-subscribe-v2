@@ -31,6 +31,7 @@ Run `pnpm test` and `npx tsc --noEmit` after changes.
 - `lib/playlists/` — domain logic: `subscribe.ts`, `unsubscribe.ts`, `managed.ts`, `generate-playlist.ts`, `describe-playlist.ts`, `cover-art.ts`
 - `lib/music/` — provider abstraction (`getProvider(provider).forUser(userId)`); Spotify tokens come from Clerk OAuth (`utils/clerk.ts`)
 - `lib/agent/` — chat assistant tools and the proposal/confirm flow
+- `lib/tracks/` — the mood-search catalog: `index-tracks.ts` (`indexTracks`, run after each cron sync), `sources/` (MusicBrainz and Last.fm clients, each with its own rate limiter), `tags.ts` (`cleanTags`), `vibe-profile.ts` (Gemini profile from tags only), `embed.ts`, `search.ts` (hybrid vector + full-text search), `spotify-ids.ts` (ISRC → Spotify id cache)
 - `lib/db/prisma.ts` — Prisma client
 - `store/` — Zustand stores (`useUserStore` holds managed playlists and pending source removals)
 - `utils/` — small framework-free helpers only; app logic belongs in `lib/`
@@ -44,6 +45,8 @@ Run `pnpm test` and `npx tsc --noEmit` after changes.
 - **SourcePlaylist** — a playlist tracks are pulled from, shared across users
 - **ManagedPlaylistSourceSubscription** — links the two
 - **SyncRun** — one row per sync attempt: status (`RUNNING`/`SUCCESS`/`SKIPPED`/`FAILED`), trigger, tracks added, skip counts, per-source breakdown
+- **Track** — the mood-search catalog, keyed by ISRC. `status`: `INDEXED` (has a vibe profile and embedding), `UNINDEXED` (too few tags to describe; not retried), `FAILED` (retried on the next run), `PENDING`. Stores no Spotify data.
+- **SpotifyTrackCache** — ISRC → Spotify track id with a 7-day expiry, refreshed by every sync and filled on demand by search
 - **McpAccessToken** — personal tokens for the MCP server (30/60/90-day expiry)
 - **AuditLog**
 
@@ -55,6 +58,14 @@ Run `pnpm test` and `npx tsc --noEmit` after changes.
 - The route only authenticates and parses params; `runSync()` in `lib/sync/engine.ts` does the work and returns a `SyncSummary`. Keep HTTP concerns (`NextResponse`, request parsing) out of `lib/`.
 - Other code that starts a sync should go through `triggerSync()` (the MCP `trigger_sync_now` tool and the immediate sync in `subscribe()` do; `/api/users/me/sync` still builds the URL by hand and should be migrated). In request handlers, fire-and-forget work must be wrapped in `after()` from `next/server` and the callback must return the promise.
 - Sync routes set `maxDuration = 300`; the project runs on Fluid Compute (`vercel.json`). Without it, functions are capped at 10s and the cron returns 504.
+
+## Mood Search
+
+- Vibe profiles are built only from MusicBrainz and Last.fm tags. Never send a track's title or artist to the model, and never store or embed Spotify data in `tracks`: titles drowned out mood in the old embeddings, and Spotify's terms forbid using their data for ML.
+- `hasEnoughSignal` gates generation (at least 1 track tag or 3 artist tags). Tracks below it are `UNINDEXED`; don't loosen it to raise coverage — a made-up profile matches the wrong searches.
+- In the indexing pipeline, "no match" returns `null`/`[]` and real failures throw, so `indexTracks` can tell `UNINDEXED` from `FAILED`. Don't catch errors lower down.
+- Search must filter on `status = 'INDEXED'`. There's no vector index yet (an exact scan is fine at this size); Prisma drops hand-made HNSW indexes as drift, so add one in a migration with a comment when it's needed.
+- Backfill waiting tracks with `pnpm tsx --env-file=.env scripts/backfill-tracks.ts` (`--limit N`, `--retry-failed`).
 
 ## Assistant and MCP
 
@@ -77,4 +88,4 @@ Run `pnpm test` and `npx tsc --noEmit` after changes.
 
 ## Environment
 
-`POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, Clerk keys, `NEXT_PUBLIC_APP_URL`, `CRON_SECRET`, `GOOGLE_GENERATIVE_AI_API_KEY` (curator), `AI_GATEWAY_API_KEY` (assistant, generation, cover art). Optional: model overrides (`CURATOR_MODEL`, `GENERATE_PLAYLIST_MODEL`, `COVER_ART_*_MODEL`), `APPLE_MUSIC_TEAM_ID` / `APPLE_MUSIC_KEY_ID` / `APPLE_MUSIC_PRIVATE_KEY`.
+`POSTGRES_PRISMA_URL`, `POSTGRES_URL_NON_POOLING`, Clerk keys, `NEXT_PUBLIC_APP_URL`, `CRON_SECRET`, `GOOGLE_GENERATIVE_AI_API_KEY` (curator), `LASTFM_API_KEY` (track tags), `AI_GATEWAY_API_KEY` (assistant, generation, cover art, vibe profiles, embeddings). Optional: model overrides (`CURATOR_MODEL`, `VIBE_PROFILE_MODEL`, `VIBE_PROFILE_MIN_INTERVAL_MS` (default 0; 4500 if pointed at Gemini's free tier), `GENERATE_PLAYLIST_MODEL`, `COVER_ART_*_MODEL`), `APPLE_MUSIC_TEAM_ID` / `APPLE_MUSIC_KEY_ID` / `APPLE_MUSIC_PRIVATE_KEY`.
