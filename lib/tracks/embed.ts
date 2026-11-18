@@ -4,7 +4,7 @@ import { embed, gateway } from "ai";
 // Google directly, so switching providers doesn't require re-embedding.
 export async function embedText(text: string, kind: "track" | "search") {
   const { embedding } = await embed({
-    model: gateway.textEmbeddingModel("google/gemini-embedding-001"),
+    model: gateway.embeddingModel("google/gemini-embedding-001"),
     value: text,
     providerOptions: {
       google: {

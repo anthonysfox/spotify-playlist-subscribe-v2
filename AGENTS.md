@@ -33,6 +33,7 @@ Run `pnpm test` and `npx tsc --noEmit` after changes.
 - `lib/agent/` — chat assistant tools and the proposal/confirm flow
 - `lib/tracks/` — the mood-search catalog: `index-tracks.ts` (`indexTracks`, run after each cron sync), `sources/` (MusicBrainz and Last.fm clients, each with its own rate limiter), `tags.ts` (`cleanTags`), `vibe-profile.ts` (Gemini profile from tags only), `embed.ts`, `search.ts` (hybrid vector + full-text search), `spotify-ids.ts` (ISRC → Spotify id cache)
 - `lib/db/prisma.ts` — Prisma client
+- `scripts/` — one-off scripts run with `pnpm tsx --env-file=.env …` (`backfill-tracks.ts`, `export-embeddings.ts`)
 - `store/` — Zustand stores (`useUserStore` holds managed playlists and pending source removals)
 - `utils/` — small framework-free helpers only; app logic belongs in `lib/`
 
@@ -64,6 +65,10 @@ Run `pnpm test` and `npx tsc --noEmit` after changes.
 - Vibe profiles are built only from MusicBrainz and Last.fm tags. Never send a track's title or artist to the model, and never store or embed Spotify data in `tracks`: titles drowned out mood in the old embeddings, and Spotify's terms forbid using their data for ML.
 - `hasEnoughSignal` gates generation (at least 1 track tag or 3 artist tags). Tracks below it are `UNINDEXED`; don't loosen it to raise coverage — a made-up profile matches the wrong searches.
 - In the indexing pipeline, "no match" returns `null`/`[]` and real failures throw, so `indexTracks` can tell `UNINDEXED` from `FAILED`. Don't catch errors lower down.
+- Indexing runs from the cron route: `runSync` collects the tracks it saw into `tracksToIndex`, then `after()` calls `indexTracks` with a 240s deadline. Only tracks from playlists synced in that run are indexed; anything else waits as `PENDING` for the next run or the backfill.
+- Per track the indexer calls MusicBrainz (ISRC lookup) and Last.fm (`track.getTopTags` + `artist.getTopTags`), then the AI Gateway (profile, then embedding). Spotify is never called during indexing. Each source has a module-level slot limiter (MusicBrainz 1100ms, Last.fm 250ms); keep new callers going through them.
+- Embeddings are `google/gemini-embedding-001` at 1536 dimensions (`vector(1536)`), `RETRIEVAL_DOCUMENT` for tracks and `RETRIEVAL_QUERY` for searches. Changing the model or dimensions means re-embedding every `INDEXED` row.
+- `searchTracksByVibe(userId, vibe, limit)` (chat tool `searchTracksByVibe`, MCP `search_existing_tracks_by_vibe`) merges vector and full-text rankings with Reciprocal Rank Fusion (k=60), then resolves Spotify ids through `SpotifyTrackCache` and `/search?q=isrc:` and drops tracks Spotify can't find (users without a Spotify connection get every result with `spotifyId: null`). Misses are never cached, because `searchTracks` returns `[]` on errors too.
 - Search must filter on `status = 'INDEXED'`. There's no vector index yet (an exact scan is fine at this size); Prisma drops hand-made HNSW indexes as drift, so add one in a migration with a comment when it's needed.
 - Backfill waiting tracks with `pnpm tsx --env-file=.env scripts/backfill-tracks.ts` (`--limit N`, `--retry-failed`).
 

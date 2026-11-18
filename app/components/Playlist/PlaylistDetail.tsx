@@ -46,24 +46,251 @@ const RUN_DOT: Record<string, string> = {
   skipped: "bg-ink-25",
 };
 
+/** One-line description of a run, shared by the Runs list and chart tooltips. */
+function runSummary(run: SyncRunSummary): string {
+  const skipped = totalSkipped(run);
+  if (run.status === "success") {
+    return run.tracksAdded > 0
+      ? `+${run.tracksAdded} added${skipped ? ` · ${skipped} filtered out` : ""}`
+      : skipped
+        ? `${skipped} filtered out, none added`
+        : "no new tracks";
+  }
+  if (run.status === "skipped") return run.skipReason ?? "skipped";
+  if (run.status === "running") return "in progress";
+  return run.errorMessage ?? "failed";
+}
+
+type BarKind = "added" | "empty" | "skipped" | "failed" | "running";
+
+function barKind(run: SyncRunSummary): BarKind {
+  if (run.status === "failed" || run.status === "stale") return "failed";
+  if (run.status === "skipped") return "skipped";
+  if (run.status === "running") return "running";
+  return run.tracksAdded > 0 ? "added" : "empty";
+}
+
+const BAR_STYLE: Record<BarKind, string> = {
+  added: "bg-brand",
+  empty: "bg-ink-25",
+  skipped: "border border-dashed border-ink-25",
+  failed: "bg-warn",
+  running: "bg-brand animate-softpulse",
+};
+
+const BAR_LABEL: Record<BarKind, (r: SyncRunSummary) => string> = {
+  added: (r) => `+${r.tracksAdded}`,
+  empty: () => "0",
+  skipped: () => "–",
+  failed: () => "!",
+  running: () => "…",
+};
+
+const LEGEND: { kind: BarKind; label: string }[] = [
+  { kind: "added", label: "Tracks added" },
+  { kind: "empty", label: "Nothing new" },
+  { kind: "skipped", label: "Skipped" },
+  { kind: "failed", label: "Failed" },
+];
+
+const CHART_HEIGHT = 56;
+
+function formatRunTime(iso: string) {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatDuration(ms: number) {
+  if (ms < 1000) return `${ms}ms`;
+  const s = Math.round(ms / 1000);
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${s % 60}s`;
+}
+
+const OUTCOME_TEXT: Record<BarKind, string> = {
+  added: "text-ink",
+  empty: "text-ink-70",
+  skipped: "text-ink-70",
+  failed: "text-warn-text",
+  running: "text-ink-70",
+};
+
+/** Hover/focus card for one bar of the run history chart. */
+function RunTooltip({
+  run,
+  className,
+}: {
+  run: SyncRunSummary;
+  className: string;
+}) {
+  const kind = barKind(run);
+  const filtered = [
+    { n: run.skippedAlreadyPresent, label: "already in playlist" },
+    { n: run.skippedExplicit, label: "explicit" },
+    { n: run.skippedTooOld, label: "too old" },
+    { n: run.skippedByVibe, label: "off the vibe" },
+  ].filter((f) => f.n > 0);
+  const sources = run.sourceBreakdown.filter((s) => s.added > 0);
+
+  return (
+    <div
+      role="tooltip"
+      className={`border-line bg-surface pointer-events-none absolute z-20 w-56 rounded-xl border p-3 text-left shadow-lg ${className}`}
+    >
+      <div className="text-ink-35 flex justify-between text-[10.5px]">
+        <span>{formatRunTime(run.startedAt)}</span>
+        <span>{run.trigger === "MANUAL" ? "Manual" : "Scheduled"}</span>
+      </div>
+
+      <div
+        className={`mt-1 text-[12.5px] font-medium break-words ${OUTCOME_TEXT[kind]}`}
+      >
+        {kind === "added"
+          ? `+${run.tracksAdded} track${run.tracksAdded === 1 ? "" : "s"} added`
+          : kind === "empty"
+            ? "No new tracks"
+            : runSummary(run)}
+      </div>
+
+      {sources.length > 0 && (
+        <div className="mt-2 space-y-0.5 text-[11px]">
+          {sources.map((s) => (
+            <div
+              key={s.sourcePlaylistId}
+              className="flex justify-between gap-2"
+            >
+              <span className="text-ink-50 truncate">{s.sourceName}</span>
+              <span className="text-ink-70 tabular-nums">+{s.added}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {filtered.length > 0 && (
+        <div className="border-line mt-2 border-t pt-2 text-[11px]">
+          <div className="text-ink-35 mb-0.5">Filtered out</div>
+          {filtered.map((f) => (
+            <div key={f.label} className="flex justify-between gap-2">
+              <span className="text-ink-50">{f.label}</span>
+              <span className="text-ink-70 tabular-nums">{f.n}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {run.durationMs > 0 && kind !== "running" && (
+        <div className="text-ink-35 mt-2 text-[10.5px]">
+          Took {formatDuration(run.durationMs)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RunHistoryChart({
+  runs,
+  runsHref,
+}: {
+  runs: SyncRunSummary[];
+  runsHref: string;
+}) {
+  const [active, setActive] = useState<number | null>(null);
+  const maxAdded = Math.max(1, ...runs.map((r) => r.tracksAdded));
+  const totalAdded = runs.reduce((n, r) => n + r.tracksAdded, 0);
+  const kinds = runs.map(barKind);
+  const present = new Set(kinds);
+
+  return (
+    <>
+      <p className="text-ink-50 mb-4 text-[12px]">
+        Tracks added by each of the last {runs.length} syncs ·{" "}
+        <span className="text-ink-70 font-medium">+{totalAdded} total</span>
+      </p>
+
+      <div
+        className="relative flex items-end gap-1.5"
+        style={{ height: CHART_HEIGHT + 16 }}
+        onMouseLeave={() => setActive(null)}
+      >
+        {runs.map((r, i) => {
+          const kind = kinds[i];
+          const h =
+            kind === "added"
+              ? Math.max(8, (r.tracksAdded / maxAdded) * CHART_HEIGHT)
+              : kind === "running"
+                ? 8
+                : 4;
+          // Keep the tooltip inside the card: edge bars anchor it to that side.
+          const align =
+            i < 2
+              ? "left-0"
+              : i >= runs.length - 2
+                ? "right-0"
+                : "left-1/2 -translate-x-1/2";
+          return (
+            <button
+              type="button"
+              key={r.id}
+              className={`focus-visible:ring-brand/50 relative flex h-full min-w-0 flex-1 cursor-default flex-col items-center justify-end gap-1 rounded-t outline-none focus-visible:ring-2 ${
+                active !== null && active !== i ? "opacity-50" : ""
+              } transition-opacity`}
+              aria-label={`${formatRunTime(r.startedAt)}: ${runSummary(r)}`}
+              onMouseEnter={() => setActive(i)}
+              onFocus={() => setActive(i)}
+              onBlur={() => setActive(null)}
+            >
+              {active === i && (
+                <RunTooltip run={r} className={`bottom-full mb-2 ${align}`} />
+              )}
+              <span
+                className={`text-[10px] tabular-nums ${
+                  kind === "failed"
+                    ? "text-warn-text font-semibold"
+                    : kind === "added"
+                      ? "text-ink-70 font-medium"
+                      : "text-ink-35"
+                }`}
+              >
+                {BAR_LABEL[kind](r)}
+              </span>
+              <span
+                className={`w-full rounded-t ${BAR_STYLE[kind]}`}
+                style={{ height: h }}
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="border-line text-ink-35 mt-0 flex justify-between border-t pt-1.5 text-[11px]">
+        <span>{formatRelativeTime(runs[0].startedAt)}</span>
+        <span>{formatRelativeTime(runs[runs.length - 1].startedAt)}</span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px]">
+        {LEGEND.filter((l) => present.has(l.kind)).map((l) => (
+          <span key={l.kind} className="text-ink-50 flex items-center gap-1.5">
+            <span className={`h-2 w-2 rounded-sm ${BAR_STYLE[l.kind]}`} />
+            {l.label}
+          </span>
+        ))}
+        <Link
+          href={runsHref}
+          className="text-ink-50 hover:text-ink ml-auto underline-offset-2 hover:underline"
+        >
+          All runs →
+        </Link>
+      </div>
+    </>
+  );
+}
+
 function RunRow({ run }: { run: SyncRunSummary }) {
   const when = formatRelativeTime(run.finishedAt ?? run.startedAt);
-  const skipped = totalSkipped(run);
-  let summary: string;
-  if (run.status === "success") {
-    summary =
-      run.tracksAdded > 0
-        ? `+${run.tracksAdded} added${skipped ? ` · ${skipped} skipped` : ""}`
-        : skipped
-          ? `${skipped} skipped, none added`
-          : "no changes";
-  } else if (run.status === "skipped") {
-    summary = run.skipReason ?? "skipped";
-  } else if (run.status === "running") {
-    summary = "in progress";
-  } else {
-    summary = run.errorMessage ?? "failed";
-  }
+  const summary = runSummary(run);
 
   return (
     <div className="border-line flex items-center gap-3 border-b px-4 py-3 last:border-b-0">
@@ -184,7 +411,6 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
   const lastRun = playlist.lastRun ?? runs?.[0] ?? null;
   // Oldest → newest, last 9, for the history bars.
   const historyRuns = (runs ?? []).slice(0, 9).reverse();
-  const maxAdded = Math.max(1, ...historyRuns.map((r) => r.tracksAdded));
 
   return (
     <div className="flex h-full min-h-0 flex-col px-4 py-5 min-[900px]:px-6 min-[900px]:py-6">
@@ -420,62 +646,10 @@ export function PlaylistDetail({ id, tab }: { id: string; tab: Tab }) {
                   runs are recorded.
                 </p>
               ) : (
-                <>
-                  <div
-                    className="flex items-end gap-1.5"
-                    style={{ height: 44 }}
-                  >
-                    {historyRuns.map((r, i) => {
-                      const failed =
-                        r.status === "failed" ||
-                        r.status === "stale" ||
-                        r.status === "skipped";
-                      const h = failed
-                        ? 10
-                        : Math.max(6, (r.tracksAdded / maxAdded) * 44);
-                      const newest = i === historyRuns.length - 1;
-                      return (
-                        <span
-                          key={r.id}
-                          title={
-                            failed
-                              ? (r.errorMessage ?? r.skipReason ?? "failed")
-                              : `${r.tracksAdded} added`
-                          }
-                          className={`w-full rounded-t ${
-                            failed
-                              ? "bg-[#7C2D12]"
-                              : newest
-                                ? "bg-brand"
-                                : "bg-brand/40"
-                          }`}
-                          style={{ height: h }}
-                        />
-                      );
-                    })}
-                  </div>
-                  <div className="text-ink-35 mt-2 flex justify-between text-[11px]">
-                    <span>{formatRelativeTime(historyRuns[0].startedAt)}</span>
-                    {historyRuns.some(
-                      (r) => r.status === "failed" || r.status === "stale",
-                    ) && (
-                      <span className="text-warn-text">
-                        {
-                          historyRuns.filter(
-                            (r) =>
-                              r.status === "failed" || r.status === "stale",
-                          ).length
-                        }{" "}
-                        failed
-                      </span>
-                    )}
-                    <span>
-                      {formatRelativeTime(
-                        historyRuns[historyRuns.length - 1].startedAt,
-                      )}
-                    </span>
-                  </div>
-                </>
+                <RunHistoryChart
+                  runs={historyRuns}
+                  runsHref={`/library/${id}/runs`}
+                />
               )}
             </div>
 
